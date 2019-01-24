@@ -70,14 +70,18 @@ class ImageDatasetLoader(DatasetLoader):
                                  shuffle=True)
 
     def show_few(self, size=1, in_row=False, figsize=(20, 10), show_axis=False):
-        inputs, labels = self.get_batch(batch_size=size)
-        
-        rc_tuple = (1, size)
-        if in_row:
-            rc_tuple = (size, 1)
-        
+
+        # Check argument data types
         if not isinstance(show_axis, bool):
             raise RuntimeError('Unexpected data type passed for "show_axis" argument!')
+        if not isinstance(in_row, bool):
+            raise RuntimeError('Unexpected data type passed for "in_row" argument!')
+
+        inputs, labels = self.get_batch(batch_size=size)
+        
+        rc_tuple = (size, 1)
+        if in_row:
+            rc_tuple = (1, size)
 
         if not show_axis:
             show_axis = 'off'
