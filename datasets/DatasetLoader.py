@@ -9,10 +9,12 @@ class DatasetLoader(object):
         This is the Base DatasetLoader class
 
         INPUTS:
-        - train_path : The path to the directory holding the training data
-        - trainanot_path : The path to the directory holding the label data
+        - input_path : The path to the directory holding the training data
+        - label_path : The path to the directory holding the label data
         '''
         
+        # Define the class variables to get the 
+        # input and label path
         self.input_path = input_path
         self.label_path = label_path
 
@@ -28,8 +30,8 @@ class DatasetLoader(object):
         self.total_inputs = len(self.input_names)
         self.total_labels = len(self.label_names)
         
-        # Make sure there are same number of inputs as the number of labels
-        assert (self.total_inputs == self.total_labels)
+        # A check if everything is okay
+        self.check()
 
     def show_paths(self):
         '''
@@ -67,3 +69,11 @@ class DatasetLoader(object):
 
     def create_loader(self):
         pass
+
+    def check(self):
+        # Make sure the input and label paths exists
+        if not os.path.exists(self.input_path) or \
+           not os.path.exists(self.label_path):
+            raise RuntimeError('The path passed in doesn\'t exists!!')
+        # Make sure there are same number of inputs as the number of labels
+        assert (self.total_inputs == self.total_labels)
