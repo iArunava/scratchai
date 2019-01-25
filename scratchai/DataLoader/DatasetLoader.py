@@ -30,9 +30,6 @@ class DatasetLoader(object):
         self.total_inputs = len(self.input_names)
         self.total_labels = len(self.label_names)
         
-        # A check if everything is okay
-        self.check()
-
     def show_paths(self):
         '''
         The method to show the input path

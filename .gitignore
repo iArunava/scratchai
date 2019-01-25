@@ -1,6 +1,9 @@
 *.swp
 datasets/files/
 *-ubyte
+*.png
+*.jpg
+scratchai/DataLoader/files/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
