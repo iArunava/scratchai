@@ -16,6 +16,8 @@ class Linear(BaseModel):
 
         '''
         
+        super().__init__()
+
         self.in_units = in_units
         self.out_units = out_units
         self.weights = np.zeros((in_units, self.out_units))
