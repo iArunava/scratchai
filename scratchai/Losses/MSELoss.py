@@ -1,4 +1,5 @@
-import numpy as np
+import autograd.numpy as np
+from autograd import grad
 from .BaseLoss import BaseLoss
 
 class MSELoss(BaseLoss):
@@ -7,7 +8,10 @@ class MSELoss(BaseLoss):
         '''
         Constructor class for the Mean Squared Error Loss
         '''
-        pass
+        super().__init__()
+
+        self.loss = 0
+        self.grads = 0
 
     def calculate(self, outputs, targets):
         '''
@@ -21,6 +25,16 @@ class MSELoss(BaseLoss):
         - integer - an integer for the mean squared error loss between the outputs and targets
         '''
         
+        outputs = np.array(outputs)
+        targets = np.array(targets)
 
         loss = ((outputs - targets) ** 2) / 2
+        self.loss = loss
         return loss
+
+    def backward(self):
+        '''
+        Method to calculate the gradients
+        '''
+        self.grads = grad(self.calculate)(self.loss)
+        return grads

@@ -1,4 +1,4 @@
-import numpy as np
+import autograd.numpy as np
 
 class BaseLoss(object):
     '''
@@ -9,3 +9,6 @@ class BaseLoss(object):
 
     def __call__(self):
         return self.calculate()
+
+    def backward(self):
+        pass
