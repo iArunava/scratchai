@@ -1,5 +1,5 @@
 import autograd.numpy as np
-from autograd import grad
+from autograd import elementwise_grad as egrad
 from .BaseLoss import BaseLoss
 
 class MSELoss(BaseLoss):
@@ -28,6 +28,9 @@ class MSELoss(BaseLoss):
         outputs = np.array(outputs)
         targets = np.array(targets)
 
+        self.outputs = outputs
+        self.targets = targets
+
         loss = ((outputs - targets) ** 2) / 2
         self.loss = loss
         return loss
@@ -36,5 +39,5 @@ class MSELoss(BaseLoss):
         '''
         Method to calculate the gradients
         '''
-        self.grads = grad(self.calculate)(self.loss)
-        return grads
+        self.grads = egrad(self.calculate)(self.outputs, self.targets)
+        return self.grads

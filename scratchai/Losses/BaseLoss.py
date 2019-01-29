@@ -7,8 +7,8 @@ class BaseLoss(object):
     def calculate(self):
         pass
 
-    def __call__(self):
-        return self.calculate()
+    def __call__(self, outputs, targets):
+        return self.calculate(outputs, targets)
 
     def backward(self):
         pass

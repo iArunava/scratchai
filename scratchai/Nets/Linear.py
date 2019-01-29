@@ -1,5 +1,5 @@
 import autograd.numpy as np
-from BaseModel import BaseModel
+from .BaseModel import BaseModel
 
 class Linear(BaseModel):
     '''
