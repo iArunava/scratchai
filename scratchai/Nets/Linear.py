@@ -1,4 +1,4 @@
-import numpy as np
+import autograd.numpy as np
 from BaseModel import BaseModel
 
 class Linear(BaseModel):
