@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 
-def bnconv(self, in_channels, out_channels, kernel_size, stride,
-             padding, bias=False, eps=1e-5, momentum=0.1, conv_first=True, 
-             act='relu', nslope=0.2, norm='instance', inplace=True):
+def bnconv(in_channels:int, out_channels:int, kernel_size, stride,
+             padding:int, bias:bool=False, eps:float=1e-5, 
+             momentum:float=0.1, conv_first=True, act:str='relu', 
+             nslope:float=0.2, norm:str='batch', inplace:bool=True):
     
     '''
     This is the BNConv module that helps in defining the 
@@ -28,14 +29,14 @@ def bnconv(self, in_channels, out_channels, kernel_size, stride,
                 Default: True
     '''
 
-    act = act.lower()
-    norm = norm.lower()
     normc = out_channels if conv_first else in_channels
     
     if act == 'relu':
         act = nn.ReLU(inplace=inplace)
     elif act == 'leakyrelu':
         act = nn.LeakyReLU(negative_slope=nslope, inplace=inplace)
+    elif act == False:
+        act = None
     else:
         raise ('Activation value not understood')
 
@@ -55,6 +56,9 @@ def bnconv(self, in_channels, out_channels, kernel_size, stride,
                 
               norm,
               act]
+    
+    if act is None:
+        layers = layers[:2]
 
     net = nn.Sequential(*layers) if conv_first else nn.Sequential(*layers[::-1])
 

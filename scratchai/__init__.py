@@ -1,2 +1,3 @@
-from .Nets import *
+from .nets import *
+from .utils import *
 from .DataLoader import *
