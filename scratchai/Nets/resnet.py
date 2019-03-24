@@ -1,9 +1,9 @@
 from .blocks import resblock, bnconv
 
-class ResNet(nn.Module):
+class Resnet(nn.Module):
   
   def __init__(self, nc:int, block:nn.Module, layers:list, lconv:int=2, expansion:int=1, 
-                     s1_channels:int=64, apool:bool=True, conv_first=True, inplace=False):
+                     s1_channels:int=64, conv_first=True, inplace=True):
     '''
     The class that defines the ResNet module
     
@@ -13,41 +13,38 @@ class ResNet(nn.Module):
     - layers
     - lconv : # of conv layers in each Residual Block
     '''
-    super(ResNet, self).__init__()
+    super(Resnet, self).__init__()
     
-    self.apool = apool
-    
-    layers = [BNConv(in_channels=3,
+    layers = [bnconv(in_channels=3,
                 out_channels=s1_channels,
                 kernel_size=7,
                 padding=3,
                 stride=2,
-                eps=2e-5,
-                momentum=0.9,
-                conv_first=True),
+                conv_first=conv_first),
     
               nn.MaxPool2d(kernel_size=3,
-                                stride=2),
+                                stride=2,
+                                padding=1),
     
-              ResNetBlock(block, inc=s1_channels,
+              resblock(block, inc=s1_channels,
                               outc=s1_channels*expansion,
                               num_layers=layers[0],
                               stride=1, conv_first=conv_first,
                               inplace=inplace),
     
-              ResNetBlock(block, inc=s1_channels*expansion,
+              resblock(block, inc=s1_channels*expansion,
                               outc=s1_channels*expansion*2,
                               num_layers=layers[1], 
                               conv_first=conv_first,
                               inplace=inplace),
     
-              ResNetBlock(block, inc=s1_channels*expansion*2,
+              resblock(block, inc=s1_channels*expansion*2,
                               outc=s1_channels*expansion*4,
                               num_layers=layers[2], 
                               conv_first=conv_first,
                               inplace=inplace),
     
-              ResNetBlock(block, inc=s1_channels*expansion*4,
+              resblock(block, inc=s1_channels*expansion*4,
                               outc=s1_channels*expansion*8,
                               num_layers=layers[3], 
                               conv_first=conv_first,
@@ -56,20 +53,9 @@ class ResNet(nn.Module):
     
     self.net = nn.Sequential(*layers)
     
-    if self.apool:
-      self.avgpool = nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
+    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
     
-    self.fc = nn.Linear(2048, nc)
-    
-    #'''
-    for module in self.modules():
-      #if isinstance(module, nn.Conv2d):
-        #nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
-        #nn.init.xavier_normal_(module.weight, gain=0.02)
-      if isinstance(module, nn.BatchNorm2d):
-        nn.init.constant_(module.weight.data, 1)
-        #nn.init.constant_(module.bias, 0)
-    #'''
+    self.fc = nn.Linear(512, nc)
     
   def forward(self, x):
     
