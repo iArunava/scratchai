@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import warnings
 
-class TrainObj(Object):
+class TrainObj(object):
     
     def __init__(self, lr, epochs, mt, device, se, fn='ckpt'):
         '''
@@ -104,10 +104,10 @@ class TrainObj(Object):
                 if e+1 % se == 0:
                     ckpt = {
                         'epoch' : e+1,
-                        'model_state_dict' : moc[0].state_dict()
+                        'model_state_dict' : moc[0].state_dict(),
                         'opt_state_dict' : moc[2].state_dict()
                     }
-                    torch.save(ckpt, '{}-{:.2f}'.format(cacc)
+                    torch.save(ckpt, '{}-{:.2f}'.format(cacc))
 
                 print ('Epochs {}/{} || Train Loss: {:.3f} \
                        Test Loss: {:.3f} || Accuracy {:.3f}' \
