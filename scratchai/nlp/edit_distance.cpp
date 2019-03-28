@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Python.h>
 
 using namespace std;
 
@@ -51,6 +52,7 @@ int edit_distance(string s1, string s2, int csub=1, int cdel=1, int cins=1, bool
     return table[n][m];
 }
 
+/*
 int main() {
     
     string s1 = "inter";
@@ -60,3 +62,4 @@ int main() {
 
     return 0;
 }
+*/
