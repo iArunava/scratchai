@@ -137,7 +137,7 @@ class ResidualBlock2L(nn.Module):
     
     def forward(self, x): return x + self.side(x)
 
-class CycleGAN(nn.Module):
+class CycleGAN_G(nn.Module):
 
     def __init__(self, ic_conv=64, norm='instance', pad_type='reflect', 
                  eps=1e-5, momentum=0.1):
@@ -237,7 +237,7 @@ class CycleGAN(nn.Module):
                 nn.init.normal_(layer.weight.data, mean=1.0, std=0.02)
                 nn.init.constant_(layer.bias.data, 0)
                 
-class Discriminator(nn.Module):
+class CycleGAN_D(nn.Module):
 
     def __init__(self, iconv=64, num_conv=4):
         
@@ -369,3 +369,104 @@ def unnormalize(img):
     #return (img * [0.229, 0.224, 0.225]) + [0.485, 0.456, 0.406]
     return (img * [0.5, 0.5, 0.5]) + [0.5, 0.5, 0.5]
     #return img
+
+############################################################
+############################################################
+############################################################
+
+# NOTE! Not Tested
+class CycleGAN(object):
+    
+    def __init__(self, x_path, y_path, bs=4, transform=None, device='cuda', l_type='mse' betas=(0.5, 0.999), 
+                 dlr=0.0002, glr=0.0002, lambA=10, lambB = 10, idt_loss=True, lamb_idt=0.1):
+        
+        super().__init__()
+        
+        # Store some vars
+        self.d = device
+        self.lambA = lambA
+        self.lambB = lambB
+        self.lamb_idt = lamb_idt
+        self.idt_loss = idt_loss
+
+        # Create the models
+        self.gx2y = CycleGAN_G().to(self.d)
+        self.gy2x = CycleGAN_G().to(self.d)
+        self.dx = CycleGAN_D().to(self.d)
+        self.dy = CycleGAN_D().to(self.d)
+        
+        # Create the Dataloaders
+        x_data = datasets.ImageFolder(x_path, transform=transform)
+        self.xloader = dataloader.DataLoader(x_data, batch_size=bs, shuffle=True)
+        y_data = datasets.ImageFolder(y_path, transform=transform)
+        self.yloader = dataloader.DataLoader(y_data, batch_size=bs, shuffle=True)
+
+        # Define the criterion
+        if l_type == 'mse':
+            self.criterion = nn.MSELoss()
+        elif l_type == 'l1':
+            self.criterion = nn.L1Loss()
+            print ('l1')
+        self.cycle_c = nn.L1Loss()
+
+        # Define the optimizer
+        self.opt_G = optim.Adam(itertools.chain(self.gx2y.parameters(), self.gy2x.parameters()), lr=dlr, betas=betas)
+        self.opt_D = optim.Adam(itertools.chain(self.dy.parameters(), self.dx.parameters()), lr=glr, betas=betas)
+
+        # Intialize vars
+        self.idt_x = 0
+        self.idt_y = 0
+    
+    def crit(self, out, tar):
+        target = torch.ones_like(out) if tar else torch.zeros_like(out)
+        return self.criterion(real, target)
+
+    def forward(self):
+        self.fakeY = self.gx2y(self.realX)
+        self.recnX = self.gy2x(self.fakeY)
+        self.fakeX = self.gy2x(self.realY)
+        self.recnY = self.gx2y(self.fakeX)
+
+    def backward_G(self):
+        self.gly = self.crit(self.fakeY, True)
+        self.glx = self.crit(self.fakeX, True)
+
+        self.cx = self.cycle_c(self.recnX, self.realX) * self.lambA
+        self.cy = self.cycle_c(self.recnY, self.realY) * self.lambB
+
+        if self.idt_loss:
+            self.idt_x = self.criterion(self.gx2y(self.realY), self.realY) * self.lambA * self.lamb_idt
+            self.idt_y = self.criterion(self.gy2x(self.realX), self.realX) * self.lambB * self.lamb_idt
+
+        self.g_loss = self.cx + self.cy + self.gly + self.glx + self.idt_x + self.idt_y
+        self.g_loss.backward()
+    
+    def backward_D(self):
+        self.loss_fy = self.crit(self.dy(self.fakeY.detach()), False)
+        self.loss_fx = self.crit(self.dx(self.fakeX.detach()), False)
+
+        self.loss_ry = self.crit(self.dy(self.realY), True)
+        self.loss_rx = self.crit(self.dx(self.realX), True)
+
+        self.dx_loss = (loss_fx + loss_rx) * 0.5
+        self.dx_loss.backward()
+
+        self.dy_loss = (loss_fy + loss_fy) * 0.5
+        self.dy_loss.backward()
+
+    def do_one_iter(self):
+        self.realX, _ = next(iter(self.xloader))
+        self.realY, _ = next(iter(self.yloader))
+        self.realX, self.realY = self.realX.to(self.d), self.realY.to(self.d)
+
+        self.forward()
+
+        self.dx.set_requires_grad(False); self.dy.set_requires_grad(False)
+        self.gx2y.zero_grad(); self.gy2x.zero_grad()
+        self.backward_G()
+        self.opt_G.step()
+
+        self.dx.set_requires_grad(True); self.dy.set_requires_grad(True)
+        self.dx.zero_grad(); self.dy.zero_grad()
+        self.backward_D()
+        self.opt_D.step()
