@@ -3,27 +3,35 @@ import os
 from ImageDatasetLoader import ImageDatasetLoader
 from color_code import *
 from PIL import Image
+import glob
+import torchvision
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
-class SegmentationDatasetLoader(ImageDatasetLoader):
+class SegLoader(ImageDatasetLoader):
 
-    def __init__(self, input_path, label_path, dataset_is=None, color_map=None):
+    def __init__(self, ip:str, lp:str, bs:int, trfs, imdf=True, dataset_is=None, color_map=None):
         '''
         Constructor for the Segmentation Dataset Loader
 
         Arguemnts:
-        - input_path : 
-        - label_path : 
-        - dataset_is : name of the dataset, if it is known then the color map will
+        :: ip - The input path
+        :: lp - The label path
+        :: bs - The batch size
+        :: trfs - The transforms that needs to be performed on the Images
+        :: imdf - If the image files are immediately in the paths mentioned
+        :: dataset_is : name of the dataset, if it is known then the color map will
                        be loaded by default, without the need of passing
                        Supported Datasets:
                        - CamVid : pass 'camvid' as value to this argument
 
-        - color_map - dict - a dictionary where the key is the class name
+        :: color_map - dict - a dictionary where the key is the class name
                              and the value is a tuple or list with 3 elements
                              one for each channel. So each key is a RGB value.
         '''
 
-        super().__init__(input_path, label_path)
+        super().__init__(ip, lp)
             
         if str(dataset_is) == CAMVID:
             color_map = camvid_color_map
@@ -34,9 +42,46 @@ class SegmentationDatasetLoader(ImageDatasetLoader):
         self.colors = list(self.color_map.values())
         self.num_classes = len(color_map)
 
+        self.ip = ip if ip[0] == '/' else ip + '/'
+        self.lp = lp if lp[0] == '/' else lp + '/'
+        
+        '''
+        imdp = '**/*' if not self.imdf else '*'
+        self.ipf = glob.glob(ip + imdp, recursive=True)
+        self.lpf = glob.glob(lp + imdp, recursive=True)
+        '''
+        self.bs = bs
+        self.trfs = trfs
+        
+        # TODO: Update to use own loaders to support imdf
+        ipd = torchvision.datasets.ImageFolder(ip)
+        self.xloader = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
+        lpd = torchvlsion.datasets.ImageFolder(lp)
+        self.yloader = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
+        
         # Check for unusualities in the given directory
         self.check()
+
+    def show_batch(self):
+        # Implicitly checks for self.y is not None
+        assert self.x is not None
+
+        plt.figure(figsize=(5, 5))
+        gs = gridspec.GridSpec(5, 5)
+        gs.update(wspace=0.5, hspace=0.5)
+
+        for i in range(self.bs if self.bs <= 10 else 10):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.imshow(self.x[i].transpose(0, 1).transpose(1, 2).detach().numpy().cpu())
+
+        plt.show()
     
+    def one_batch(self):
+        self.x, _ = next(iter(self.xloader))
+        self.y, _ = next(iter(self.yloader))
+        return x, y
+        
     def check(self):
         if self.dataset_is is None and self.color_map is None:
             raise RuntimeError('Both \'dataset_is\' and \'color_map\' can\'t be None')
@@ -122,3 +167,4 @@ class SegmentationDatasetLoader(ImageDatasetLoader):
 
         rgb = np.stack([r, g, b], axis=2)
         return rgb
+
