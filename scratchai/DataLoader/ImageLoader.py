@@ -1,9 +1,9 @@
 import numpy as np
 from PIL import Image
-from DatasetLoader import DatasetLoader
+from scratchai.DataLoader.DatasetLoader import DatasetLoader
 import matplotlib.pyplot as plt
 
-class ImageDatasetLoader(DatasetLoader):
+class ImageLoader(DatasetLoader):
     '''
     This is the class that helps you load inputs and labels for semantic
     segmentation datasets.

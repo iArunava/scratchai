@@ -1,7 +1,7 @@
 import numpy as np
 import os
-from ImageDatasetLoader import ImageDatasetLoader
-from color_code import *
+from scratchai.DataLoader.ImageLoader import ImageLoader
+from .color_code import *
 from PIL import Image
 import glob
 import torchvision
@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-class SegLoader(ImageDatasetLoader):
+class SegLoader(ImageLoader):
 
     def __init__(self, ip:str, lp:str, bs:int, trfs, imdf=True, dataset_is=None, color_map=None):
         '''
