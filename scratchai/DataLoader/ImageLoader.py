@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 from scratchai.DataLoader.DatasetLoader import DatasetLoader
 import matplotlib.pyplot as plt
+import torch
+import torchvision.transforms as trfs
 
 class ImageLoader(DatasetLoader):
     '''
@@ -22,7 +24,7 @@ class ImageLoader(DatasetLoader):
         super().__init__(input_path, label_path)
 
 
-    def get_batch(self, batch_size=1, shuffle=True):
+    def get_batch(self, shuffle=True):
         '''
         Return a batch of the images from both inputs and labels
 
@@ -41,29 +43,30 @@ class ImageLoader(DatasetLoader):
         
         if shuffle:
             sample_idx = np.random.randint(low=0, 
-                                   high=self.total_inputs, 
-                                   size=batch_size)
+                                   high=self.tinp, 
+                                   size=self.bs)
         else:
-            sample_idx = self.glowhigh(batch_size=batch_size,
+            sample_idx = self.glowhigh(batch_size=self.bs,
                                   return_range=True)
             
-        inputs = self.input_names[sample_idx]
-        labels = self.label_names[sample_idx]
+        inputs = self.inpn[sample_idx]
+        labels = self.labn[sample_idx]
         
         all_inps = []
         all_labs = []
         for inp, label in zip(inputs, labels):
             si = np.array(Image.open(self.input_path + inp))
+            si = torch.tensor(si).transpose(2, 1).transpose(1, 0)
             li = np.array(Image.open(self.label_path + label))
+            li = torch.tensor(li)
             all_inps.append(si)
             all_labs.append(li)
 
-        all_inps = np.array(all_inps)
-        all_labs = np.array(all_labs)
+        self.x = torch.stack(all_inps, dim=0)
+        self.y = torch.stack(all_labs, dim=0).squeeze()
 
-        return all_inps, all_labs
+        return self.x, self.y
             
-    
     def create_loader(self, batch_size=1, shuffle=True):
         while(1):
             yield self.get_batch(batch_size=batch_size,

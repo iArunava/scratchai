@@ -24,11 +24,11 @@ class DatasetLoader(object):
         if self.label_path[-1] != '/':
             self.label_path += '/'
 
-        self.input_names = np.array(os.listdir(input_path))
-        self.label_names = np.array(os.listdir(label_path))
+        self.inpn = np.array(sorted(os.listdir(input_path)))
+        self.labn = np.array(sorted(os.listdir(label_path)))
 
-        self.total_inputs = len(self.input_names)
-        self.total_labels = len(self.label_names)
+        self.tinp = len(self.inpn)
+        self.tlab = len(self.labn)
         
     def show_paths(self):
         '''
