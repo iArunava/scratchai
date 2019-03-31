@@ -69,7 +69,7 @@ class UNet(nn.Module):
         o3 = self.ud3(o2); o4 = self.ud4(o3)
         o5 = self.ud5(o4); 
 	
-        o6 = self.ue1(o5, o4); o7 = self.ue2(o6, o3); 
-        o8 = self.ue3(o7, o2); o9 = self.ue4(o8, o1)
+        o6 = self.ue1(o5, o4.clone()); o7 = self.ue2(o6, o3.clone()); 
+        o8 = self.ue3(o7, o2.clone()); o9 = self.ue4(o8, o1.clone())
 
         return self.fconv(o9)
