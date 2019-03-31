@@ -13,4 +13,4 @@ camvid_color_map = {
         'Car' : (64, 0, 128),
         'Pedestrian' : (64, 64, 0),
         'Bicyclist' : (0, 128, 192)
-    }
+}

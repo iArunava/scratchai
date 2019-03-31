@@ -1,17 +1,18 @@
 import numpy as np
 import os
 from scratchai.DataLoader.ImageLoader import ImageLoader
-from .color_code import *
+from . import color_code as ccode
 from PIL import Image
 import glob
 import torchvision
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import torchvision.transforms as trf
 
 class SegLoader(ImageLoader):
 
-    def __init__(self, ip:str, lp:str, bs:int, trfs, imdf=True, dataset_is=None, color_map=None):
+    def __init__(self, ip:str, lp:str, bs:int, trfs=None, imdf=True, d=None, cmap=None):
         '''
         Constructor for the Segmentation Dataset Loader
 
@@ -32,15 +33,22 @@ class SegLoader(ImageLoader):
         '''
 
         super().__init__(ip, lp)
-            
-        if str(dataset_is) == CAMVID:
-            color_map = camvid_color_map
         
-        self.dataset_is = dataset_is
-        self.color_map = color_map
+        self.d = d
+        if str(self.d) == ccode.CAMVID:
+            self.cmap = ccode.camvid_color_map
+
+        self.trfs = trfs
+        if self.trfs is None:
+            self.trfs = trf.Compose([trf.ToTensor()])
+        
+        self.d= d
+        self.cmap = cmap
+        '''
         self.classes = list(self.color_map.keys())
         self.colors = list(self.color_map.values())
         self.num_classes = len(color_map)
+        '''
 
         self.ip = ip if ip[0] == '/' else ip + '/'
         self.lp = lp if lp[0] == '/' else lp + '/'
@@ -51,16 +59,15 @@ class SegLoader(ImageLoader):
         self.lpf = glob.glob(lp + imdp, recursive=True)
         '''
         self.bs = bs
-        self.trfs = trfs
         
         # TODO: Update to use own loaders to support imdf
-        ipd = torchvision.datasets.ImageFolder(ip)
+        ipd = torchvision.datasets.ImageFolder(ip, transform=self.trfs)
         self.xloader = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
-        lpd = torchvlsion.datasets.ImageFolder(lp)
+        lpd = torchvision.datasets.ImageFolder(lp, transform=self.trfs)
         self.yloader = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
         
         # Check for unusualities in the given directory
-        self.check()
+        #self.check()
 
     def show_batch(self):
         # Implicitly checks for self.y is not None
@@ -73,14 +80,18 @@ class SegLoader(ImageLoader):
         for i in range(self.bs if self.bs <= 10 else 10):
             ax = plt.subplot(gs[i])
             plt.axis('off')
-            ax.imshow(self.x[i].transpose(0, 1).transpose(1, 2).detach().numpy().cpu())
+            ax.imshow(self.t2n(self.x[i]))
+            # use cv2.add_weighted
 
         plt.show()
     
+    def t2n(self, t):
+        return t.transpose(0, 1).transpose(1, 2).detach().cpu().numpy()
+
     def one_batch(self):
         self.x, _ = next(iter(self.xloader))
         self.y, _ = next(iter(self.yloader))
-        return x, y
+        return self.x, self.y
         
     def check(self):
         if self.dataset_is is None and self.color_map is None:
@@ -168,3 +179,6 @@ class SegLoader(ImageLoader):
         rgb = np.stack([r, g, b], axis=2)
         return rgb
 
+def camvidloader(**kwargs):
+    kwargs['d'] = 'camvid'
+    return SegLoader(**kwargs)

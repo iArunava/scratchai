@@ -1,1 +1,1 @@
-from .SegLoader import *
+from .SegLoader import SegLoader
