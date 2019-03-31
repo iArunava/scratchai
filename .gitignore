@@ -1,4 +1,5 @@
-
+*.tgz
+*.tar.gz
 out
 *.swp
 datasets/files/
