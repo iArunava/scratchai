@@ -28,6 +28,10 @@ class TestUNet(unittest.TestCase):
         self.assertEqual(list(out.shape), [2, 3, 4, 4], "The out shape not same as in shape")
 
     def test_ublock(self):
+        '''
+        Input: [N, C, H, W]
+        Output: [N, C//2, (H*2) - 4, (W*2) - 4]
+        '''
         net = scratchai.nets.seg.unet.UNet_EBlock(4)
         n1 = torch.randn(2, 4, 52, 52)
         n2 = torch.randn(2, 2, 136, 136)
