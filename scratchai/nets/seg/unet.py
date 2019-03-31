@@ -17,10 +17,11 @@ def uconv(ic:int, oc:int, ks:int=2, s:int=2, p:int=0, norm:bool=False, act:bool=
     return layers
 
 class UNet_EBlock(nn.Module):
-    def __init__(self, ic, oc):
+    def __init__(self, ic):
         super().__init__()
-        self.uc = uconv(ic, oc)[0]
-        self.up = nn.Sequential(*conv(ic, ic), *conv(ic, oc), *conv(oc, oc))
+        self.uc = uconv(ic, ic//2)[0]
+        self.up = nn.Sequential(*conv(ic, ic//2), *conv(ic//2, ic//2))
+
     def forward(self, i1, i2):
         '''
         Arguments:
@@ -50,18 +51,18 @@ class UNet(nn.Module):
         
         self.ic = ic; self.nc = nc
         
-        self.ud1 = nn.Sequential(*conv(ic, sd), *conv(sd, sd), *conv(sd, sd), mpool())
-        self.ud2 = nn.Sequential(*conv(sd, sd), *conv(sd, sd*2), *conv(sd*2, sd*2), mpool())
-        self.ud3 = nn.Sequential(*conv(sd*2, sd*2), *conv(sd*2, sd*4), *conv(sd*4, sd*4), mpool())
-        self.ud4 = nn.Sequential(*conv(sd*4, sd*4), *conv(sd*4, sd*8), *conv(sd*8, sd*8), mpool())
-        self.ud5 = nn.Sequential(*conv(sd*8, sd*8), *conv(sd*8, sd*16), *conv(sd*16, sd*16), mpool())
+        self.ud1 = nn.Sequential(*conv(ic, sd), *conv(sd, sd),  mpool())
+        self.ud2 = nn.Sequential(*conv(sd, sd*2), *conv(sd*2, sd*2), mpool())
+        self.ud3 = nn.Sequential(*conv(sd*2, sd*4), *conv(sd*4, sd*4), mpool())
+        self.ud4 = nn.Sequential(*conv(sd*4, sd*8), *conv(sd*8, sd*8), mpool())
+        self.ud5 = nn.Sequential(*conv(sd*8, sd*16), *conv(sd*16, sd*16), mpool())
 
-        self.ue1 = UNet_EBlock(sd*16, sd*8)
-        self.ue2 = UNet_EBlock(sd*8, sd*4)
-        self.ue3 = UNet_EBlock(sd*4, sd*2)
-        self.ue4 = UNet_EBlock(sd*2, sd)
+        self.ue1 = UNet_EBlock(sd*16)
+        self.ue2 = UNet_EBlock(sd*8)
+        self.ue3 = UNet_EBlock(sd*4)
+        self.ue4 = UNet_EBlock(sd*2)
 
-        self.fconv = conv(sd, nc, act=False)[0]
+        self.fconv = conv(sd, nc, ks=1, act=False)[0]
 
     def forward(self, x):
         o1 = self.ud1(x); o2 = self.ud2(o1)
