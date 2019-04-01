@@ -7,8 +7,8 @@ def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=0, norm:bool=False, act:bool=T
     if act: layers += [nn.ReLU(inplace=True)]
     return layers
 
-def mpool(ks:int=2, s:int=2, p:int=1):
-    return nn.MaxPool2d(kernel_size=ks, stride=2, padding=1)
+def mpool(ks:int=2, s:int=2, p:int=0):
+    return nn.MaxPool2d(kernel_size=ks, stride=s, padding=p)
 
 def uconv(ic:int, oc:int, ks:int=2, s:int=2, p:int=0, norm:bool=False, act:bool=False):
     layers = [nn.ConvTranspose2d(ic, oc, kernel_size=ks, stride=s, padding=p, bias=not norm)]
@@ -51,11 +51,11 @@ class UNet(nn.Module):
         
         self.ic = ic; self.nc = nc
         
-        self.ud1 = nn.Sequential(*conv(ic, sd), *conv(sd, sd),  mpool())
-        self.ud2 = nn.Sequential(*conv(sd, sd*2), *conv(sd*2, sd*2), mpool())
-        self.ud3 = nn.Sequential(*conv(sd*2, sd*4), *conv(sd*4, sd*4), mpool())
-        self.ud4 = nn.Sequential(*conv(sd*4, sd*8), *conv(sd*8, sd*8), mpool())
-        self.ud5 = nn.Sequential(*conv(sd*8, sd*16), *conv(sd*16, sd*16), mpool())
+        self.ud1 = nn.Sequential(*conv(ic, sd), *conv(sd, sd))
+        self.ud2 = nn.Sequential(mpool(), *conv(sd, sd*2), *conv(sd*2, sd*2))
+        self.ud3 = nn.Sequential(mpool(), *conv(sd*2, sd*4), *conv(sd*4, sd*4))
+        self.ud4 = nn.Sequential(mpool(), *conv(sd*4, sd*8), *conv(sd*8, sd*8))
+        self.ud5 = nn.Sequential(mpool(), *conv(sd*8, sd*16), *conv(sd*16, sd*16))
 
         self.ue1 = UNet_EBlock(sd*16)
         self.ue2 = UNet_EBlock(sd*8)
@@ -67,9 +67,9 @@ class UNet(nn.Module):
     def forward(self, x):
         o1 = self.ud1(x); o2 = self.ud2(o1)
         o3 = self.ud3(o2); o4 = self.ud4(o3)
-        o5 = self.ud5(o4); 
-	
-        o6 = self.ue1(o5, o4.clone()); o7 = self.ue2(o6, o3.clone()); 
+        o5 = self.ud5(o4)
+
+        o6 = self.ue1(o5, o4.clone()); o7 = self.ue2(o6, o3.clone())
         o8 = self.ue3(o7, o2.clone()); o9 = self.ue4(o8, o1.clone())
 
         return self.fconv(o9)

@@ -57,8 +57,10 @@ class ImageLoader(DatasetLoader):
         for inp, label in zip(inputs, labels):
             si = np.array(Image.open(self.input_path + inp))
             si = torch.tensor(si).transpose(2, 1).transpose(1, 0)
+
             li = np.array(Image.open(self.label_path + label))
             li = torch.tensor(li)
+
             all_inps.append(si)
             all_labs.append(li)
 
