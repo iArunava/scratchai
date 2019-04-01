@@ -72,9 +72,18 @@ class SegLoader(ImageLoader):
         # Check for unusualities in the given directory
         #self.check()
 
-    def show_batch(self):
+    def show_batch(self, t='fin'):
+        '''
+        Arguments:
+        :: t - ['inp', 'lab', 'com']
+               inp - The inputs
+               lab - The Labels
+               com = Inputs and Labels combined
+
+        '''
         # Implicitly checks for self.y is not None
         assert self.x is not None
+        assert t in ['inp', 'lab', 'fin']
 
         plt.figure(figsize=(10, 10))
         gs = gridspec.GridSpec(2, 1)
@@ -83,10 +92,10 @@ class SegLoader(ImageLoader):
         for i in range(self.bs if self.bs <= 10 else 10):
             ax = plt.subplot(gs[i])
             plt.axis('off')
-            img = self.t2n(self.x[i])
+            inp = self.t2n(self.x[i])
             lab = self.decode(self.t2n(self.y[i], c=False))
-            fin = cv2.addWeighted(img, 0.7, lab, 0.3, 0, dtype=2)
-            ax.imshow(fin)
+            fin = cv2.addWeighted(inp, 0.7, lab, 0.3, 0, dtype=2)
+            ax.imshow(locals()[t])
 
         plt.show()
     
