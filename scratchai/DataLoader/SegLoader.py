@@ -11,6 +11,8 @@ import matplotlib.gridspec as gridspec
 import torchvision.transforms as trf
 import cv2
 
+__all__ = ['SegLoader', 'camvidloader']
+
 class SegLoader(ImageLoader):
 
     def __init__(self, ip:str, lp:str, nc:int, bs:int, trfs=None, imdf=True, d=None, cmap=None):
@@ -60,14 +62,13 @@ class SegLoader(ImageLoader):
 
 
         self.bs = bs
+        self.len = len(self.inpn) // self.bs
         
         # TODO: Update to use own loaders to support imdf
-        '''
         ipd = torchvision.datasets.ImageFolder(ip, transform=self.trfs)
-        self.xloader = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
+        self.dltr = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
         lpd = torchvision.datasets.ImageFolder(lp, transform=self.trfs)
-        self.yloader = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
-        '''
+        self.dltt = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
         
         # Check for unusualities in the given directory
         #self.check()
@@ -190,7 +191,19 @@ class SegLoader(ImageLoader):
         rgb = np.stack([r, g, b], axis=2)
         return rgb
 
-def camvidloader(ip, lp, bs, **kwargs):
+    def __len__(self):
+        return self.len
+
+    def get_dltr(self):
+        return self.dltr
+
+    def get_dltt(self):
+        return self.dltt
+
+def camvidloader(ip:str, lp:str, nc:int, bs:int, **kwargs):
+    kwargs['ip'] = ip
+    kwargs['lp'] = lp
+    kwargs['nc'] = nc
     kwargs['bs'] = bs
     kwargs['d'] = 'camvid'
     return SegLoader(**kwargs)
