@@ -1,2 +1,5 @@
-# ScratchyDL
-This reposiytory will contain the code to implement all the Deep Learning Algorithms from Sratch
+# scratchai
+
+## Builds
+
+[![CircleCI](https://circleci.com/gh/iArunava/scratchai.svg?style=svg)](https://circleci.com/gh/iArunava/scratchai)
