@@ -1,3 +1,4 @@
 torch==1.0.1
 matplotlib
-tkinter
+numpy
+tabulate
