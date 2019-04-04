@@ -66,13 +66,13 @@ class Learner(object):
                 img, lab = img.to(self.device), lab.to(self.device)
                 lab *= 255
                 
-                optimizer.zero_grad()
+                self.opt.zero_grad()
 
                 out = self.net(img.float())
                 
-                loss = criterion(out, lab.squeeze(1).long())
+                loss = self.crit(out, lab.squeeze(1).long())
                 loss.backward()
-                optimizer.step()
+                self.opt.step()
 
                 train_loss += loss.item()
                 
