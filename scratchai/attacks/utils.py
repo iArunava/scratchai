@@ -1,3 +1,5 @@
+import torch
+
 def clip_eta(eta, ord, eps):
     """
     Helper fucntion to clip the perturbation to epsilon norm ball.
@@ -17,7 +19,7 @@ def clip_eta(eta, ord, eps):
     azdiv = 1e-12
 
     if ord == np.inf:
-        eta = clip_by_value(eta, -eps, eps)
+        eta = torch.clamp(eta, -eps, eps)
     else:
         if ord == 1:
             raise NotImplementedError("The expression below is not the correct way"
