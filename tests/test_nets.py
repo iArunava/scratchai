@@ -1,3 +1,7 @@
+"""
+The Tests that needs to be performed on scratchai.nets
+"""
+
 import sys
 import os
 import unittest
@@ -37,6 +41,14 @@ class TestUNet(unittest.TestCase):
         n2 = torch.randn(2, 2, 136, 136)
         out = net(n1, n2)
         self.assertEqual(list(out.shape), [2, 2, 100, 100], "The out shape not same as in shape")
+
+class TestENet(unittest.Testcase):
+    def test_initial_block(self):
+        noise = torch.randn(2, 3, 14, 14)
+        net = scractchai.InitialBlock()
+        out = net(noise)
+        self.assertEqual(list(out.shape), [2, 2, 100, 100], "out shape reduction not as it should"
+                                                            " be.")
 
 if __name__ == '__name__':
     unittest.main()
