@@ -1,3 +1,2 @@
-from .seg.unet import UNet
-from .seg.enet import *
+from .seg import *
 from .resnet import *

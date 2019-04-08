@@ -42,13 +42,24 @@ class TestUNet(unittest.TestCase):
         out = net(n1, n2)
         self.assertEqual(list(out.shape), [2, 2, 100, 100], "The out shape not same as in shape")
 
-class TestENet(unittest.Testcase):
-    def test_initial_block(self):
-        noise = torch.randn(2, 3, 14, 14)
-        net = scractchai.InitialBlock()
-        out = net(noise)
-        self.assertEqual(list(out.shape), [2, 2, 100, 100], "out shape reduction not as it should"
-                                                            " be.")
+class TestENet(unittest.TestCase):
 
+    def test_initial_block(self):
+        noise = torch.randn(2, 3, 4, 4)
+        net = scratchai.nets.seg.enet.InitialBlock(3, 3)
+        out = net(noise)
+        self.assertEqual(list(out.shape), [2, 6, 2, 2], "out shape reduction not as it should"
+                                                            " be.")
+    def test_RDANeck(self):
+        noise = torch.randn(2, 8, 4, 4)
+
+        net = scratchai.nets.seg.enet.RDANeck(8, 8)
+        out = net(noise)
+        self.assertEqual(list(out.shape), [2, 8, 4, 4], "out shape reduction not as it should"
+                                                            " be.")
+        net = scratchai.nets.seg.enet.RDANeck(8, 9)
+        out = net(noise)
+        self.assertEqual(list(out.shape), [2, 9, 4, 4], "out shape reduction not as it should"
+                                                            " be.")
 if __name__ == '__name__':
     unittest.main()
