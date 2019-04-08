@@ -99,25 +99,23 @@ class DNeck(nn.Module):
         super().__init__()
 
         self.cpad = oc - ic
-        rd = int(oc // pratio)
-        self.main = nn.Sequential((conv(ic, rd, 1, 1, 0), conv(rd, rd, 3, 2, 1), 
-                                   conv(rd, oc, 1, 1, 0, act=None)))
-        self.act = act(inplace=True)
-        self.mpool = mpool()
-        self.act = act(inplace=True)
+        rd = oc // pratio
+        self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *conv(rd, rd, 3, 2, 1), 
+                                   *conv(rd, oc, 1, 1, 0, act=None))
+        self.mpool = mpool(idxs=True)
+        self.act = act(inplace=True) if act == nn.ReLU else act()
 
     def forward(self, x):
         ix, idxs = self.mpool(x)
         x = self.main(x)
         zshape = list(x.shape); zshape[1] = self.cpad
         # TODO Add device for torch.zeros
-        out = ix + x if self.cpad else torch.cat((ix, torch.zeros(*zshape)), dim=1) + x
+        out = torch.cat((ix, torch.zeros(*zshape)), dim=1) + x if self.cpad else ix + x 
         return self.act(out), idxs
 
 class UNeck(nn.Module):
     """
     This module implements the Downsampling Block
-
     Args:
         ic: # of in_channels
         oc: # of out_channels
@@ -133,11 +131,11 @@ class UNeck(nn.Module):
         self.cpad = oc - ic
         rd = oc // pratio
         # TODO Dropout
-        self.main = nn.Sequential((conv(ic, rd, 1, 1, 0), uconv(rd, rd, 3, 2, 1), 
-                                   conv(rd, oc, 1, 1, 0, act=None)))
+        self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *uconv(rd, rd, 3, 2, 1, 1),
+                                   *conv(rd, oc, 1, 1, 0, act=None))
         
-        self.conv = conv(ic, oc, 1, 1, 0)
-        self.mpool = mupool()
+        self.conv = nn.Sequential(*conv(ic, oc, 1, 1, 0))
+        self.mupool = mupool()
         self.act = act(inplace=True)
 
     def forward(self, x, idxs):
