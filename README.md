@@ -28,3 +28,11 @@ Table of Contents:
 >>> learner = scratchai.Learner(net, load)
 >>> learner.fit()
 ```
+2. Train a ENet [WIP]
+```
+>>> import scratchai
+>>> net = scratchai.ENet(32)
+>>> load = scratchai.camvid('.', download=True)
+>>> learner = scratchai.Learner(net, load)
+>>> learner.fit()
+```
