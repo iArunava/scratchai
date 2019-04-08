@@ -173,7 +173,7 @@ class ENet(nn.Module):
         self.b4 = nn.Sequential(*[RDANeck(64, 64, act=nn.ReLU) for _ in range(2)])
 
         self.u2 = UNeck(64, 16)
-        self.b5 = nn.Sequential(RDANeck(16, 16, act=nn.ReLU), uconv(16, nc, 3, 2, 1, 1))
+        self.b5 = nn.Sequential(RDANeck(16, 16, act=nn.ReLU), *uconv(16, nc, 3, 2, 1, 1))
 
     def forward(self, x):
         o1, idx1 = self.d1(self.init(x))
