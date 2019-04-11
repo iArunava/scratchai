@@ -6,6 +6,7 @@ ENet: A Deep Neural Network Architecture forReal-Time Semantic Segmentation
 import torch
 import torch.nn as nn
 import copy
+import numpy as np
 
 def mupool(ks:int=2, s:int=2, p:int=0):
     return nn.MaxUnpool2d(kernel_size=ks, stride=s, padding=p)
@@ -62,16 +63,18 @@ class RDANeck(nn.Module):
 
         super().__init__()
         
-        self.cpad = oc - ic
+        self.cpad = np.abs(oc - ic)
         ks = (1, 5)
         pad = (0, 2)
         rd = oc // pratio
         
-        l = [*conv(rd, rd, ks, 1, pad), *conv(rd, rd, ks[::-1], 1, pad[::-1])] if aflag \
-            else [*conv(rd, rd, 3, 1, 1, d)]
+        l = [*conv(rd, rd, ks, 1, pad, norm=None, act=None), \
+             *conv(rd, rd, ks[::-1], 1, pad[::-1])] if aflag \
+            else [*conv(rd, rd, 3, 1, d, d)]
         
-        # TODO Add dropout
-        self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *l, *conv(rd, oc, 1, 1, 0, act=None))
+        # TODO Check if the position of dropout is correct
+        self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *l, *conv(rd, oc, 1, 1, 0, act=None),
+                                  nn.Dropout2d(p))
         self.act = act(inplace=True)
 
     def forward(self, x):
@@ -98,7 +101,7 @@ class DNeck(nn.Module):
     def __init__(self, ic, oc, p=0.1, pratio=4, act:nn.Module=nn.PReLU):
         super().__init__()
 
-        self.cpad = oc - ic
+        self.cpad = np.abs(oc - ic)
         rd = oc // pratio
         self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *conv(rd, rd, 3, 2, 1), 
                                    *conv(rd, oc, 1, 1, 0, act=None))
@@ -130,9 +133,9 @@ class UNeck(nn.Module):
 
         self.cpad = oc - ic
         rd = oc // pratio
-        # TODO Dropout
+        # TODO Check if the position of dropout is correct
         self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *uconv(rd, rd, 3, 2, 1, 1),
-                                   *conv(rd, oc, 1, 1, 0, act=None))
+                                   *conv(rd, oc, 1, 1, 0, act=None), nn.Dropout2d(p))
         
         self.conv = nn.Sequential(*conv(ic, oc, 1, 1, 0))
         self.mupool = mupool()
@@ -157,7 +160,6 @@ class ENet(nn.Module):
 
         self.nc = nc
         
-        # ENet Architec
         self.init = InitialBlock()
 
         self.d1 = DNeck(16, 64, 0.01)
@@ -178,4 +180,4 @@ class ENet(nn.Module):
     def forward(self, x):
         o1, idx1 = self.d1(self.init(x))
         o2, idx2 = self.d2(self.b1(o1))
-        return self.b5(self.u2(self.b4(self.u1(self.b2_3(x), idx2)), idx1))
+        return self.b5(self.u2(self.b4(self.u1(self.b2_3(o2), idx2)), idx1))
