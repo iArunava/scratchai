@@ -14,10 +14,15 @@ class TestUNet(unittest.TestCase):
         This module tests the UNet implementation to be the same
         as shown in the paper.
         '''
-        unet = scratchai.nets.UNet(3, 4)
         noise = torch.randn(2, 3, 572, 572)
-        out = unet(noise)
+
+        unet1 = scratchai.nets.UNet(3, 4, sos=False)
+        out = unet1(noise)
         self.assertEqual(list(out.shape), [2, 4, 388, 388], "The out shape not same as in shape")
+
+        unet2 = scratchai.nets.UNet(3, 4, sos=True)
+        out = unet2(noise)
+        self.assertEqual(list(out.shape), [2, 4, 572, 572], "The out shape not same as in shape")
 
     def test_conv(self):
         conv = scratchai.nets.seg.unet.conv(3, 3)[0]
@@ -103,9 +108,9 @@ class TestENet(unittest.TestCase):
     def test_enet(self):
         n1 = torch.randn(2, 3, 256, 256)
         n2 = torch.randn(2, 3, 720, 960)
-        n3 = torch.randn(2, 3, 360, 500)
+        n3 = torch.randn(2, 3, 360, 512)
 
-        net = scratchai.ENet(4)
+        net = scratchai.nets.ENet(4)
 
         o1 = net(n1)
         self.assertEqual(list(o1.shape), [2, 4, 256, 256], "out shape reduction not as it should"
@@ -114,7 +119,7 @@ class TestENet(unittest.TestCase):
         self.assertEqual(list(o2.shape), [2, 4, 720, 960], "out shape reduction not as it should"
                                                             " be.")
         o3 = net(n3)
-        self.assertEqual(list(o3.shape), [2, 4, 360, 500], "out shape reduction not as it should"
+        self.assertEqual(list(o3.shape), [2, 4, 360, 512], "out shape reduction not as it should"
                                                             " be.")
 if __name__ == '__name__':
     unittest.main()

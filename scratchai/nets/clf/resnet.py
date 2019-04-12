@@ -5,8 +5,8 @@ The Resnet
 import torch
 import torch.nn as nn
 
-from .blocks.resblock import *
-from .blocks.bnconv import bnconv
+from scratchai.nets.blocks.resblock import *
+from scratchai.nets.blocks.bnconv import bnconv
 
 __all__ = ['resnet18', 'resnet34', 'resnet50', 'resnet50', 'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 'resnext101', 'resnext152']
 
