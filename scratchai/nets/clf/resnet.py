@@ -1,3 +1,7 @@
+"""
+The Resnet
+"""
+
 import torch
 import torch.nn as nn
 
@@ -5,6 +9,39 @@ from .blocks.resblock import *
 from .blocks.bnconv import bnconv
 
 __all__ = ['resnet18', 'resnet34', 'resnet50', 'resnet50', 'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 'resnext101', 'resnext152']
+
+### UPDATE
+# TODO: Refactor the code to use this module in the Resnet class below
+def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=0, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
+    layers = [nn.Conv2d(ic, oc, kernel_size=ks, stride=s, padding=p, bias=not norm)]
+    if norm: layers += [norm(oc)]
+    if act: layers += [nn.ReLU(inplace=True)]
+    return layers
+
+class resblock(nn.Module):
+    """
+    This module is the implementation of a resnet block
+
+    Args:
+        ic: # of input channels
+        oc: # of output channels
+        ks: kernel_size of the mid_conv
+        s:  stride of the mid_conv
+        p:  padding of the mid_conv
+        norm: The norm layer
+        act: the activation
+        pratio: the factor by which the # of in_channels is reduced
+    """
+    def __init__(self, ic:int, oc:int=None, norm:nn.Module=nn.BatchNorm2d, act:bool=True,
+                 dflag:bool=False, pratio:int=4, layers:int=2):
+        super().__init__()
+        s = 2 if dflag else 1; oc = ic*2 if not oc else oc
+        self.main = nn.Sequential(*conv(ic, oc, 3, 1, 1), *conv(oc, oc, 3, s, 1, act=None))
+        self.act = nn.ReLU(inplace=True)
+
+    def forward(self, x): return self.act(self.main(x) + x)
+
+### END_UPDATE
 
 class Resnet(nn.Module):
   

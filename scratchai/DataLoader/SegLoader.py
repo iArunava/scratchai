@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import torchvision.transforms as trf
 import cv2
+import os
+import subprocess
 
 __all__ = ['SegLoader', 'camvidloader']
 
@@ -65,10 +67,12 @@ class SegLoader(ImageLoader):
         self.len = len(self.inpn) // self.bs
         
         # TODO: Update to use own loaders to support imdf
+        '''
         ipd = torchvision.datasets.ImageFolder(ip, transform=self.trfs)
         self.dltr = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
         lpd = torchvision.datasets.ImageFolder(lp, transform=self.trfs)
         self.dltt = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
+        '''
         
         # Check for unusualities in the given directory
         #self.check()
@@ -95,7 +99,7 @@ class SegLoader(ImageLoader):
             plt.axis('off')
             inp = self.t2n(self.x[i])
             lab = self.decode(self.t2n(self.y[i], c=False))
-            fin = cv2.addWeighted(inp, 0.7, lab, 0.3, 0, dtype=2)
+            fin = cv2.addWeighted(inp, 0.5, lab, 0.5, 0, dtype=0)
             ax.imshow(locals()[t])
 
         plt.show()
@@ -108,8 +112,8 @@ class SegLoader(ImageLoader):
             
 
     def one_batch(self):
-        self.x, _ = next(iter(self.xloader))
-        self.y, _ = next(iter(self.yloader))
+        self.x, _ = next(iter(self.dltr))
+        self.y, _ = next(iter(self.dltt))
         return self.x, self.y
         
     def check(self):
@@ -200,10 +204,18 @@ class SegLoader(ImageLoader):
     def get_dltt(self):
         return self.dltt
 
-def camvidloader(ip:str, lp:str, nc:int, bs:int, **kwargs):
-    kwargs['ip'] = ip
-    kwargs['lp'] = lp
-    kwargs['nc'] = nc
-    kwargs['bs'] = bs
+def camvidloader(root:str=None, download:bool=False, **kwargs):
+    root = root + '/' if root[-1] is not '/' else root
+    
+    if download and not os.path.isdir(root + 'camvid/'):
+        dirname = os.path.dirname(__file__)
+        subprocess.run(['sh', dirname + '/get_datasets/get_camvid.sh', root])
+
+    kwargs['ip'] = root + 'camvid/images/_images'
+    kwargs['lp'] = root + 'camvid/labels/_labels'
     kwargs['d'] = 'camvid'
+
+    assert os.path.isdir(kwargs['ip']) == True
+    assert os.path.isdir(kwargs['ip']) == True
+
     return SegLoader(**kwargs)

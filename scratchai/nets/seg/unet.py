@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=0, norm:bool=False, act:bool=True):
     layers = [nn.Conv2d(ic, oc, kernel_size=ks, stride=s, padding=p, bias=not norm)]
@@ -43,13 +44,15 @@ class UNet(nn.Module):
     :: ic - # of input channels
     :: nc - # of classes
     :: sd - # of filters for first convolution
+    :: sos - If True, output is of the same size as the input
+             Default: True
     '''
 
-    def __init__(self, ic, nc, sd=64):
+    def __init__(self, ic, nc, sd=64, sos=True):
         
         super().__init__()
         
-        self.ic = ic; self.nc = nc
+        self.ic = ic; self.nc = nc; self.sos = sos
         
         self.ud1 = nn.Sequential(*conv(ic, sd), *conv(sd, sd))
         self.ud2 = nn.Sequential(mpool(), *conv(sd, sd*2), *conv(sd*2, sd*2))
@@ -65,11 +68,15 @@ class UNet(nn.Module):
         self.fconv = conv(sd, nc, ks=1, act=False)[0]
 
     def forward(self, x):
+        _, _, h, w = x.shape
         o1 = self.ud1(x); o2 = self.ud2(o1)
         o3 = self.ud3(o2); o4 = self.ud4(o3)
         o5 = self.ud5(o4)
 
         o6 = self.ue1(o5, o4.clone()); o7 = self.ue2(o6, o3.clone())
         o8 = self.ue3(o7, o2.clone()); o9 = self.ue4(o8, o1.clone())
-
-        return self.fconv(o9)
+        
+        if self.sos:
+            return F.interpolate(self.fconv(o9), (h, w), mode='bilinear', align_corners=False)
+        else:
+            return self.fconv(o9)
