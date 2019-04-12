@@ -101,11 +101,20 @@ class TestENet(unittest.TestCase):
                                                            " be.")
     
     def test_enet(self):
-        noise = torch.randn(2, 3, 256, 256)
+        n1 = torch.randn(2, 3, 256, 256)
+        n2 = torch.randn(2, 3, 720, 960)
+        n3 = torch.randn(2, 3, 360, 500)
+
         net = scratchai.ENet(4)
-        out = net(noise)
-        self.assertEqual(list(out.shape), [2, 4, 256, 256], "out shape reduction not as it should"
+
+        o1 = net(n1)
+        self.assertEqual(list(o1.shape), [2, 4, 256, 256], "out shape reduction not as it should"
                                                             " be.")
-        
+        o2 = net(n2)
+        self.assertEqual(list(o2.shape), [2, 4, 720, 960], "out shape reduction not as it should"
+                                                            " be.")
+        o3 = net(n3)
+        self.assertEqual(list(o3.shape), [2, 4, 360, 500], "out shape reduction not as it should"
+                                                            " be.")
 if __name__ == '__name__':
     unittest.main()
