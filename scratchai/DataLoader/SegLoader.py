@@ -13,7 +13,7 @@ import cv2
 import os
 import subprocess
 
-__all__ = ['SegLoader', 'camvidloader']
+__all__ = ['SegLoader', 'camvid']
 
 class SegLoader(ImageLoader):
 
@@ -62,17 +62,14 @@ class SegLoader(ImageLoader):
         self.tinp = len(self.ipf)
         '''
 
-
         self.bs = bs
         self.len = len(self.inpn) // self.bs
         
         # TODO: Update to use own loaders to support imdf
-        '''
         ipd = torchvision.datasets.ImageFolder(ip, transform=self.trfs)
         self.dltr = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
         lpd = torchvision.datasets.ImageFolder(lp, transform=self.trfs)
         self.dltt = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
-        '''
         
         # Check for unusualities in the given directory
         #self.check()
@@ -204,15 +201,15 @@ class SegLoader(ImageLoader):
     def get_dltt(self):
         return self.dltt
 
-def camvidloader(root:str=None, download:bool=False, **kwargs):
+def camvid(root:str=None, download:bool=False, **kwargs):
     root = root + '/' if root[-1] is not '/' else root
     
     if download and not os.path.isdir(root + 'camvid/'):
         dirname = os.path.dirname(__file__)
         subprocess.run(['sh', dirname + '/get_datasets/get_camvid.sh', root])
 
-    kwargs['ip'] = root + 'camvid/images/_images'
-    kwargs['lp'] = root + 'camvid/labels/_labels'
+    kwargs['ip'] = root + 'camvid/images/'
+    kwargs['lp'] = root + 'camvid/labels/'
     kwargs['d'] = 'camvid'
 
     assert os.path.isdir(kwargs['ip']) == True

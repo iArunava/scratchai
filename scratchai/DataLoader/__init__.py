@@ -1,1 +1,1 @@
-from .SegLoader import *
+from scratchai.DataLoader.SegLoader import *

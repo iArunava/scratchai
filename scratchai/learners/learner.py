@@ -10,31 +10,43 @@ __all__ = ['Learner']
 class Learner(object):
     
     def __init__(self, net:nn.Module, loader=None, dltt=None, lr:float=1e-3, epochs:int=10, mt:str='seg', \
-                 crit:nn.Module=nn.CrossEntropyLoss, opt=optim.Adam, se:int=5, device='cuda', metrics:list=None, e:int=10):
-        '''
+                 crit:nn.Module=nn.CrossEntropyLoss, opt=optim.Adam, she:int=5, device='cuda', metrics:list=None, \
+                 sae:int=1, pe:int=1, wd:int=1e-4, trainiter:int=None, valiter:int=None):
+        """
         A Learner Object
 
         Arguments:
-        :: model - The model to train
-        :: loader - The DataLoader from where to get the data
-        :: e - The number of epochs
-        :: se - Interval in which to checkpoint
-        '''
+            :: net - The model to train
+            :: loader - The DataLoader from where to get the data
+            :: epochs - The number of epochs
+            :: she - Interval in which to checkpoint
+            :: pe - Interval in which it prints the loss and other metrics
+            :: wd - Weight Decay for L2 Regularization
+        """
 
         self.lr = lr
         self.epochs = epochs
         self.mt = mt
         self.net = net
-        self.se = se
+        self.she = she
+        self.sae = sae
+        self.pe = pe
         self.loader = loader
         self.dltr = self.loader.get_dltr()
         self.dltt = self.loader.get_dltt()
         self.metrics = metrics
+        self.wd = wd
         self.device = device
-        self.e = e
+
+        self.tlosses = []
+        self.vlosses = []
+        self.trainiter = len(self.dltr) // self.dltr.batch_size if not trainiter \
+                         else trainiter
+        self.valiter = len(self.dltt) // self.dltt.batch_size if not valiter \
+                         else valiter
 
         self.crit = crit()
-        self.opt = opt(net.parameters(), lr=self.lr)
+        self.opt = opt(net.parameters(), lr=self.lr, weight_decay=self.wd)
 
         self.h = 512
         self.w = 512
@@ -45,53 +57,50 @@ class Learner(object):
             self._trainseg()
 
     def _trainseg(self):
-        '''
-        Method to help in training Segmentation datasets
+        """
+        Method to help in training of Segmentation datasets
+        """
 
-        Arguments;
-        :: m
-        '''
         for e in range(1, self.epochs+1):
-
-            train_loss = 0
+            trloss = 0
             self.net.train()
-            for ii, data in enumerate(tqdm(self.dltr)):
 
-                img, lab = data
+            for ii in tqdm(range(self.trainiter)):
 
+                img, lab = next(iter(self.dltr))
+
+                # TODO hack to skip batches with size = 1
                 if img.shape[0] == 1:
-                    print (img.shape, ii, e)
                     continue
-                    
+
                 img, lab = img.to(self.device), lab.to(self.device)
                 lab *= 255
-                
-                self.opt.zero_grad()
 
+                self.opt.zero_grad()
                 out = self.net(img.float())
-                
                 loss = self.crit(out, lab.squeeze(1).long())
                 loss.backward()
                 self.opt.step()
 
-                train_loss += loss.item()
+                trloss += loss.item()
                 
-                if ii % show_every == 0:
-                    out5 = show_cscpaes(self.net, H, W)
-                    checkpoint = {
-                        'epochs' : e,
-                        'model_state_dict' : self.net.state_dict(),
-                        'opt_state_dict' : optimizer.state_dict()
-                    }
-                    torch.save(checkpoint, './ckpt-dlabv3-{}-{:2f}.pth'.format(e, train_loss))
-                    print ('Model saved!')
-                    print ('Epoch {}/{}...'.format(e, epochs),
-                        'Loss {:6f}'.format(loss.item()))
+            self.tlosses.append(trloss)
+
+            if ii % self.she == 0:
+                out5 = show_cscpaes(self.net, self.h, self.w)
+                print ('Epoch {}/{}...'.format(e, epochs),
+                    'Loss {:6f}'.format(loss.item()))
+
+            if e % self.sae == 0:
+                checkpoint = {
+                    'epochs' : e,
+                    'model_state_dict' : self.net.state_dict(),
+                    'opt_state_dict' : optimizer.state_dict()
+                }
+                torch.save(checkpoint, './ckpt-{:2f}.pth'.format(trloss))
+                print ('Model saved!')
                 
-            print ()
-            train_losses.append(train_loss)
-            
-            if (e+1) % print_every == 0:
+            if (e+1) % self.pe == 0:
                 print ('Epoch {}/{}...'.format(e, epochs),
                         'Loss {:6f}'.format(train_loss))
             '''
@@ -216,7 +225,11 @@ class Learner(object):
                 print ('Epochs {}/{} || Train Loss: {:.2f} || ' \
                        'Test Loss: {} || Accuracy {:.2f}' \
                        .format(e+1, self.epochs, trl, vrl, cacc))
-
+    
+    ###################################################################################
+    #################################################################################
+    #########################Ongoing Print Functions################################
+    #################################################################################
     def conv_out_size(self, net):
         kh, kw = net.kernel_size if type(net.kernel_size) == tuple else (net.kernel_size, net.kernel_size)
         sh, sw = net.stride if type(net.stride) == tuple else (net.stride, net.stride)
