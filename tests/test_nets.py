@@ -59,17 +59,17 @@ class TestENet(unittest.TestCase):
         noise = torch.randn(2, 8, 4, 4)
         
         # Check 1
-        net = scratchai.nets.seg.enet.RDANeck(8, 8)
+        net = scratchai.nets.seg.enet.RDANeck(8, 8, device='cpu')
         out = net(noise)
         self.assertEqual(list(out.shape), [2, 8, 4, 4], "out shape reduction not as it should"
                                                             " be.")
         # Check 2
-        net = scratchai.nets.seg.enet.RDANeck(8, 9)
+        net = scratchai.nets.seg.enet.RDANeck(8, 9, device='cpu')
         out = net(noise)
         self.assertEqual(list(out.shape), [2, 9, 4, 4], "out shape reduction not as it should"
                                                             " be.")
         # Check 3
-        net = scratchai.nets.seg.enet.RDANeck(8, 8, aflag=True)
+        net = scratchai.nets.seg.enet.RDANeck(8, 8, aflag=True, device='cpu')
         out = net(noise)
         self.assertEqual(list(out.shape), [2, 8, 4, 4], "out shape reduction not as it should"
                                                             " be.")
@@ -78,7 +78,7 @@ class TestENet(unittest.TestCase):
         noise2 = torch.randn(2, 8, 2, 2)
         
         # Check 1
-        net = scratchai.nets.seg.enet.DNeck(8, 8)
+        net = scratchai.nets.seg.enet.DNeck(8, 8, device='cpu')
         out, idxs = net(noise)
         self.assertEqual(list(out.shape), [2, 8, 2, 2], "out shape reduction not as it should"
                                                             " be.")
@@ -88,7 +88,7 @@ class TestENet(unittest.TestCase):
                                                             " be.")
         
         # Check 2
-        net = scratchai.nets.seg.enet.DNeck(8, 9)
+        net = scratchai.nets.seg.enet.DNeck(8, 9, device='cpu')
         out, idxs = net(noise)
         self.assertEqual(list(out.shape), [2, 9, 2, 2], "out shape reduction not as it should"
                                                             " be.")
@@ -96,7 +96,7 @@ class TestENet(unittest.TestCase):
         noise = torch.randn(2, 7, 4, 4)
         noise2 = torch.randn(2, 8, 2, 2)
 
-        net = scratchai.nets.seg.enet.DNeck(7, 7)
+        net = scratchai.nets.seg.enet.DNeck(7, 7, device='cpu')
         out, idxs = net(noise)
         self.assertEqual(list(out.shape), [2, 7, 2, 2], "out shape reduction not as it should"
                                                             " be.")
@@ -106,20 +106,18 @@ class TestENet(unittest.TestCase):
                                                            " be.")
     
     def test_enet(self):
-        n1 = torch.randn(2, 3, 256, 256)
-        n2 = torch.randn(2, 3, 720, 960)
-        n3 = torch.randn(2, 3, 360, 512)
+        n1 = torch.randn(2, 3, 256, 256).cuda()
 
-        net = scratchai.nets.ENet(4)
+        net = scratchai.nets.ENet(4).cuda()
 
         o1 = net(n1)
         self.assertEqual(list(o1.shape), [2, 4, 256, 256], "out shape reduction not as it should"
-                                                            " be.")
-        o2 = net(n2)
-        self.assertEqual(list(o2.shape), [2, 4, 720, 960], "out shape reduction not as it should"
-                                                            " be.")
-        o3 = net(n3)
-        self.assertEqual(list(o3.shape), [2, 4, 360, 512], "out shape reduction not as it should"
+                                                            " be.");
+        del n1, o1
+        torch.cuda.empty_cache()
+        n1 = torch.randn(2, 3, 360, 512).cuda()
+        o1 = net(n1)
+        self.assertEqual(list(o1.shape), [2, 4, 360, 512], "out shape reduction not as it should"
                                                             " be.")
 if __name__ == '__name__':
     unittest.main()

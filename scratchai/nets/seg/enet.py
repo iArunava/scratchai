@@ -59,7 +59,7 @@ class RDANeck(nn.Module):
     """
 
     def __init__(self, ic:int, oc:int, d:int=1, aflag:bool=False, pratio:int=4, 
-                 p:float=0.1, act:nn.Module=nn.ReLU):
+                 p:float=0.1, act:nn.Module=nn.ReLU, device:str='cuda'):
 
         super().__init__()
         
@@ -67,6 +67,8 @@ class RDANeck(nn.Module):
         ks = (1, 5)
         pad = (0, 2)
         rd = oc // pratio
+        self.dev = torch.device('cuda' if torch.cuda.is_available() and device=='cuda' \
+                                else 'cpu')
         
         l = [*conv(rd, rd, ks, 1, pad, norm=None, act=None), \
              *conv(rd, rd, ks[::-1], 1, pad[::-1])] if aflag \
@@ -82,7 +84,7 @@ class RDANeck(nn.Module):
         x = self.main(x)
         zshape = list(x.shape); zshape[1] = self.cpad
         # TODO Add device for torch.zeros
-        out = torch.cat((ix, torch.zeros(*zshape)), dim=1) + x if self.cpad else ix + x
+        out = torch.cat((ix, torch.zeros(*zshape, device=self.dev)), dim=1) + x if self.cpad else ix + x
         return self.act(out)
 
 class DNeck(nn.Module):
@@ -98,11 +100,14 @@ class DNeck(nn.Module):
            Default - 0.1
     """
 
-    def __init__(self, ic, oc, p=0.1, pratio=4, act:nn.Module=nn.PReLU):
+    def __init__(self, ic, oc, p=0.1, pratio=4, act:nn.Module=nn.PReLU, device='cuda'):
         super().__init__()
 
         self.cpad = np.abs(oc - ic)
         rd = oc // pratio
+        self.dev = torch.device('cuda' if torch.cuda.is_available() and device=='cuda' \
+                                else 'cpu')
+
         self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *conv(rd, rd, 3, 2, 1), 
                                    *conv(rd, oc, 1, 1, 0, act=None))
         self.mpool = mpool(idxs=True)
@@ -113,7 +118,7 @@ class DNeck(nn.Module):
         x = self.main(x)
         zshape = list(x.shape); zshape[1] = self.cpad
         # TODO Add device for torch.zeros
-        out = torch.cat((ix, torch.zeros(*zshape)), dim=1) + x if self.cpad else ix + x 
+        out = torch.cat((ix, torch.zeros(*zshape, device=self.dev)), dim=1) + x if self.cpad else ix + x 
         return self.act(out), idxs
 
 class UNeck(nn.Module):

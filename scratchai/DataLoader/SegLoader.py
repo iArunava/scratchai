@@ -47,7 +47,7 @@ class SegLoader(ImageLoader):
         if self.trfs is None:
             self.trfs = trf.Compose([trf.ToTensor()])
         
-        self.d= d
+        self.d = d
         self.nc = nc
         self.colors = list(self.cmap.values())
         self.classes = list(self.cmap.keys())
@@ -65,11 +65,15 @@ class SegLoader(ImageLoader):
         self.bs = bs
         self.len = len(self.inpn) // self.bs
         
+        # FIXME Check if the self.get_batch() method works perfectly compare to pytoch implementation
+        self.dltr = self.get_batch()
+        '''
         # TODO: Update to use own loaders to support imdf
         ipd = torchvision.datasets.ImageFolder(ip, transform=self.trfs)
         self.dltr = DataLoader(ipd, batch_size=bs, shuffle=True, num_workers=2)
         lpd = torchvision.datasets.ImageFolder(lp, transform=self.trfs)
         self.dltt = DataLoader(lpd, batch_size=bs, shuffle=True, num_workers=2)
+        '''
         
         # Check for unusualities in the given directory
         #self.check()
@@ -101,6 +105,7 @@ class SegLoader(ImageLoader):
 
         plt.show()
     
+
     def t2n(self, t, c=True):
         if c:
             return t.transpose(0, 1).transpose(1, 2).detach().cpu().numpy()
@@ -208,9 +213,10 @@ def camvid(root:str=None, download:bool=False, **kwargs):
         dirname = os.path.dirname(__file__)
         subprocess.run(['sh', dirname + '/get_datasets/get_camvid.sh', root])
 
-    kwargs['ip'] = root + 'camvid/images/'
-    kwargs['lp'] = root + 'camvid/labels/'
-    kwargs['d'] = 'camvid'
+    kwargs['ip'] = root + 'camvid/images/_images'
+    kwargs['lp'] = root + 'camvid/labels/_labels'
+    kwargs['d']  = 'camvid'
+    kwargs['nc'] = 34
 
     assert os.path.isdir(kwargs['ip']) == True
     assert os.path.isdir(kwargs['ip']) == True

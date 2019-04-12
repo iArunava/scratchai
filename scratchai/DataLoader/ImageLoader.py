@@ -66,8 +66,8 @@ class ImageLoader(DatasetLoader):
 
         self.x = torch.stack(all_inps, dim=0)
         self.y = torch.stack(all_labs, dim=0).squeeze()
-
-        return self.x, self.y
+        
+        yield self.x, self.y
             
     def create_loader(self, batch_size=1, shuffle=True):
         while(1):

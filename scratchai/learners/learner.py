@@ -5,11 +5,12 @@ from .trainops.train import TrainObj
 import torch.optim as optim
 from tqdm import tqdm
 
-__all__ = ['Learner']
+__all__ = ['Learner', 'SegLearner']
 
+    
 class Learner(object):
     
-    def __init__(self, net:nn.Module, loader=None, dltt=None, lr:float=1e-3, epochs:int=10, mt:str='seg', \
+    def __init__(self, net:nn.Module, loader=None, lr:float=1e-3, epochs:int=10, mt:str='seg', \
                  crit:nn.Module=nn.CrossEntropyLoss, opt=optim.Adam, she:int=5, device='cuda', metrics:list=None, \
                  sae:int=1, pe:int=1, wd:int=1e-4, trainiter:int=None, valiter:int=None):
         """
@@ -27,24 +28,28 @@ class Learner(object):
         self.lr = lr
         self.epochs = epochs
         self.mt = mt
-        self.net = net
+        self.device = device
+        self.net = net.to(self.device)
         self.she = she
         self.sae = sae
         self.pe = pe
         self.loader = loader
-        self.dltr = self.loader.get_dltr()
-        self.dltt = self.loader.get_dltt()
         self.metrics = metrics
         self.wd = wd
-        self.device = device
+        self.trainiter = trainiter
+        self.valiter = valiter
 
         self.tlosses = []
         self.vlosses = []
+
+        '''
+        self.dltr = self.loader.get_dltr()
+        self.dltt = self.loader.get_dltt()
         self.trainiter = len(self.dltr) // self.dltr.batch_size if not trainiter \
                          else trainiter
         self.valiter = len(self.dltt) // self.dltt.batch_size if not valiter \
                          else valiter
-
+        '''
         self.crit = crit()
         self.opt = opt(net.parameters(), lr=self.lr, weight_decay=self.wd)
 
@@ -55,96 +60,6 @@ class Learner(object):
         assert self.dltr is not None
         if self.mt == 'seg':
             self._trainseg()
-
-    def _trainseg(self):
-        """
-        Method to help in training of Segmentation datasets
-        """
-
-        for e in range(1, self.epochs+1):
-            trloss = 0
-            self.net.train()
-
-            for ii in tqdm(range(self.trainiter)):
-
-                img, lab = next(iter(self.dltr))
-
-                # TODO hack to skip batches with size = 1
-                if img.shape[0] == 1:
-                    continue
-
-                img, lab = img.to(self.device), lab.to(self.device)
-                lab *= 255
-
-                self.opt.zero_grad()
-                out = self.net(img.float())
-                loss = self.crit(out, lab.squeeze(1).long())
-                loss.backward()
-                self.opt.step()
-
-                trloss += loss.item()
-                
-            self.tlosses.append(trloss)
-
-            if ii % self.she == 0:
-                out5 = show_cscpaes(self.net, self.h, self.w)
-                print ('Epoch {}/{}...'.format(e, epochs),
-                    'Loss {:6f}'.format(loss.item()))
-
-            if e % self.sae == 0:
-                checkpoint = {
-                    'epochs' : e,
-                    'model_state_dict' : self.net.state_dict(),
-                    'opt_state_dict' : optimizer.state_dict()
-                }
-                torch.save(checkpoint, './ckpt-{:2f}.pth'.format(trloss))
-                print ('Model saved!')
-                
-            if (e+1) % self.pe == 0:
-                print ('Epoch {}/{}...'.format(e, epochs),
-                        'Loss {:6f}'.format(train_loss))
-            '''
-            if e % eval_every == 0:
-                with torch.no_grad():
-                    self.net.eval()
-
-                    eval_loss = 0
-
-                    for _ in tqdm(range(bc_eval)):
-                        inputs, labels = next(eval_pipe)
-
-                        inputs, labels = inputs.to(device), labels.to(device)
-                        out = self.net(inputs.float())
-
-                        loss = criterion(out, labels.long())
-
-                        eval_loss += loss.item()
-
-                    print ()
-                    print ('Loss {:6f}'.format(eval_loss))
-
-                    eval_losses.append(eval_loss)
-            
-            '''
-            #scheduler.step(train_loss)
-            
-            '''
-            if e % save_every == 0:
-                
-                
-                show_pascal(self.net, training_path, all_tests[np.random.randint(0, len(all_tests))])
-                checkpoint = {
-                    'epochs' : e,
-                    'state_dict' : self.net.state_dict(),
-                    'opt_state_dict' : optimizer.state_dict()
-                }
-                torch.save(checkpoint, '/content/ckpt-enet-{}-{:2f}.pth'.format(e, train_loss))
-                print ('Model saved!')
-            '''
-            
-        #     show(self.net, all_tests[np.random.randint(0, len(all_tests))])
-        #     show_pascal(self.net, training_path, all_tests[np.random.randint(0, len(all_tests))])
-
 
     def _trainclf(self, moc, dltr, dltt=None):
         '''
@@ -275,3 +190,107 @@ class Learner(object):
                 layers.append(temp)
         
         print (tabulate(layers))
+
+
+class SegLearner(Learner):
+    def __init__(self, *args, **kwargs):
+        """
+        The Learner Object that helps train Segmentation Datasets
+
+        Arguments:
+            :: net - The model to train
+            :: loader - The DataLoader from where to get the data
+            :: epochs - The number of epochs
+            :: she - Interval in which to checkpoint
+            :: pe - Interval in which it prints the loss and other metrics
+            :: wd - Weight Decay for L2 Regularization
+        """
+        
+        super().__init__(*args, **kwargs)
+        
+        '''
+        self.dltr = self.loader.get_dltr()
+        self.dltt = self.loader.get_dltt()
+        '''
+        self.trainiter = self.loader.len if not self.trainiter \
+                         else self.trainiter
+        self.valiter = self.loader.len if not self.valiter \
+                         else self.valiter
+
+    def fit(self):
+        self._trainseg()
+
+    def _trainseg(self):
+        """
+        Method to help in training of Segmentation datasets
+        """
+
+        for e in range(1, self.epochs+1):
+            trloss = 0
+            self.net.train()
+
+            for ii in tqdm(range(self.trainiter)):
+
+                img, lab = next(iter(self.loader.get_batch()))
+
+                # TODO hack to skip batches with size = 1
+                if img.shape[0] == 1:
+                    continue
+
+                img, lab = img.to(self.device), lab.to(self.device)
+                # TODO Introduce transforms in get_batch
+                #lab *= 255
+
+                self.opt.zero_grad()
+                out = self.net(img.float())
+                loss = self.crit(out, lab.long())
+                loss.backward()
+                self.opt.step()
+
+                trloss += loss.item()
+                break
+                
+            self.tlosses.append(trloss)
+
+            if ii % self.she == 0:
+                #show_camvid(self.net, self.h, self.w)
+                print ('Epoch {}/{}...'.format(e, self.epochs),
+                    'Loss {:6f}'.format(loss.item()))
+
+            if e % self.sae == 0:
+                checkpoint = {
+                    'epochs' : e,
+                    'model_state_dict' : self.net.state_dict(),
+                    'opt_state_dict' : self.opt.state_dict()
+                }
+                torch.save(checkpoint, './ckpt-{:2f}.pth'.format(trloss))
+                print ('Model saved!')
+                
+            if e % self.pe == 0:
+                print ('Epoch {}/{}...'.format(e, self.epochs),
+                        'Loss {:6f}'.format(trloss))
+
+            '''
+            if e % eval_every == 0:
+                with torch.no_grad():
+                    self.net.eval()
+
+                    eval_loss = 0
+
+                    for _ in tqdm(range(bc_eval)):
+                        inputs, labels = next(eval_pipe)
+
+                        inputs, labels = inputs.to(device), labels.to(device)
+                        out = self.net(inputs.float())
+
+                        loss = criterion(out, labels.long())
+
+                        eval_loss += loss.item()
+
+                    print ()
+                    print ('Loss {:6f}'.format(eval_loss))
+
+                    eval_losses.append(eval_loss)
+            
+            '''
+            #scheduler.step(train_loss)
