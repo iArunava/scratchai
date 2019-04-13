@@ -142,9 +142,9 @@ class Learner(object):
                        .format(e+1, self.epochs, trl, vrl, cacc))
     
     ###################################################################################
-    #################################################################################
-    #########################Ongoing Print Functions################################
-    #################################################################################
+    ######################## Ongoing Print Functions ##################################
+    ###################################################################################
+
     def conv_out_size(self, net):
         kh, kw = net.kernel_size if type(net.kernel_size) == tuple else (net.kernel_size, net.kernel_size)
         sh, sw = net.stride if type(net.stride) == tuple else (net.stride, net.stride)
@@ -255,7 +255,7 @@ class SegLearner(Learner):
             if ii % self.she == 0:
                 #show_camvid(self.net, self.h, self.w)
                 print ('Epoch {}/{}...'.format(e, self.epochs),
-                    'Loss {:6f}'.format(loss.item()))
+                    'Loss {:3f}'.format(loss.item()))
 
             if e % self.sae == 0:
                 checkpoint = {
@@ -268,29 +268,25 @@ class SegLearner(Learner):
                 
             if e % self.pe == 0:
                 print ('Epoch {}/{}...'.format(e, self.epochs),
-                        'Loss {:6f}'.format(trloss))
+                        'Loss {:3f}'.format(trloss))
 
-            '''
-            if e % eval_every == 0:
+            if e % eval_every == 0 and self.dltt:
                 with torch.no_grad():
                     self.net.eval()
 
-                    eval_loss = 0
+                    eloss = 0
 
-                    for _ in tqdm(range(bc_eval)):
-                        inputs, labels = next(eval_pipe)
+                    for _ in tqdm(range(self.valiter)):
+                        img, lab = next(iter(self.get_batch())
 
-                        inputs, labels = inputs.to(device), labels.to(device)
-                        out = self.net(inputs.float())
+                        img, lab = img.to(device), lab.to(device)
+                        out = self.net(img.float())
+                        loss = criterion(out, lab.long())
+                        eloss += loss.item()
 
-                        loss = criterion(out, labels.long())
+                    print ('Loss {:3f}'.format(eloss // self.valiter))
 
-                        eval_loss += loss.item()
-
-                    print ()
-                    print ('Loss {:6f}'.format(eval_loss))
-
-                    eval_losses.append(eval_loss)
+                    self.vlosses.append(eloss)
             
-            '''
+            # TODO: An API where users can easily setup a scheduler
             #scheduler.step(train_loss)
