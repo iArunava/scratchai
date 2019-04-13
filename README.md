@@ -23,16 +23,16 @@ Table of Contents:
 1. Train a UNet [WIP]
 ```
 >>> import scratchai
->>> net = scratchai.UNet(3, 32)
->>> load = scratchai.camvid('.', download=True)
->>> learner = scratchai.Learner(net, load)
+>>> net = scratchai.nets.UNet(3, 32)
+>>> load = scratchai.DataLoader.camvid('.', download=True)
+>>> learner = scratchai.learners.Learner(net, load)
 >>> learner.fit()
 ```
 2. Train a ENet [WIP]
 ```
 >>> import scratchai
->>> net = scratchai.ENet(32)
->>> load = scratchai.camvid('.', download=True)
->>> learner = scratchai.Learner(net, load)
+>>> net = scratchai.nets.ENet(32)
+>>> load = scratchai.DataLoader.camvid('.', download=True)
+>>> learner = scratchai.learners.SegLearner(net, load)
 >>> learner.fit()
 ```
