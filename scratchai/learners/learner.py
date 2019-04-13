@@ -277,7 +277,7 @@ class SegLearner(Learner):
                     eloss = 0
 
                     for _ in tqdm(range(self.valiter)):
-                        img, lab = next(iter(self.get_batch())
+                        img, lab = next(iter(self.get_batch()))
 
                         img, lab = img.to(device), lab.to(device)
                         out = self.net(img.float())
