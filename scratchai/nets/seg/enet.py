@@ -20,7 +20,7 @@ def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=0, d:int=1, norm:bool=True, ac
     if act: layers += [act() if act == nn.PReLU else act(inplace=True)]
     return layers
 
-def uconv(ic:int, oc:int, ks:int=2, s:int=2, p:int=0, op:int=0, norm:bool=False, act:bool=False):
+def uconv(ic:int, oc:int, ks:int=2, s:int=2, p:int=0, op:int=0, norm:bool=True, act:bool=False):
     layers = [nn.ConvTranspose2d(ic, oc, kernel_size=ks, stride=s, padding=p, output_padding=op, \
                                  bias=not norm)]
     if norm: layers += [nn.BatchNorm2d(oc)]
@@ -32,14 +32,15 @@ class InitialBlock(nn.Module):
     This module is the initial block of the ENet architecture
     """
 
-    def __init__(self, ic=3, oc=13):
+    def __init__(self, ic=3, oc=16):
         super().__init__()
-        self.main = nn.Sequential(*conv(ic, oc, 3, 2, 1, act=None))
+        self.main = nn.Sequential(*conv(ic, oc-3, 3, 2, 1, norm=False, act=None))
         self.side = mpool()
+        self.norm = nn.BatchNorm2d(oc)
         self.prelu = nn.PReLU()
     
     def forward(self, x):
-        return self.prelu(torch.cat((self.main(x), self.side(x)), dim=1))
+        return self.prelu(self.norm(torch.cat((self.main(x), self.side(x)), dim=1)))
 
 class RDANeck(nn.Module):
     """
