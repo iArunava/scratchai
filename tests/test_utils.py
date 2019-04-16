@@ -16,6 +16,7 @@ class TestImgUtils(unittest.TestCase):
         self.assertEqual(type(img), np.ndarray, 'The return type is not np.ndarray')
         self.assertEqual(img.shape, (32, 32, 3), 'The shape of the output is' \
                                                     'not as expected')
+
         # TO make sure all pixels having value less than threshold is removed.
         # NOTE if tcol have values lower than thresh then values lower
         # than thresh will be present. That is why tcol = [255, 255, 255]
