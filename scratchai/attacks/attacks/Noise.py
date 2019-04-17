@@ -38,12 +38,22 @@ class Noise(Attack):
         """
         Generate symbolic graph for adversarial examples and return.
 
-        Args:
-            x: The model's symbolic inputs.
-            kwargs: See parse_parmas
+        Arguments
+        ---------
+        x : torch.tensor
+            The model's symbolic inputs.
+        kwargs : dict
+                 See parse_parmas
+
+        Returns
+        -------
+        adv_x : torch.tensor
+                The adversarial example
         """
 
         assert self.parse_params(**kwargs)
+        assert type(x) is torch.Tensor
+        x = x.float()
 
         if self.ord != np.inf: raise NotImplementedError(self.ord)
         
