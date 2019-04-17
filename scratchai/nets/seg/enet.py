@@ -67,7 +67,7 @@ class RDANeck(nn.Module):
         self.cpad = np.abs(oc - ic)
         ks = (1, 5)
         pad = (0, 2)
-        rd = oc // pratio
+        rd = ic // pratio
         self.dev = torch.device('cuda' if torch.cuda.is_available() and device=='cuda' \
                                 else 'cpu')
         
@@ -105,7 +105,7 @@ class DNeck(nn.Module):
         super().__init__()
 
         self.cpad = np.abs(oc - ic)
-        rd = oc // pratio
+        rd = ic // pratio
         self.dev = torch.device('cuda' if torch.cuda.is_available() and device=='cuda' \
                                 else 'cpu')
 
@@ -138,7 +138,7 @@ class UNeck(nn.Module):
         super().__init__()
 
         self.cpad = oc - ic
-        rd = oc // pratio
+        rd = ic // pratio
         # TODO Check if the position of dropout is correct
         self.main = nn.Sequential(*conv(ic, rd, 1, 1, 0), *uconv(rd, rd, 3, 2, 1, 1),
                                    *conv(rd, oc, 1, 1, 0, act=None), nn.Dropout2d(p))
