@@ -5,7 +5,7 @@ The Noise Attack
 import numpy as np
 import torch
 import torch.nn as nn
-from cleverhans.future.torch.attacks.Attack import Attack
+from cleverhans.future.torch.attacks.attack import Attack
 
 
 class Noise(Attack):
