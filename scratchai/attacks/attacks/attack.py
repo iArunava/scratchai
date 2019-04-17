@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+__all__ = ['Attack']
+
 class Attack():
     """
     This class is the base class for all the PyTorch Attacks

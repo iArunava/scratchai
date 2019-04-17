@@ -51,7 +51,7 @@ class TestENet(unittest.TestCase):
 
     def test_initial_block(self):
         noise = torch.randn(2, 3, 4, 4)
-        net = scratchai.nets.seg.enet.InitialBlock(3, 3)
+        net = scratchai.nets.seg.enet.InitialBlock(3, 6)
         out = net(noise)
         self.assertEqual(list(out.shape), [2, 6, 2, 2], "out shape reduction not as it should"
                                                             " be.")
