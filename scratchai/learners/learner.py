@@ -68,6 +68,9 @@ class Learner():
     self.h = 512
     self.w = 512
   
+  def count_params(self):
+      return sum(p.numel() for p in self.net.parameters() if p.requires_grad)
+
   def fit(self):
     pass
   
