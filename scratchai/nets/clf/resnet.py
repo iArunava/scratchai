@@ -4,12 +4,15 @@ The Resnet
 
 import torch
 import torch.nn as nn
+import scratchai.pretrained.urls as urls
 
+from scratchai.utils import load_from_pth
 from scratchai.nets.blocks.resblock import Resnext
-from scratchai.nets.blocks.bnconv import bnconv
 
 
 __all__ = ['resnet18', 'resnet34', 'resnet50', 'resnet50', 'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 'resnext101', 'resnext152']
+
+prtr= 'pretrained'
 
 
 def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
@@ -91,6 +94,19 @@ def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int, dflag:bool=True,
        # of output channels
   num_layers - int
                # of blocks to be stacked
+  dflag : bool
+          Whether the first resblock needs to perform downsampling.
+          Defaults to True.
+  btype : str, should be one of ['basic'. 'bottleneck']
+          The type of resblock to be used. Defaults to 'basic'
+  fdown : bool
+          If true the side branch *must* contain a conv block,
+          whether it performs downsampling or not. Defaults to False.
+
+  Returns
+  -------
+  layers : list
+           A list containing all the nn.Module that is required for this layer.
   """
   
   layers = [block(ic, oc, dflag=dflag, btype=btype, fdown=fdown)]
@@ -112,7 +128,7 @@ class Resnet(nn.Module):
           # of conv layers in each Residual Block
   """
 
-  def __init__(self, nc:int, layers:list, lconv:int=2, ex:int=1, 
+  def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=1, 
        block:nn.Module=resblock, oc1:int=64, **kwargs):
     super().__init__()
 
@@ -135,39 +151,48 @@ class Resnet(nn.Module):
     return x
 
 
-def resnet18(nc, **kwargs):
-  kwargs['nc'] = nc
+def resnet18(pretrained=True, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
-  return Resnet(**kwargs)
+  net = Resnet(**kwargs)
+  if pretrained:
+    net.load_state_dict(load_from_pth(urls.resnet18_url))
+  return net
 
-def resnet34(nc, **kwargs):
-  kwargs['nc'] = nc
+def resnet34(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
-  return Resnet(**kwargs)
+  net = Resnet(**kwargs)
+  if pretrained:
+    net.load_state_dict(load_from_pth(urls.resnet34_url))
+  return net
 
-def resnet50(nc, **kwargs):
-  kwargs['nc'] = nc
+def resnet50(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4
-  kwargs['fdown'] = True
-  return Resnet(**kwargs)
+  kwargs['ex'] = 4; kwargs['fdown'] = True
+  net = Resnet(**kwargs)
+  if pretrained:
+    net.load_state_dict(load_from_pth(urls.resnet50_url))
+  return net
 
-def resnet101(nc, **kwargs):
-  kwargs['nc'] = nc
+def resnet101(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 23, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4
-  kwargs['fdown'] = True
-  return Resnet(**kwargs)
+  kwargs['ex'] = 4; kwargs['fdown'] = True
+  net = Resnet(**kwargs)
+  if pretrained:
+    net.load_state_dict(load_from_pth(urls.resnet50_url))
+  return net
 
-def resnet152(nc, **kwargs):
-  kwargs['nc'] = nc
+def resnet152(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 8, 36, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4
-  kwargs['fdown'] = True
-  return Resnet(**kwargs)
+  kwargs['ex'] = 4; kwargs['fdown'] = True
+  net = Resnet(**kwargs)
+  if pretrained:
+    net.load_state_dict(load_from_pth(urls.resnet50_url))
+  return net
+
+# FIXME The resnet blocks work okay but resnext needs a check
 def resnext18(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [2, 2, 2, 2]
