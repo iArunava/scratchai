@@ -180,7 +180,7 @@ def resnet101(pretrained=True, **kwargs):
   kwargs['ex'] = 4; kwargs['fdown'] = True
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet50_url))
+    net.load_state_dict(load_from_pth(urls.resnet101_url))
   return net
 
 def resnet152(pretrained=True, **kwargs):
@@ -189,7 +189,7 @@ def resnet152(pretrained=True, **kwargs):
   kwargs['ex'] = 4; kwargs['fdown'] = True
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet50_url))
+    net.load_state_dict(load_from_pth(urls.resnet152_url))
   return net
 
 # FIXME The resnet blocks work okay but resnext needs a check
