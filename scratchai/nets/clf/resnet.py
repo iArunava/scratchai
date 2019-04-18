@@ -48,20 +48,35 @@ class resblock(nn.Module):
   """
 
   def __init__(self, ic:int, oc:int=None, norm:nn.Module=nn.BatchNorm2d, 
-        act:bool=True, dflag:bool=False, pratio:int=4, layers:int=2):
+        act:bool=True, dflag:bool=False, pratio:int=4, layers:int=2, 
+        btype:str='basic', fdown:bool=False):
     super().__init__()
+    assert btype in ['basic', 'bottleneck']
     self.dflag = dflag
     s = 2 if dflag else 1; oc = ic*2 if not oc else oc
-    self.main = nn.Sequential(*conv(ic, oc), \
-                              *conv(oc, oc, s=s, act=None))
+    
+    if btype == 'basic':
+        self.main = nn.Sequential(*conv(ic, oc, s=s), *conv(oc, oc, act=None))
+    elif btype == 'bottleneck':
+        interc = oc // 4
+        self.main = nn.Sequential(*conv(ic, interc, 1, 1, 0), \
+                                  *conv(interc, interc, s=s),
+                                  *conv(interc, oc, 1, 1, 0, act=None),)
     self.act = nn.ReLU(inplace=True)
-    self.side = conv(ic, oc, s=s, act=None) if dflag else None
+    
+    # HACK fdown is introduced just because the 1st layer of a resnet >= 50
+    # needs a side branch with a 1x1 convolution. Find a better way if possible.
+    if dflag or fdown:
+      self.side = nn.Sequential(*conv(ic, oc, 1, s, 0, act=None))
+    else:
+      self.side = None
 
-  def forward(self, x): 
-    return self.act(self.main(x) + (self.side(x) if self.dflag else x))
+  def forward(self, x):
+    return self.act(self.main(x) + (self.side(x) if self.side else x))
 
 
-def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int):
+def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int, dflag:bool=True,
+              btype:str='basic', fdown:bool=False):
 
   """
 
@@ -77,12 +92,10 @@ def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int):
   num_layers - int
                # of blocks to be stacked
   """
-
-  layers = []
-  layers += nn.ModuleList([block(ic=ic, oc=oc, dflag=True)])
-
-  layers.extend([block(ic=oc, oc=oc) for i in range (num_layers-1)])
-  return nn.Sequential(*layers)
+  
+  layers = [block(ic, oc, dflag=dflag, btype=btype, fdown=fdown)]
+  layers += [block(oc, oc, btype=btype) for i in range (num_layers-1)]
+  return layers
 
 
 class Resnet(nn.Module):
@@ -100,25 +113,23 @@ class Resnet(nn.Module):
   """
 
   def __init__(self, nc:int, layers:list, lconv:int=2, ex:int=1, 
-       block:nn.Module=resblock, oc1:int=64, conv_first=True,
-       inplace=True):
-    super(Resnet, self).__init__()
+       block:nn.Module=resblock, oc1:int=64, **kwargs):
+    super().__init__()
 
     layers = [*conv(3, oc1, 7, 2, 3),
               nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-              res_stage(block, oc1, oc1*ex, layers[0]),
-              res_stage(block, oc1*ex, oc1*ex*2, layers[1]),
-              res_stage(block, oc1*ex*2, oc1*ex*4, layers[2]),
-              res_stage(block, oc1*ex*4, oc1*ex*8, layers[3])]
+              *res_stage(block, oc1, oc1*ex, layers[0], dflag=False, **kwargs),
+              *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
+              *res_stage(block, oc1*ex*2, oc1*ex*4, layers[2], **kwargs),
+              *res_stage(block, oc1*ex*4, oc1*ex*8, layers[3], **kwargs),
+              nn.AdaptiveAvgPool2d((1, 1))]
     self.net = nn.Sequential(*layers)
-
-    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-    self.fc = nn.Linear(512, nc)
+    
+    self.fc = nn.Linear(512*ex, nc)
 
   def forward(self, x):
     bs = x.size(0)
     x = self.net(x)
-    x = self.avgpool(x) if self.apool else x
     x = x.view(bs, -1)
     x = self.fc(x)
     return x
@@ -127,33 +138,36 @@ class Resnet(nn.Module):
 def resnet18(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [2, 2, 2, 2]
-  kwargs['lconv'] = 2
   return Resnet(**kwargs)
 
 def resnet34(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [3, 4, 6, 3]
-  kwargs['lconv'] = 2
   return Resnet(**kwargs)
 
 def resnet50(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [3, 4, 6, 3]
-  kwargs['lconv'] = 3
+  kwargs['btype'] = 'bottleneck'
+  kwargs['ex'] = 4
+  kwargs['fdown'] = True
   return Resnet(**kwargs)
 
 def resnet101(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [3, 4, 23, 3]
-  kwargs['lconv'] = 3
+  kwargs['btype'] = 'bottleneck'
+  kwargs['ex'] = 4
+  kwargs['fdown'] = True
   return Resnet(**kwargs)
 
 def resnet152(nc, **kwargs):
   kwargs['nc'] = nc
-  kwargs['layers'] = [3, 8, 56, 3]
-  kwargs['lconv'] = 3
+  kwargs['layers'] = [3, 8, 36, 3]
+  kwargs['btype'] = 'bottleneck'
+  kwargs['ex'] = 4
+  kwargs['fdown'] = True
   return Resnet(**kwargs)
-
 def resnext18(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [2, 2, 2, 2]
