@@ -20,6 +20,7 @@ scratchai
     - learner.py - the file which helps to train
   - imgutils.py - file to contain all image utility functions
   - version.py - stores version related information
+  
 tests
    - test_nets - ensures all modules are behaving in an expected fashion
    - test_learners - ensures learners are behaving in an expected fashion
