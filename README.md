@@ -8,14 +8,14 @@
 
 Table of Contents:
 1. Classification
-  - [Resnet]()
-  - [Resnext]()
+    - [Resnet]()
+    - [Resnext]()
 2. Segmentation
-  - [UNet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py)
-  - [ENet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py)
+    - [UNet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py)
+    - [ENet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py)
 3. Generative Adversarial Networks
-  - [DCGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/resnet.py)
-  - [CycleGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py)
+    - [DCGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/resnet.py)
+    - [CycleGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py)
   
   
 ### Tutorials
