@@ -6,6 +6,7 @@ import requests
 import numpy as np
 from torchvision import models, transforms
 from PIL import Image
+import matplotlib.pyplot as plt
 
 NOISE = 'noise'
 SEMANTIC = 'semantic'
@@ -74,6 +75,7 @@ class TestAttacks(unittest.TestCase):
       img = TestAttacks.trf(img)
       #img = self.scale(img) # It works w/ as well as w/o scaling.
       adv_x = atk.generate(img)
+      #plt.imshow(adv_x.transpose(0, 1).transpose(1, 2)); plt.show()
       adv_x = TestAttacks.trf(transforms.ToPILImage()(adv_x))
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
       
