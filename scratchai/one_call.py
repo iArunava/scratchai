@@ -1,4 +1,6 @@
 import torch
+import os
+import requests
 from PIL import Image
 from torchvision import transforms
 from scratchai.nets.clf.resnet import resnet18
@@ -15,7 +17,7 @@ def classify(path:str):
   Arguments
   ---------
   img : str
-        The path to the image file.
+        The path to the image file / url to the image file.
   
   Returns
   -------
@@ -28,6 +30,16 @@ def classify(path:str):
   normalizes it using imagenet specific normalization values and passes it to 
   a resnet output the predicted value.
   """
+  
+  # Check if url
+  # TODO Improve check
+  is_url = path.startswith('http')
+  fname = path.split('/')[-1]
+  if is_url:
+    if not os.path.isfile('/tmp/{}'.format(fname)):
+      with open('/tmp/'+fname, 'wb') as f:
+        f.write(requests.get(path).content)
+    path = '/tmp/'+fname
 
   trf = transforms.Compose([transforms.Resize(256), 
                             transforms.CenterCrop(224), 
@@ -35,8 +47,7 @@ def classify(path:str):
                             transforms.Normalize([0.485, 0.456, 0.406], 
                                                  [0.229, 0.224, 0.225])
                            ])
-  
-  img = trf(Image.open(path))
+  img = trf(Image.open(path).convert('RGB'))
   net = resnet18(pretrained=True).eval()
   pred = int(torch.argmax(net(img.unsqueeze(0)), dim=1))
   return imagenet_labels[pred]
