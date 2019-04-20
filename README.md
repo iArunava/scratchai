@@ -40,7 +40,7 @@ Table of Contents:
 
 1. Classify an image
 ```
->>> import scratchai
->>> scratchai.one_call.classify('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg')
+>>> from scratchai.one_call import *
+>>> classify('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg')
 'rugby ball'
 ```
