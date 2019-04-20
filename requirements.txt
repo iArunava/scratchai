@@ -4,3 +4,4 @@ numpy
 tabulate
 validators
 tqdm
+Pillow
