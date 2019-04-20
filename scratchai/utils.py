@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import os
 from subprocess import call
+from scratchai._config import home
 
 def load_from_pth(url, fname='random', key='state_dict'):
   """
@@ -23,7 +24,7 @@ def load_from_pth(url, fname='random', key='state_dict'):
   
   # TODO Download this file to a location where it doesn't need to 
   # be downloaded again and again.
-  prefix = '/tmp/'
+  prefix = home
   if not os.path.isfile(prefix + fname + '.pth'):
     call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
   ckpt = torch.load('{}{}.pth'.format(prefix, fname))

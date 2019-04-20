@@ -4,6 +4,7 @@ import cv2
 import operator
 import PIL
 import os
+import requests
 from PIL import Image
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
