@@ -36,3 +36,11 @@ Table of Contents:
 >>> learner = scratchai.learners.SegLearner(net, load)
 >>> learner.fit()
 ```
+#### One Calls
+
+1. Classify an image
+```
+>>> import scratchai
+>>> scratchai.one_call.classify('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg')
+'rugby ball'
+```
