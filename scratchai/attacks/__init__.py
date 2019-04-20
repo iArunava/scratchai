@@ -1,1 +1,1 @@
-from scratchai.attacks.attacks.Noise import Noise
+from scratchai.attacks.attacks import *
