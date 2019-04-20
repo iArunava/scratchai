@@ -130,8 +130,8 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
   max_iters = np.floor(features * gamma / 2)
   increase = bool(theta > 0)
 
-  tmp = np.ones((features, features), int)
-  np.fill_diagonal(tmp, 0)
+  zdiag = np.ones((features, features), int)
+  np.fill_diagonal(zdiag, 0)
 
   # Compute the initial search domain. We optimize the initial search domain
   # by removing all features that are already at their maximum values
@@ -156,5 +156,66 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
       list_deriv.append(deriv)
 
     grads = (torch.stack(list_deriv, dim=0).view(classes, -1, features))
+    
+    # Compute the Jacobian components
+    # To help with the computation later, reshape the target_class
+    # and other_class to [nb_classes, -1, 1].
+    # The last dimension is added to allow broadcasting later.
+    target_class = torch.view(classes, -1, 1)
+    other_class = (target_class == 0).float()
+    
+    # TODO Check the dim
+    grads_target = torch.sum(grads * target_class, dim=0)
+    grads_other = torch.sum(grads * other_class, dim=0)
+    
+    # Remove the already-used input features from the search space
+    # Subtract 2 times the maximum value from those so that they
+    # won't be picked later
+    increase_coef = (4 * int(increase) - 2) * (search_domain == 0).float()
+
+    target_tmp = grads_target
+    target_tmp -= increase_coef * torch.max(torch.abs(grads_target), dim=1)
+    target_sum = target_tmp.view(-1, features, 1) + target_tmp.view(-1, 1, features)
+
+    other_tmp = grads_other
+    other_tmp -= increase_coef * torch.max(torch.abs(grads_target), dim=1)
+    other_sum = other_tmp.view(-1, features, 1) * other_tmp.view(-1, 1, features)
+
+    # Create a mask to only keep features that match conditions
+    if increase;
+      scores_mask = ((target_sum > 0) & (other_sum < 0))
+    else:
+      scores_mask = ((target_sum < 0) & (other_sum > 0))
+
+    # Create a 2D numpy array of scores for each pair of candidate features
+    scores = scores_mask * (-target_sum * other_sum) *  zdiag
+
+    # Extract the best 2 pixels
+    best = torch.argmax(scores.view(-1, features*features), dim=1)
+
+    p1 = best % features
+    p2 = best // features
+    p1_ohot = one_hot(p1, depth=features)
+    p2_ohot = one_hot(p2, depth=features)
+
+    # Check if more modification is needed
+    # TODO preds is 1 hot vector in tf implementation
+    mod_not_done = torch.sum(y_target * preds, dim=1) == 0
+    cond = mod_not_done & (torch.sum(search_domain, dim=1) >= 2)
+
+    # Update the search domain
+    cond_float = cond.view(-1, 1)
+    to_mod = (p1_ohot + p2_ohot) * cond_float
+
+    search_domain = search_domain - to_mod
+
+    # Apply the modifications to the image
+    to_mod = to_mod.view(-1, *x.shape)
+    if increase:
+      x = torch.min(clip_max, x + to_mod * theta)
+    else:
+      x = torch.min(clip_min, x + to_mod * theta)
 
     max_iters -= 1
+
+  return x
