@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+import os
 from subprocess import call
 
-def load_from_pth(url, key='state_dict'):
+def load_from_pth(url, fname='random', key='state_dict'):
   """
   Function to download/load the pth file and return the key mentioned.
 
@@ -12,7 +13,8 @@ def load_from_pth(url, key='state_dict'):
         The url from which to download the file.
   key : str
         The key of the dict to return
-
+  fname : str
+          The name with which the file should be saved.
   Returns
   -------
   val : the type of element stored in the key (mostly torch.tensor)
@@ -21,6 +23,8 @@ def load_from_pth(url, key='state_dict'):
   
   # TODO Download this file to a location where it doesn't need to 
   # be downloaded again and again.
-  call(['wget', '-O', '/tmp/random.pth', url])
-  ckpt = torch.load('/tmp/random.pth')
+  prefix = '/tmp/'
+  if not os.path.isfile(prefix + fname + '.pth'):
+    call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
+  ckpt = torch.load('{}{}.pth'.format(prefix, fname))
   return ckpt[key]

@@ -6,3 +6,4 @@ from scratchai import nets
 from scratchai import attacks
 from scratchai import pretrained
 import scratchai.imgutils
+import scratchai.one_call
