@@ -40,7 +40,7 @@ jobs:
       - run:
           name: test_nets
           command: |
-            python3 -m unittest tests/test_nets
+            python3 -m unittest tests/test_nets.py
 
       - save_cache:
           paths:
