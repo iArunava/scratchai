@@ -28,7 +28,7 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-  tests:
+  test:
     docker:
       - image: circleci/python:3.6.1
 
@@ -46,3 +46,10 @@ jobs:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "test_nets.py" }}
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
