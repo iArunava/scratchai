@@ -106,16 +106,16 @@ class TestENet(unittest.TestCase):
                              " be.")
   
   def test_enet(self):
-    n1 = torch.randn(2, 3, 256, 256).cuda()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    n1 = torch.randn(2, 3, 256, 256)
 
-    net = scratchai.nets.ENet(4).cuda()
+    net = scratchai.nets.ENet(4).to(device)
 
-    o1 = net(n1)
+    o1 = net(n1).to(device)
     self.assertEqual(list(o1.shape), [2, 4, 256, 256], "out shape reduction not as it should"
                               " be.");
     del n1, o1
-    torch.cuda.empty_cache()
-    n1 = torch.randn(2, 3, 360, 512).cuda()
+    n1 = torch.randn(2, 3, 360, 512).to(device)
     o1 = net(n1)
     self.assertEqual(list(o1.shape), [2, 4, 360, 512], "out shape reduction not as it should"
                               " be.")
