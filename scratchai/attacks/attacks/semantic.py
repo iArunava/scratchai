@@ -2,9 +2,8 @@
 Semantic adversarial Examples
 """
 
-from scratchai.attacks.attacks.attack import Attack
-
-class Semantic(Attack):
+# FIXME Change this from class to function
+class Semantic():
   """
   Semantic adversarial examples.
   

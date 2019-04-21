@@ -35,10 +35,9 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing Noise attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
-      atk = scratchai.attacks.Noise(net)
-      self.check_atk(net, img, atk, t=NOISE)
+      self.check_atk(net, img, scratchai.attacks.noise, t=NOISE)
       print ('[INFO] Attack worked successfully!')
-      del net, atk
+      del net
 
   def test_semantic(self):
     """
@@ -69,7 +68,7 @@ class TestAttacks(unittest.TestCase):
     
     # Adversarial Example
     if t == NOISE:
-      adv_x = atk.generate(torch.from_numpy(np.array(img))).transpose(2, 1).transpose(1, 0)
+      adv_x = atk(torch.from_numpy(np.array(img))).transpose(2, 1).transpose(1, 0)
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
     elif t == SEMANTIC:
       img = TestAttacks.trf(img)

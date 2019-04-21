@@ -57,6 +57,7 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
   x = x.clone().detach().float().requires_grad_(True)
   if y is None:
     _, y = torch.max(net(x), dim=1)
+    print (y.shape, y)
 
   # Compute loss
   crit = nn.CrossEntropyLoss()

@@ -25,7 +25,7 @@ def optimize_linear(grads, eps, ordr):
   azdiv = torch.tensor(1e-12, dtype=grads.dtype, device=grads.device)
 
   if ordr == np.inf:
-    opt_pert = torch.abs(grads)
+    opt_pert = torch.sign(grads)
 
   elif ordr == 1:
     abs_grad = torch.abs(grads)
@@ -39,10 +39,16 @@ def optimize_linear(grads, eps, ordr):
     for red_scalar in red_ind:
       num_ties = torch.sum(num_ties, red_scalar, keepdims=True)
     opt_pert = sign * max_mask / num_ties
+    # TODO tests
 
   elif ordr == 2:
     # TODO
-    pass
+    square = torch.max(azdiv, torch.sum(grads ** 2, red_ind, keepdim=True))
+    opt_pert = grads / torch.sqrt(square)
+    # TODO tests
+  else:
+    raise NotImplementedError('Only L-inf, L1 and L2 norms are '
+                              'currently implemented.')
 
   scaled_pert = eps * opt_pert
   return scaled_pert

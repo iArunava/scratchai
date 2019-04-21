@@ -1,2 +1,3 @@
-from scratchai.attacks.attacks.noise import Noise
+from scratchai.attacks.attacks.noise import noise
 from scratchai.attacks.attacks.semantic import Semantic
+from scratchai.attacks.attacks.fast_gradient_method import fgm
