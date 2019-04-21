@@ -58,11 +58,8 @@ class SaliencyMapMethod(Attack):
       self.y_target = self.y_target.view([1, nb_classes])
       #print (torch.argmax(self.y_target, dim=1))
     
-    # TODO Remove this line, just there for debug purpose
-    x_adv = x
-    # TODO Uncomment and check
-    #x_adv = jsma_symbolic(x, y_target, model, theta, gamma, clip_min,
-               #clip_max)
+    x_adv = jsma_symbolic(x, self.y_target, self.model, self.theta, 
+                          self.gamma, self.clip_min, self.clip_max)
     return x_adv
 
   def parse_params(self, theta=1., gamma=1., clip_min=0., clip_max=1.,
@@ -141,6 +138,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
   else:
     search_domain = (x > clip_min).view(-1, features)
   
+  print ('here')
   # TODO remove this
   max_iters = 1
 

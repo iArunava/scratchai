@@ -107,7 +107,7 @@ class TestENet(unittest.TestCase):
   
   def test_enet(self):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    n1 = torch.randn(2, 3, 256, 256)
+    n1 = torch.randn(2, 3, 256, 256).to(device)
 
     net = scratchai.nets.ENet(4).to(device)
 

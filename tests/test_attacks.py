@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 NOISE = 'noise'
 SEMANTIC = 'semantic'
+SAL = 'saliency_map_method'
 
 class TestAttacks(unittest.TestCase):
   
@@ -38,7 +39,7 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing Noise attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
       atk = scratchai.attacks.Noise(net)
-      self.check_atk(net, img, atk)
+      self.check_atk(net, img, atk, t=NOISE)
       print ('[INFO] Attack worked successfully!')
       del net, atk
   
@@ -54,7 +55,7 @@ class TestAttacks(unittest.TestCase):
 
     net = getattr(models, 'alexnet')(pretrained=True)
     atk = scratchai.attacks.SaliencyMapMethod(net)
-    self.check_atk(net, img, atk)
+    self.check_atk(net, img, atk, t=SAL)
 
     '''
     for model in all_models:
@@ -66,23 +67,12 @@ class TestAttacks(unittest.TestCase):
       del net, atk
     '''
     
-  def init(self):
-    """
-    Contains operations needed to perform before
-    any test in this class is executed.
-    """
-    if TestAttacks.img is None:
-      with open('/tmp/test.png', 'wb') as f:
-        f.write(requests.get(TestAttacks.url).content)
-      TestAttacks.img = Image.open('/tmp/test.png')
-
   def test_semantic(self):
     """
     tests to ensure semantic attack works!
     """
-    with open('/tmp/test.png', 'wb') as f:
-      f.write(requests.get(TestAttacks.url).content)
-    img = Image.open('/tmp/test.png')
+    self.init()
+    img = TestAttacks.img
 
     # TODO replace this with a scratchai model
     all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
@@ -94,6 +84,16 @@ class TestAttacks(unittest.TestCase):
       self.check_atk(net, img, atk, t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
       del net, atk
+
+  def init(self):
+    """
+    Contains operations needed to perform before
+    any test in this class is executed.
+    """
+    if TestAttacks.img is None:
+      with open('/tmp/test.png', 'wb') as f:
+        f.write(requests.get(TestAttacks.url).content)
+      TestAttacks.img = Image.open('/tmp/test.png')
   
   def scale(self, img):
     return img * (255. / img.max())
