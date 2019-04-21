@@ -173,6 +173,5 @@ def imshow(img):
         The Image to show
   """
   if type(img) == torch.Tensor:
-    x = 0 if len(img.shape) == 3 else 1
-    img = img.clone().detach().cpu().transpose(0+x, 1+x).transpose(1+x, 2+x)
+    img = img.clone().detach().cpu().squeeze().transpose(0, 1).transpose(1, 2)
   plt.imshow(img); plt.show()

@@ -148,6 +148,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
     preds  = torch.argmax(logits, dim=1)
     loss = nn.CrossEntropyLoss()(logits, preds)
     
+    '''
     loss.backward()
     grads = x.grad
     print (grads.shape)
@@ -159,37 +160,42 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
       deriv = grad(logits[:, idx], x, retain_graph=True)[0]
       #print (deriv[0].shape, x.shape)
       list_deriv.append(deriv)
-    '''
 
     #print (list_deriv[0].shape)
     #grads = (torch.stack(list_deriv, dim=0).view(classes, -1, features))
-    #grads = torch.stack(list_deriv, dim=0)
-    #print (grads.shape)
-    return 0
+    grads = torch.stack(list_deriv, dim=0).view(classes, -1, features)
+    print (grads.shape)
+    #'''
     
     # Compute the Jacobian components
     # To help with the computation later, reshape the target_class
     # and other_class to [nb_classes, -1, 1].
     # The last dimension is added to allow broadcasting later.
-    target_class = torch.view(classes, -1, 1)
-    other_class = (target_class == 0).float()
+    tclass = y_target.view(classes, -1, 1)
+    oclass = (tclass == 0).float()
+    print (tclass.shape, oclass.shape)
     
     # TODO Check the dim
-    grads_target = torch.sum(grads * target_class, dim=0)
-    grads_other = torch.sum(grads * other_class, dim=0)
+    a = grads * tclass
+    gtarget = torch.sum(grads * tclass, dim=0)
+    gother = torch.sum(grads * oclass, dim=0)
+    print (gtarget.shape, gother.shape)
+    print (gtarget[:1])
+    print (gother[:1])
     
     # Remove the already-used input features from the search space
     # Subtract 2 times the maximum value from those so that they
     # won't be picked later
     increase_coef = (4 * int(increase) - 2) * (search_domain == 0).float()
 
-    target_tmp = grads_target
-    target_tmp -= increase_coef * torch.max(torch.abs(grads_target), dim=1)
+    target_tmp = gtarget
+    target_tmp -= increase_coef * torch.max(torch.abs(gtarget), dim=1)
     target_sum = target_tmp.view(-1, features, 1) + target_tmp.view(-1, 1, features)
 
-    other_tmp = grads_other
-    other_tmp -= increase_coef * torch.max(torch.abs(grads_target), dim=1)
+    other_tmp = gother
+    other_tmp += increase_coef * torch.max(torch.abs(gother), dim=1)
     other_sum = other_tmp.view(-1, features, 1) * other_tmp.view(-1, 1, features)
+    return 0
 
     # Create a mask to only keep features that match conditions
     if increase:
