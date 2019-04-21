@@ -58,6 +58,7 @@ class SaliencyMapMethod(Attack):
       self.y_target = self.y_target.view([1, nb_classes])
       #print (torch.argmax(self.y_target, dim=1))
     
+    x.requires_grad = True
     x_adv = jsma_symbolic(x, self.y_target, self.model, self.theta, 
                           self.gamma, self.clip_min, self.clip_max)
     return x_adv
@@ -123,6 +124,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
 
   classes = int(y_target.shape[1])
   features = int(np.product(x.shape[1:]))
+  #print (features)
 
   max_iters = np.floor(features * gamma / 2)
   increase = bool(theta > 0)
@@ -138,22 +140,32 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
   else:
     search_domain = (x > clip_min).view(-1, features)
   
-  print ('here')
   # TODO remove this
   max_iters = 1
-
+  net.eval()
   while max_iters:
     logits = net(x)
     preds  = torch.argmax(logits, dim=1)
-  
+    loss = nn.CrossEntropyLoss()(logits, preds)
+    
+    loss.backward()
+    grads = x.grad
+    print (grads.shape)
+    '''
     # Create the Jacobian Graph
     list_deriv = []
     for idx in range(classes):
-      deriv = grad(logits[:, idx], x)
-      print (deriv)
+      #print (x.requires_grad)
+      deriv = grad(logits[:, idx], x, retain_graph=True)[0]
+      #print (deriv[0].shape, x.shape)
       list_deriv.append(deriv)
+    '''
 
-    grads = (torch.stack(list_deriv, dim=0).view(classes, -1, features))
+    #print (list_deriv[0].shape)
+    #grads = (torch.stack(list_deriv, dim=0).view(classes, -1, features))
+    #grads = torch.stack(list_deriv, dim=0)
+    #print (grads.shape)
+    return 0
     
     # Compute the Jacobian components
     # To help with the computation later, reshape the target_class

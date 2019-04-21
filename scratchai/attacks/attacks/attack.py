@@ -5,6 +5,7 @@ Base Class for PyTorch Attacks
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from scratchai.utils import freeze
 
 __all__ = ['Attack']
 
@@ -17,7 +18,7 @@ class Attack():
     dtype: A string mentioning the data type of the model
   """
   def __init__(self, model:nn.Module, dtype:str='float32'):
-    self.model = model
+    self.model = freeze(model)
     self.dtype = dtype
 
   def get_or_guess_labels(self, x, kwargs):

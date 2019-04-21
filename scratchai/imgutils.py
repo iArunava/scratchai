@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -6,6 +7,7 @@ import PIL
 import os
 import requests
 from PIL import Image
+
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
   """
@@ -31,6 +33,7 @@ def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
      | (img[:, :, 2] < rgb[2])
   img[tidx] = tcol
   return img
+
 
 def mask_reg(img, pnts, reln, deg:int=1, tcol:tuple=(0, 0, 0), 
       locate:bool=False, invert:bool=False) -> np.ndarray:
@@ -98,6 +101,7 @@ def mask_reg(img, pnts, reln, deg:int=1, tcol:tuple=(0, 0, 0),
   
   return img if not locate else mark_pnt_on_img(img, pnts)
 
+
 def mark_pnt_on_img(img, pnts:list, col:tuple=(0, 255, 0)) -> np.ndarray:
   """
   Mark points on Image.
@@ -120,6 +124,7 @@ def mark_pnt_on_img(img, pnts:list, col:tuple=(0, 255, 0)) -> np.ndarray:
   for pnt in pnts:
     cv2.circle(img, pnt, 10, col, -1)
   return img
+
 
 def load_img(path:str, rtype=PIL.Image.Image):
   """
@@ -156,3 +161,18 @@ def load_img(path:str, rtype=PIL.Image.Image):
   if rtype is np.ndarray:
     return np.array(img)
   return img
+
+
+def imshow(img):
+  """
+  Show the image.
+
+  Arguments
+  ---------
+  img : PIL.Image.Image, torch.tensor
+        The Image to show
+  """
+  if type(img) == torch.Tensor:
+    x = 0 if len(img.shape) == 3 else 1
+    img = img.clone().detach().cpu().transpose(0+x, 1+x).transpose(1+x, 2+x)
+  plt.imshow(img); plt.show()

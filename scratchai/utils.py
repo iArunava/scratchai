@@ -4,6 +4,7 @@ import os
 from subprocess import call
 from scratchai._config import home
 
+
 def load_from_pth(url, fname='random', key='state_dict'):
   """
   Function to download/load the pth file and return the key mentioned.
@@ -29,3 +30,17 @@ def load_from_pth(url, fname='random', key='state_dict'):
     call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
   ckpt = torch.load('{}{}.pth'.format(prefix, fname))
   return ckpt[key]
+
+
+def freeze(net:nn.Module):
+  """
+  Freeze the graph of the nn.Module
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net whose graph needs to be freezed.
+  """
+  for param in net.parameters():
+    param.requires_grad = False
+  return net
