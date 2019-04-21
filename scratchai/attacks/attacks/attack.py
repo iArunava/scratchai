@@ -16,7 +16,7 @@ class Attack():
     model: The model nn.Module object
     dtype: A string mentioning the data type of the model
   """
-  def __init__(self, model:nn.Module, dtype:str):
+  def __init__(self, model:nn.Module, dtype:str='float32'):
     self.model = model
     self.dtype = dtype
 
@@ -36,18 +36,19 @@ class Attack():
     """
 
     if 'y' in kwargs and 'y_target' in kwargs:
-      raise ValueError("Cannot set both 'y' and 'y_target'")
+        raise ValueError("Cannot set both 'y' and 'y_target'")
     elif 'y' in kwargs:
-      labels = kwargs['y']
+        labels = kwargs['y']
     elif 'y_target' in kwargs:
-      labels = kwargs['y_target']
+        labels = kwargs['y_target']
     else:
-      logits = self.model(x if len(x.shape) == 4 else x.unsqueeze(0))
-      # TODO Remove cls, not needed, just there for debugging purpose
-      pred_max, cls = torch.max(logits, dim=1)
-      #print (cls)
-      labels = (logits == pred_max).float()
-      labels.requires_grad = False
+        # TODO Make sure softmax outputs are not again 
+        # passed through softmax layer
+        # TODO Make sure this function is implemented as expected
+        logits = self.model(x if len(x.shape) == 4 else x.unsqueeze(0))
+        pred_max = torch.argmax(logits, dim=1)
+        opreds = torch.float(logits == pred_max)
+        opreds.requires_grad = False
     
-    classes = labels.size(1)
-    return labels, classes
+    nb_classes = opreds.size(1)
+    return opreds, nb_classes

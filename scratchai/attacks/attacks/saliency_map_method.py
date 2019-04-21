@@ -182,7 +182,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
     other_sum = other_tmp.view(-1, features, 1) * other_tmp.view(-1, 1, features)
 
     # Create a mask to only keep features that match conditions
-    if increase;
+    if increase:
       scores_mask = ((target_sum > 0) & (other_sum < 0))
     else:
       scores_mask = ((target_sum < 0) & (other_sum > 0))

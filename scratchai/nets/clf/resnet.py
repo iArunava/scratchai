@@ -155,14 +155,15 @@ def resnet18(pretrained=True, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet18_url))
+    # TODO check inspect module and change the fname
+    net.load_state_dict(load_from_pth(urls.resnet18_url, 'resnet18'))
   return net
 
 def resnet34(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet34_url))
+    net.load_state_dict(load_from_pth(urls.resnet34_url, 'resnet34'))
   return net
 
 def resnet50(pretrained=True, **kwargs):
@@ -171,7 +172,7 @@ def resnet50(pretrained=True, **kwargs):
   kwargs['ex'] = 4; kwargs['fdown'] = True
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet50_url))
+    net.load_state_dict(load_from_pth(urls.resnet50_url, 'resnet50'))
   return net
 
 def resnet101(pretrained=True, **kwargs):
@@ -180,7 +181,7 @@ def resnet101(pretrained=True, **kwargs):
   kwargs['ex'] = 4; kwargs['fdown'] = True
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet101_url))
+    net.load_state_dict(load_from_pth(urls.resnet101_url, 'resnet101'))
   return net
 
 def resnet152(pretrained=True, **kwargs):
@@ -189,7 +190,7 @@ def resnet152(pretrained=True, **kwargs):
   kwargs['ex'] = 4; kwargs['fdown'] = True
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet152_url))
+    net.load_state_dict(load_from_pth(urls.resnet152_url, 'resnet152'))
   return net
 
 # FIXME The resnet blocks work okay but resnext needs a check

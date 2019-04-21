@@ -8,14 +8,14 @@
 
 Table of Contents:
 1. Classification
-  - [Resnet]()
-  - [Resnext]()
+    - [Resnet]()
+    - [Resnext]()
 2. Segmentation
-  - [UNet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py)
-  - [ENet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py)
+    - [UNet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py)
+    - [ENet](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py)
 3. Generative Adversarial Networks
-  - [DCGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/resnet.py)
-  - [CycleGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py)
+    - [DCGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/resnet.py)
+    - [CycleGAN](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py)
   
   
 ### Tutorials
@@ -35,4 +35,12 @@ Table of Contents:
 >>> load = scratchai.DataLoader.camvid('.', download=True)
 >>> learner = scratchai.learners.SegLearner(net, load)
 >>> learner.fit()
+```
+#### One Calls
+
+1. Classify an image
+```
+>>> from scratchai.one_call import *
+>>> classify('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg')
+'rugby ball'
 ```
