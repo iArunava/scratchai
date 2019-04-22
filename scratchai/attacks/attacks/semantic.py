@@ -20,8 +20,6 @@ def semantic(x, center:bool=True, max_val:float=1.):
            If false, assumes data is in interval [0, max_val]
   max_val : float
             Maximum value allowed in the input data.
-  kwargs : dict, optional
-           Any additional arguments
   """
 
   if center:
