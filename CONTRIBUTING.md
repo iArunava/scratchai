@@ -22,6 +22,9 @@ scratchai
   - version.py - stores version related information
   - attacks
     - attacks - Stores implementation of all available attacks
+  - pretrained
+    - urls.py - stores all the urls to the pretrained models in scratchai
+    - README.md - stores details on how the pretrained models were obtained.
   
 tests
    - test_nets.py     - ensures all modules are behaving in an expected fashion
