@@ -22,6 +22,10 @@ class TestAttacks(unittest.TestCase):
                transforms.ToTensor(),
                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
               ])
+  
+  def __init__(self, num_run):
+    super().__init__()
+    self.num_run = num_run
 
   def test_noise_atk(self):
     """
@@ -68,8 +72,11 @@ class TestAttacks(unittest.TestCase):
     img = Image.open('/tmp/test.png')
 
     # TODO replace this with a scratchai model
-    # TODO write tests for targeted attack with fgm
-    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    # Running inference on just alexnet as it takes too long, otherwise
+    # TODO Update other tests to just infer with one model for quick testing and 
+    # Maybe an option to perform the rigourous testing, if needed.
+    #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    all_models = ['alexnet']
     for model in all_models:
       to_pred = int(torch.randint(1000, ()))
       print ('[INFO] Testing PGD attack on {}'.format(model))
@@ -87,7 +94,11 @@ class TestAttacks(unittest.TestCase):
     img = Image.open('/tmp/test.png')
 
     # TODO replace this with a scratchai model
-    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    # TODO write tests for targeted attack with fgm
+    # TODO Update other tests to just infer with one model for quick testing and 
+    # Maybe an option to perform the rigourous testing, if needed.
+    #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    all_models = ['alexnet']
     for model in all_models:
       print ('[INFO] Testing FGM attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
