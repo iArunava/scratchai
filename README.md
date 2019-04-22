@@ -19,15 +19,15 @@ Table of Contents:
 
 | Model | Paper | Implementation |
 | :--- | :-----: | :--: |
-| UNet | https://arxiv.org/abs/1505.04597 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py#L38)
-| ENet | https://arxiv.org/abs/1606.02147 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py#L155)
+| UNet | https://arxiv.org/abs/1505.04597 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py#L38) [Not checked] |
+| ENet | https://arxiv.org/abs/1606.02147 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py#L155) [Not checked] |
 
 3. Generative Adversarial Networks
 
 | Model | Paper | Implementation |
 | :--- | :-----: | :--: |
 | DCGAN | https://arxiv.org/abs/1511.06434 | NA |
-| CycleGAN | https://arxiv.org/abs/1703.10593 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py) |
+| CycleGAN | https://arxiv.org/abs/1703.10593 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py) [Not checked] |
     
 4. Attacks
 
