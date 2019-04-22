@@ -69,7 +69,7 @@ def clip_eta(eta, ord, eps):
     if ord not in [np.inf, 1, 2]:
         raise ValueError('ord must be np.inf, 1, or 2.')
 
-    reduce_ind = list(xrange(1, len(eta.shape)))
+    reduce_ind = list(range(1, len(eta.shape)))
     azdiv = 1e-12
 
     if ord == np.inf:

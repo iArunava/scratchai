@@ -4,127 +4,94 @@ The Projected Gradient Descent attack.
 
 import numpy as np
 import torch
-from scratchai.attacks import FGD
+import torch.nn as nn
+from scratchai.attacks.attacks import fgm
 from scratchai.attacks.utils import clip_eta
 
-class ProjectedGradientDescent(Attack):
+def pgd(net:nn.Module, x:torch.Tensor, nb_iter:int=10, eps:float=0.3, 
+    eps_iter:float=0.05, rand_minmax:float=0.3, clip_min=None, clip_max=None, 
+    y=None, ordr=np.inf, rand_init=None, targeted=False) -> torch.Tensor:
+
+  """
+  This class implements either the Basic Iterative Method
+  (Kuarkin et al. 2016) when rand_init is set to 0. or the
+  Madry et al. (2017) method when rand_minmax is larger than 0.
+  Paper link (Kuarkin et al. 2016): https://arxiv.org/pdf/1607.02533.pdf
+  Paper link (Madry et al. 2017): https://arxiv.org/pdf/1706.06083.pdf
+ 
+  # TODO FIX the below arguments style
+  Arguments
+  ---------
+  model: Model
+  dtype: dtype of the data
+  default_rand_init: whether to use random initialization by default
+  kwargs: passed through to super constructor
+
+  Returns
+  -------
+  adv_x : torch.Tensor
+      The adversarial Example.
+  """
+  
+  # TODO Check params
+  # If a data range was specified, check that the input was in that range
+  if clip_min is not None:
+    asserts.append(x.any() >= clip_min)
+
+  if clip_max is not None:
+    asserts.append(x.any() <= clip_max)
+
+  # Initialize loop variables
+  if rand_init:
+    eta = torch.FloatTensor(*x.shape).uniform_(-minmax, minmax)
+  else:
+    eta = torch.zeros_like(x)
+
+  # Clip eta
+  eta = clip_eta(eta, ordr, eps)
+  adv_x = x + eta
+  
+  if clip_min is not None or clip_max is not None:
+    adv_x = torch.clamp(adv_x, clip_max, clip_min)
+  
+  if y is None:
+    # Use ground truth labels to avoid label leaking
+    _, y = torch.max(net(x), dim=1)
+  else:
+    targeted = True
+ 
+  if ord == 1:
+    raise NotImplementedError("It's not clear that FGM is a good inner loop"
+                 " step for PGD when ord=1, because ord=1 FGM "
+                 " changes only one pixel at a time. We need "
+                 " to rigoursly test a strong ord=1 PGD "
+                 " before enabling this feature.")
+  i = 0
+  while i < nb_iter:
     """
-    This class implements either the Basic Iterative Method
-    (Kuarkin et al. 2016) when rand_init is set to 0. or the
-    Madry et al. (2017) method when rand_minmax is larger than 0.
-    Paper link (Kuarkin et al. 2016): https://arxiv.org/pdf/1607.02533.pdf
-    Paper link (Madry et al. 2017): https://arxiv.org/pdf/1706.06083.pdf
-
-    Args:
-        model: Model
-        dtype: dtype of the data
-        default_rand_init: whether to use random initialization by default
-        kwargs: passed through to super constructor
+    Do a projected gradient step.
     """
+    adv_x = fgm(net, adv_x, eps=eps_iter, ordr=ordr, clip_min=clip_min,
+                clip_max=clip_max, y=y, targeted=targeted)
 
-    FGM_CLASS = FGD
+    # Clipping perturbation eta to ord norm ball
+    eta = adv_x - x
+    eta = clip_eta(eta, ordr, eps)
+    adv_x = x + eta
 
-    def __init__(self, model, dtype='float32', default_rand_init=True, **kwargs):
-        """
-        Create a ProjectedGradientDescent instance.
-        """
+    # Redo the clipping.
+    # FGM alread already did it, but subtracting and re-adding eta can add some
+    # small numerical error
+    if clip_min is not None or clip_max is not None:
+      adv_x = torch.clamp(adv_x, clip_min, clip_max)
+    i += 1
 
-        super(ProjectedGradientDescent, self).__init__(model, dtype, **kwargs)
-
-        self.feedable_kwargs = ('eps', 'eps_iter', 'y', 'y_target', 'clip_min',
-                                'clip_max')
-        
-        self.structural_kwargs = ['ord', 'nb_iter', 'rand_init', 'sanity_checks']
-        self.default_rand_init = default_rand_init
-
-
-    def generate(self, x, **kwargs):
-        """
-        Generate symbolic graph for adversarial examples and return.
-
-        Args:
-            x: The model's symbolic inputs.
-            kwargs: See `parse_params`
-        """
-
-        assert self.parse_params(**kwargs)
-
-        asserts = []
-
-        # If a data range was specified, check that the input was in that range
-        if self.clip_min is not None:
-            asserts.append(x.any() >= self.clip_min)
-
-        if self.clip_max is not None:
-            asserts.append(x.any() <= self.clip_max)
-
-        # Initialize loop variables
-        if self.rand_init:
-            eta = torch.FloatTensor(*x.shape).uniform_(-self.minmax, self.minmax)
-        else:
-            eta = torch.zeros_like(x)
-
-        # Clip eta
-        eta = clip_eta(eta, self.ord, self.eps)
-        adv_x = x + eta
-
-        if self.clip_min is not None or self.clip_max is not None:
-            adv_x = torch.clamp(adv_x, self.clip_max, self.clip_min)
-
-        if self.y_target is not None:
-            y = self.y_target
-            targeted = True
-        elif self.y is not None:
-            y = self.y
-            targeted = False
-        else:
-            model_preds = self.model.get_probs(x)
-            preds_max = reduce_max(model_preds, 1)
-            y = torch.equals(model_preds, preds_max).float()
-            y.requires_grad = False
-            targeted = False
-            del model_preds
-
-        y_kwarg = 'y_target' if targeted else 'y'
-        fgm_params = {
-            'eps' : self.eps_iter,
-            y_kwarg: y,
-            'ord' : self.ord,
-            'clip_min' : self.clip_min,
-            'clip_max' : self.clip_max
-        }
-
-        if self.ord == 1:
-            raise NotImplementedError("It's not clear that FGM is a good inner loop"
-                                      " step for PGD when ord=1, because ord=1 FGM "
-                                      " changes only one pixel at a time. We need "
-                                      " to rigoursly test a strong ord=1 PGD "
-                                      " before enabling this feature.")
-
-        FGM = self.FGM_CLASS(self.model, dtype)
-
-        while i < self.nb_iter:
-            """
-            Do a projected gradient step.
-            """
-            adv_x = FGM.generate(adv_x, **fgm_params)
-
-            # Clipping perturbation eta to self.ord norm ball
-            eta = adv_x - x
-            eta = clip_eta(eta, self.ord, self.eps)
-            adv_x = x + eta
-
-            # Redo the clipping.
-            # FGM alread already did it, but subtracting and re-adding eta can add some
-            # small numerical error
-            if self.clip_min is not None or self.clip_max is not None:
-                adv_x = torch.clamp(adv_x, self.clip_min, self.clip_max)
-
-        # Asserts run only on CPU
-        # When multi-GPU eval code tries to force all PGD ops onto GPU, this
-        # can cause an error.
-        common_dtype = torch.float32
-        # NOTE Maybe this needs a cast
-        asserts.append(self.eps <= (1e6 + self.clip_max - self.clip_min))
-        
-        return adv_x
+  # Asserts run only on CPU
+  # When multi-GPU eval code tries to force all PGD ops onto GPU, this
+  # can cause an error.
+  # The 1e-6 is needed to compensate for numerical error.
+  # Without the 1e-6 this fails when e.g. eps=.2 clip_max=.5 clip_min=.7
+  if ordr == np.inf and clip_min is not None:
+    assert (eps <= (1e6 + clip_max - clip_min)) 
+  
+  return adv_x
