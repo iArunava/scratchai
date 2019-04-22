@@ -71,6 +71,29 @@ jobs:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "test_attacks.py" }}
+          
+  test_one_calls:
+    docker:
+      - image: circleci/python:3.6.1
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: test_one_calls
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+            python3 -m unittest tests/test_one_calls.py
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "tests/test_one_calls.py" }}        
+   
 
 workflows:
   version: 2
@@ -79,3 +102,4 @@ workflows:
       - build
       - test_nets
       - test_attacks
+      - test_one_calls
