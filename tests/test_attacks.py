@@ -54,11 +54,10 @@ class TestAttacks(unittest.TestCase):
     for model in all_models:
       print ('[INFO] Testing Semantic attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
-      atk = scratchai.attacks.Semantic(net)
       # TODO No need to call Noise again and again in each iteration
-      self.check_atk(net, img, atk, t=SEMANTIC)
+      self.check_atk(net, img, scratchai.attacks.semantic, t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
-      del net, atk
+      del net
   
   def test_pgd(self):
     """
@@ -112,7 +111,7 @@ class TestAttacks(unittest.TestCase):
     elif t == SEMANTIC:
       img = TestAttacks.trf(img)
       #img = self.scale(img) # It works w/ as well as w/o scaling.
-      adv_x = atk.generate(img)
+      adv_x = atk(img)
       #plt.imshow(adv_x.transpose(0, 1).transpose(1, 2)); plt.show()
       adv_x = TestAttacks.trf(transforms.ToPILImage()(adv_x))
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))

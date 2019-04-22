@@ -2,8 +2,7 @@
 Semantic adversarial Examples
 """
 
-# FIXME Change this from class to function
-class Semantic():
+def semantic(x, center:bool=True, max_val:float=1.):
   """
   Semantic adversarial examples.
   
@@ -25,12 +24,6 @@ class Semantic():
            Any additional arguments
   """
 
-  def __init__(self, net, center:bool=True, max_val:float=1., **kwargs):
-    super().__init__(net, **kwargs)
-    self.center = center
-    self.max_val = max_val
-
-  def generate(self, x, **kwargs):
-    if self.center:
-      return x*-1
-    return self.max_val - x
+  if center:
+    return x*-1
+  return max_val - x
