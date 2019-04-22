@@ -70,7 +70,7 @@ def clip_eta(eta, ord, eps):
         raise ValueError('ord must be np.inf, 1, or 2.')
 
     reduce_ind = list(range(1, len(eta.shape)))
-    azdiv = 1e-12
+    azdiv = torch.tensor(1e-12)
 
     if ord == np.inf:
         eta = torch.clamp(eta, -eps, eps)
@@ -78,16 +78,16 @@ def clip_eta(eta, ord, eps):
         if ord == 1:
             raise NotImplementedError("The expression below is not the correct way"
                                       " to project onto the L1 norm ball.")
-            norm = torch.maximum(azdiv, torch.mean(torch.abs(eta), reduce_ind))
+            norm = torch.max(azdiv, torch.mean(torch.abs(eta), reduce_ind))
 
         elif ord == 2:
             # azdiv(avoid_zero_div) must go inside sqrt to avoid a divide by zero
             # in the gradient through this operation.
-            norm = torch.sqrt(torch.maximum(azdiv, torch.mean(eta**2, reduce_ind)))
+            norm = torch.sqrt(torch.max(azdiv, torch.mean(eta**2, reduce_ind)))
         
         # We must clip to within the norm ball, not 'normalize' onto the
         # surface of the ball
-        factor = torch.minimum(1., div(eps, norm))
+        factor = min(1., eps / norm)
         eta *= factor
 
     return eta

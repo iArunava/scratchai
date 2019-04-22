@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 NOISE = 'noise'
 SEMANTIC = 'semantic'
+FGM = 'fgm'
+PGD = 'pgd'
 
 class TestAttacks(unittest.TestCase):
   
@@ -58,10 +60,47 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Attack worked successfully!')
       del net, atk
   
+  def test_pgd(self):
+    """
+    tests to ensure that fast_gradient_method attack works
+    """
+    with open('/tmp/test.png', 'wb') as f:
+      f.write(requests.get(TestAttacks.url).content)
+    img = Image.open('/tmp/test.png')
+
+    # TODO replace this with a scratchai model
+    # TODO write tests for targeted attack with fgm
+    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    for model in all_models:
+      to_pred = int(torch.randint(1000, ()))
+      print ('[INFO] Testing PGD attack on {}'.format(model))
+      net = getattr(models, model)(pretrained=True)
+      self.check_atk(net, img, scratchai.attacks.pgd, t=PGD, y=torch.tensor([to_pred]))
+      print ('[INFO] Attack worked successfully!')
+      del net
+
+  def test_fgm(self):
+    """
+    tests to ensure that fast_gradient_method attack works
+    """
+    with open('/tmp/test.png', 'wb') as f:
+      f.write(requests.get(TestAttacks.url).content)
+    img = Image.open('/tmp/test.png')
+
+    # TODO replace this with a scratchai model
+    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    for model in all_models:
+      print ('[INFO] Testing FGM attack on {}'.format(model))
+      net = getattr(models, model)(pretrained=True)
+      self.check_atk(net, img, scratchai.attacks.fgm, t=FGM)
+      print ('[INFO] Attack worked successfully!')
+      del net
+
+
   def scale(self, img):
     return img * (255. / img.max())
 
-  def check_atk(self, net, img, atk, t):
+  def check_atk(self, net, img, atk, t, y=None):
     # Get true pred
     net.eval()
     true_pred = int(torch.argmax(net(TestAttacks.trf(img).unsqueeze(0)), dim=1))
@@ -77,6 +116,13 @@ class TestAttacks(unittest.TestCase):
       #plt.imshow(adv_x.transpose(0, 1).transpose(1, 2)); plt.show()
       adv_x = TestAttacks.trf(transforms.ToPILImage()(adv_x))
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
+    elif t == FGM or t == PGD:
+      img = TestAttacks.trf(img)
+      adv_x = atk(net, img.unsqueeze(0), y=y)
+      adv_pred = int(torch.argmax(net(adv_x), dim=1))
       
     print (true_pred, adv_pred)
     self.assertFalse(true_pred == adv_pred, 'The attack doesn\'t work!')
+    if y is not None:
+      self.assertTrue(adv_pred == int(y), 'The attack doesn\'t work!')
+      print ('TARGETED ATTACK WORKS!')
