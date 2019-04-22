@@ -23,10 +23,6 @@ class TestAttacks(unittest.TestCase):
                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
               ])
   
-  def __init__(self, num_run):
-    super().__init__()
-    self.num_run = num_run
-
   def test_noise_atk(self):
     """
     Tests to check that the Noise Attack works
