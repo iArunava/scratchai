@@ -50,7 +50,7 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "test_nets.py" }}
 
-  test_nets:
+  test_attacks:
     docker:
       - image: circleci/python:3.6.1
 
@@ -60,7 +60,7 @@ jobs:
       - checkout
 
       - run:
-          name: test_nets
+          name: test_attacks
           command: |
             python3 -m venv venv
             . venv/bin/activate
@@ -70,7 +70,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test_nets.py" }}
+          key: v1-dependencies-{{ checksum "test_attacks.py" }}
 
 workflows:
   version: 2
