@@ -16,6 +16,6 @@ class TestOneCalls(unittest.TestCase):
     # Check that url works.
     pred = classify(TestOneCalls.url_1)
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
-    self.assertTrue(pred == lab_1, 'Doesn\'t Work!')
+    self.assertTrue(pred == TestOneCalls.lab_1, 'Doesn\'t Work!')
 
     # TODO Check that path works
