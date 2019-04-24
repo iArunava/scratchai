@@ -28,10 +28,15 @@ Table of Contents:
 | :--- | :-----: | :--: |
 | DCGAN | https://arxiv.org/abs/1511.06434 | NA |
 | CycleGAN | https://arxiv.org/abs/1703.10593 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/gans/cycle_gan.py) [Not checked] |
-    
-4. Attacks
 
+4. Style Transfer
 | Model | Paper | Implementation |
+| :--- | :-----: | :--: |
+| Image Transformation Network Justin et al. | https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/86d5011394592bde57eda40ba4682c8f26863b13/scratchai/nets/style_transfer/image_transformation_net.py#L75)
+
+5. Attacks
+
+| Attacks | Paper | Implementation |
 | :--- | :-----: | :--: |
 | Noise | https://arxiv.org/abs/1802.00420 (NS) | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/noise.py) |
 | Semantic | https://arxiv.org/abs/1703.06857 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/semantic.py)
