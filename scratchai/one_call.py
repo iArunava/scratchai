@@ -10,6 +10,8 @@ from scratchai.nets.clf.resnet import resnet18
 from scratchai.nets.style_transfer.image_transformation_net import ITN_ST
 from scratchai.datasets.labels import *
 from scratchai.imgutils import *
+from scratchai.utils import *
+from scratchai.pretrained import urls
 
 
 __all__ = ['classify']
@@ -75,7 +77,7 @@ def stransfer(path:str, style:str=None, save:bool=False):
   """
   avbl_styles = ['elephant_skin']
   if style is None: style = np.random.choice(avbl_styles, 1)[0]
-  sdict = torch.load('/home/iarunava/Downloads/'+style + '(1).pth')
+  sdict = load_from_pth(getattr(urls, style + '_url'), style)
 
   trf = transforms.Compose([transforms.ToTensor(),
                             transforms.Lambda(lambda x : x.mul(255))])

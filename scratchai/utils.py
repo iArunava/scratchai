@@ -28,4 +28,4 @@ def load_from_pth(url, fname='random', key='state_dict'):
   if not os.path.isfile(prefix + fname + '.pth'):
     call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
   ckpt = torch.load('{}{}.pth'.format(prefix, fname))
-  return ckpt[key]
+  return ckpt[key] if key in ckpt else ckpt
