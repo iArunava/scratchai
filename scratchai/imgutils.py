@@ -8,6 +8,7 @@ import os
 import requests
 from PIL import Image
 
+
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
   """
   This function is used to threshold the image to a certain color.
@@ -32,6 +33,7 @@ def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
      | (img[:, :, 2] < rgb[2])
   img[tidx] = tcol
   return img
+
 
 def mask_reg(img, pnts, reln, deg:int=1, tcol:tuple=(0, 0, 0), 
       locate:bool=False, invert:bool=False) -> np.ndarray:
@@ -99,6 +101,7 @@ def mask_reg(img, pnts, reln, deg:int=1, tcol:tuple=(0, 0, 0),
   
   return img if not locate else mark_pnt_on_img(img, pnts)
 
+
 def mark_pnt_on_img(img, pnts:list, col:tuple=(0, 255, 0)) -> np.ndarray:
   """
   Mark points on Image.
@@ -121,6 +124,7 @@ def mark_pnt_on_img(img, pnts:list, col:tuple=(0, 255, 0)) -> np.ndarray:
   for pnt in pnts:
     cv2.circle(img, pnt, 10, col, -1)
   return img
+
 
 def load_img(path:str, rtype=PIL.Image.Image):
   """
