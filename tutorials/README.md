@@ -24,3 +24,10 @@
 >>> classify('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg')
 'rugby ball'
 ```
+
+2. Perform a style Transfer
+```
+>>> from scratchai.one_call import *
+>>> stransfer('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg', save=1)
+```
+Notes: Available Styles = ['elephant_skin']
