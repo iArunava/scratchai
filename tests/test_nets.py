@@ -7,6 +7,7 @@ import os
 import unittest
 import torch
 import scratchai
+from scratchai import *
 
 class TestUNet(unittest.TestCase):
   def test_paper(self):
@@ -132,5 +133,14 @@ class TestResnet(unittest.TestCase):
       del net, out
 
 
-if __name__ == '__name__':
-  unittest.main()
+class TestITN(unittest.TestCase):
+  
+  n1 = torch.randn(2, 3, 256, 256)
+  def test_itnst_(self):
+    out = nets.ITN_ST_()(TestITN.n1)
+    self.assertEqual(list(out.shape), [2, 3, 256, 256], "out shape not looking good")
+
+  def test_itnst(self):
+    out = nets.ITN_ST()(TestITN.n1)
+    self.assertEqual(list(out.shape), [2, 3, 256, 256], "out shape not looking good")
+
