@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -156,3 +157,50 @@ def load_img(path:str, rtype=PIL.Image.Image):
   if rtype is np.ndarray:
     return np.array(img)
   return img
+
+
+def t2i(img):
+  """
+  Converts torch.Tensor images to PIL images.
+
+  Arguments
+  ---------
+  img : torch.Tensor
+        The tensor image which to convert.
+
+  Returns
+  -------
+  img : PIL.Image.Image
+        The converted PIL Image
+  """
+  return Image.fromarray(img.squeeze().clone().detach().cpu().clamp(0, 255)
+                            .numpy().transpose(1, 2, 0).astype('uint8'))
+
+
+def imsave(img, fname='random.png'):
+  """
+  Helper function to save an image to disk.
+
+  Arguments
+  ---------
+  img : PIL.Image.Image, torch.Tensor
+        The image to save.
+  
+  fname : str
+          File Name. Defaults to random.png
+  """
+
+  if isinstance(img, torch.Tensor): img = t2i(img)
+  img.save(fname)
+
+
+def imshow(img):
+  """
+  Display image.
+
+  Arguments
+  ---------
+  img : torch.Tensor
+  """
+  if isinstance(img, torch.Tensor): img = t2i(img)
+  plt.imshow(img); plt.show()
