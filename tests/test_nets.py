@@ -135,11 +135,12 @@ class TestResnet(unittest.TestCase):
 
 class TestITN(unittest.TestCase):
   
-  def test_itn(self):
-    n1 = torch.randn(2, 3, 256, 256)
-    net = nets.ITN()
-    out = net(n1)
+  n1 = torch.randn(2, 3, 256, 256)
+  def test_itnst_(self):
+    out = nets.ITN_ST_()(TestITN.n1)
     self.assertEqual(list(out.shape), [2, 3, 256, 256], "out shape not looking good")
 
-if __name__ == '__name__':
-  unittest.main()
+  def test_itnst(self):
+    out = nets.ITN_ST()(TestITN.n1)
+    self.assertEqual(list(out.shape), [2, 3, 256, 256], "out shape not looking good")
+
