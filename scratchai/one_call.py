@@ -75,7 +75,7 @@ def stransfer(path:str, style:str=None, save:bool=False):
   normalizes it using imagenet specific normalization values and passes it to 
   a resnet output the predicted value.
   """
-  avbl_styles = ['elephant_skin']
+  avbl_styles = ['elephant_skin', 'snake_skin']
   if style is None: style = np.random.choice(avbl_styles, 1)[0]
   sdict = load_from_pth(getattr(urls, style + '_url'), style)
 
