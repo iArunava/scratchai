@@ -33,3 +33,8 @@ tests
    - test_utils.py    - ensures all utils functions are working as expected
    
    
+### Add new style for real time style transfer
+
+1. Add the style name say `xy` here https://github.com/iArunava/scratchai/blob/8fa93416e0c66e916d7df85cb1eba2c19dca6c1d/scratchai/one_call.py#L78
+
+2. Add url to download the file from with varialble name `xy_url` in `pretrained/urls.py`
