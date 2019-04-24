@@ -10,12 +10,11 @@ from torchvision.transforms import CenterCrop
 
 from scratchai.nets.clf.resnet import conv as _conv
 from scratchai.nets.seg.enet import uconv as _uconv
-from scratchai.nets.debug import Debug
 
-def conv(ic:int, oc:int, k:int=3, s:int=2, act:nn.Module=nn.ReLU) -> list:
-  layers = [nn.ReflectionPad2d(k//2)]
-  layers += [nn.Conv2d(ic, oc, kernel_size=k, stride=s, bias=False),
-             nn.InstanceNorm2d(oc, affine=True)]
+def conv(ic:int, oc:int, k:int=3, s:int=2, act:bool=True, 
+         norm:bool=True) -> list:
+  layers = [nn.ReflectionPad2d(k//2), nn.Conv2d(ic, oc, k, s, bias=True)]
+  if norm: layers += [nn.InstanceNorm2d(oc, affine=True)]
   if act: layers += [nn.ReLU(inplace=True)]
   return layers
 
@@ -45,9 +44,9 @@ class uconv(nn.Module):
        The upsampling factor
   """
   def __init__(self, ic:int, oc:int, k:int=3, s:int=1, act:nn.Module=nn.ReLU, 
-               up:int=2):
+               norm:nn.Module=nn.InstanceNorm2d, up:int=2):
     super().__init__()
-    self.conv = nn.Sequential(*conv(ic, oc, k, s, act))
+    self.conv = nn.Sequential(*conv(ic, oc, k, s, act, norm))
     self.up = up
   def forward(self, x): return self.conv(F.interpolate(x, mode='nearest',
                                          scale_factor=self.up))
@@ -91,11 +90,10 @@ class ITN_ST(nn.Module):
     super().__init__()
     layers = [*conv(3, 32, 9, 1), *conv(32, 64), *conv(64, 128)]
     layers += [resblock(128, 128, norm=nn.InstanceNorm2d) for _ in range(5)]
-    layers += [uconv(128, 64), uconv(64, 32), uconv(32, 3, 9, up=1)]
+    layers += [uconv(128, 64), uconv(64, 32), uconv(32, 3, 9, up=1, norm=None, act=None)]
     self.net = nn.Sequential(*layers)
 
-  def forward(self, x): return self.net(x)
-    
+  def forward(self, x): return self.net(x)    
 
 # Below is the original implementation of the Transformation Network
 # as proposed by Justin et al. 2016. Research after the release of that paper
