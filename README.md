@@ -33,7 +33,7 @@ Table of Contents:
 
 | Model | Paper | Implementation |
 | :--- | :-----: | :--: |
-| Image Transformation Network Justin et al. | https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/86d5011394592bde57eda40ba4682c8f26863b13/scratchai/nets/style_transfer/image_transformation_net.py#L75)
+| Image Transformation Network Justin et al. | https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16.pdf https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16Supplementary.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/86d5011394592bde57eda40ba4682c8f26863b13/scratchai/nets/style_transfer/image_transformation_net.py#L75)
 
 5. Attacks
 
