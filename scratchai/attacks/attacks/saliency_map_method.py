@@ -6,9 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import grad
-from scratchai.attacks.attacks.attack import Attack
 
-class SaliencyMapMethod(Attack):
+def smm(net, x, theta=1., y=None, gamma=1., clip_min=0., clip_max=1.):
   """
   The Jacobian-based Saliency Map Method (Papernot et al. 2016)
   Paper Link: https://arxiv.org/pdf/1511.07528.pdf
@@ -17,83 +16,77 @@ class SaliencyMapMethod(Attack):
   ---------
   model : nn.Module
       The model on which the attack needs to be performed.
-  dtype : str
-      The data type of the model.
+  x : torch.Tensor
+      The input ot the model.
+  y : torch.tensor, optional
+       Target tensor if the attack is targetted
+  theta : float, optional
+      Perturbation introduced to modified components
+      (can be positive or negative). Defaults to 1.
+  gamma : float, optional
+      Maximum percentage of perturbed features. Defaults to 1.
+  clip_min : float, optional
+       Minimum component value for clipping
+  clip_max : float, optional
+       Maximum component value for clipping
 
   Returns
   -------
-  adv : torch.tensor
-     The adversarial Example of the input.
+  adv_x : torch.tensor
+          The adversarial Example of the input.
   """
 
-  def __init__(self, model, dtype='float32', **kwargs):
-    super().__init__(model, dtype, **kwargs)
-
-  def generate(self, x, **kwargs):
-    """
-    Generate symbolic graph for adversarial examples and return.
-
-    Arguments
-    ---------
-    x : torch.tensor
-      The input to the model
-    kwargs : dict
-        Additonal arguments
-    """
-
-    # Parse and save attack specific parameters
-    assert self.parse_params(**kwargs)
-
-    if self.y_target is None:
-      # TODO torch.autograd.grad doesn't support batches
-      # So, revise the implementation when it does in future releases
-      def random_targets(gt):
-        result = gt.clone()
-        classes = gt.shape[1]
-        # TODO Remove the blank () after #18315 in pytorch
-        return torch.roll(result, int(torch.randint(nb_classes, ())))
-      
-      labels, nb_classes = self.get_or_guess_labels(x, kwargs)
-      self.y_target = random_targets(labels)
-      self.y_target = self.y_target.view([1, nb_classes])
-      #print (torch.argmax(self.y_target, dim=1))
+  if y is None:
+    # TODO torch.autograd.grad doesn't support batches
+    # So, revise the implementation when it does in future releases
+    def random_targets(gt):
+      result = gt.clone()
+      classes = gt.shape[1]
+      # TODO Remove the blank () after #18315 in pytorch is resolved.
+      return torch.roll(result, int(torch.randint(nb_classes, ())))
     
-    x.requires_grad = True
-    x_adv = jsma_symbolic(x, self.y_target, self.model, self.theta, 
-                          self.gamma, self.clip_min, self.clip_max)
-    return x_adv
-
-  def parse_params(self, theta=1., gamma=1., clip_min=0., clip_max=1.,
-          y_target=None):
-    """
-    Takes in a dictionary of parameters and applies attack-specific checks
-    before saving them as attributes.
-
-    Attack-specific parameters:
-    ---------------------------
-    theta : float, optional
-        Perturbation introduced to modified components
-        (can be positive or negative). Defaults to 1.
-    gamma : float, optional
-        Maximum percentage of perturbed features. Defaults to 1.
-    clip_min : float, optional
-         Minimum component value for clipping
-    clip_max : float, optional
-         Maximum component value for clipping
-    y_target : torch.tensor, optional
-         Target tensor if the attack is targetted
-    """
-
-    self.theta = theta
-    self.gamma = gamma
-    self.clip_min = clip_min
-    self.clip_max = clip_max
-    self.y_target = y_target
-    
-    return True
+    labels, nb_classes = get_or_guess_labels(net, x, y)
+    y = random_targets(labels)
+    y = y.view([1, nb_classes])
+    #print (torch.argmax(y, dim=1))
+  
+  x.requires_grad = True
+  x_adv = jsma_symbolic(x, y, net, theta, gamma, clip_min, clip_max)
+  return x_adv
 
 
-def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
+def get_or_guess_labels(net, x, y=None):
+  """
+  Get the label to use in generating an adversarial example for x.
+  The kwargs are fed directly from the kwargs of the attack.
+  If 'y' is in kwargs, then assume its an untargetted attack and use
+  that as the label.
+  If 'y_target' is in kwargs and is not None, then assume it's a 
+  targetted attack and use that as the label.
+  Otherwise, use the model's prediction as the label and perform an 
+  untargetted attack.
+
+  Returns
+  -------
+  labels : torch.tensor
+           Return a 1-hot vector with 1 in the position of the class predicted.
+  nc : int
+       # Number of classes
+  """
+
+  if y is not None:
+    labels = kwargs['y']
+  else:
+    logits = net(x if len(x.shape) == 4 else x.unsqueeze(0))
+    # TODO Remove cls, not needed, just there for debugging purpose
+    pred_max, _ = torch.max(logits, dim=1)
+    #print (cls)
+    labels = (logits == pred_max).float()
+    labels.requires_grad = False
+  
+  return labels, labels.size(1)
+
+def jsma_symbolic(x, y, net, theta, gamma, clip_min, clip_max):
   """
   PyTorch Implementation of the JSMA (see https://arxiv.org/abs/1511.07520
   for the details about the algorithm design choices).
@@ -102,7 +95,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
   ---------
   x : torch.tensor
     The input to the model
-  y_target : torch.tensor
+  y : torch.tensor
        The target tensor
   model : nn.Module
       The pytorch model
@@ -122,7 +115,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
       The adversarial example.
   """
 
-  classes = int(y_target.shape[1])
+  classes = int(y.shape[1])
   features = int(np.product(x.shape[1:]))
   #print (features)
 
@@ -153,6 +146,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
     grads = x.grad
     print (grads.shape)
     '''
+
     # Create the Jacobian Graph
     list_deriv = []
     for idx in range(classes):
@@ -171,7 +165,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
     # To help with the computation later, reshape the target_class
     # and other_class to [nb_classes, -1, 1].
     # The last dimension is added to allow broadcasting later.
-    tclass = y_target.view(classes, -1, 1)
+    tclass = y.view(classes, -1, 1)
     oclass = (tclass == 0).float()
     print (tclass.shape, oclass.shape)
     
@@ -195,6 +189,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
     other_tmp = gother
     other_tmp += increase_coef * torch.max(torch.abs(gother), dim=1)
     other_sum = other_tmp.view(-1, features, 1) * other_tmp.view(-1, 1, features)
+    print ('BOOM')
     return 0
 
     # Create a mask to only keep features that match conditions
@@ -216,7 +211,7 @@ def jsma_symbolic(x, y_target, net, theta, gamma, clip_min, clip_max):
 
     # Check if more modification is needed
     # TODO preds is 1 hot vector in tf implementation
-    mod_not_done = torch.sum(y_target * preds, dim=1) == 0
+    mod_not_done = torch.sum(y * preds, dim=1) == 0
     cond = mod_not_done & (torch.sum(search_domain, dim=1) >= 2)
 
     # Update the search domain

@@ -24,6 +24,12 @@ class TestAttacks(unittest.TestCase):
                transforms.Normalize([0.485, 0.456, 0.406], 
                                     [0.229, 0.224, 0.225])
               ])
+  trf2 = transforms.Compose([transforms.Resize(130),
+               transforms.CenterCrop(128),
+               transforms.ToTensor(),
+               transforms.Normalize([0.485, 0.456, 0.406], 
+                                    [0.229, 0.224, 0.225])
+              ])
   img = None
 
   def test_noise_atk(self):
@@ -45,7 +51,7 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Attack worked successfully!')
       del net
   
-  def test_saliency_map_method_atk(self):
+  def test_smm_atk(self):
     """
     Tests to check that saliency map method is working as expected.
     """
@@ -55,8 +61,7 @@ class TestAttacks(unittest.TestCase):
     all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 
                   'resnet101', 'resnet152']
     net = getattr(models, 'alexnet')(pretrained=True)
-    atk = scratchai.attacks.SaliencyMapMethod(net)
-    self.check_atk(net, img, atk, t=SAL)
+    self.check_atk(net, img, scratchai.attacks.smm, t=SAL)
 
     '''
     for model in all_models:
@@ -162,7 +167,13 @@ class TestAttacks(unittest.TestCase):
       img = TestAttacks.trf(img)
       adv_x = atk(net, img.unsqueeze(0), y=y)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
-      
+    elif t == SAL:
+      # TODO Passing noise, just for testing. Remove it.
+      img = torch.randn(3, 64, 64)
+      #img = TestAttacks.trf2(img)
+      adv_x = atk(net, img.unsqueeze(0), y=y)
+      adv_pred = int(torch.argmax(net(adv_x), dim=1))
+
     print (true_pred, adv_pred)
     self.assertFalse(true_pred == adv_pred, 'The attack doesn\'t work!')
     if y is not None:
