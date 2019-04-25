@@ -45,13 +45,14 @@ def miou(pred, gt, nc, c2n=None):
   if isinstance(gt, torch.Tensor):
     gt = gt.detach().clone().cpu().numpy()
   
-  iou = {}
-  miou = 0
-  for cls in range(nc):
-    inter = np.logical_and(pred == cls,  gt == cls).sum()
-    union = np.logical_or(pred == cls, gt == cls).sum()
-    iou[cls] = inter / union if inter != 0 and union != 0 else 1.
-    miou += iou[cls]
+  with torch.no_grad():
+    iou = {}
+    miou = 0
+    for cls in range(nc):
+      inter = np.logical_and(pred == cls,  gt == cls).sum()
+      union = np.logical_or(pred == cls, gt == cls).sum()
+      iou[cls] = inter / union if inter != 0 and union != 0 else 1.
+      miou += iou[cls]
   
   # TODO print the iou in table format
   #print (tabulate([list(iou.keys()), list(iou.values())]))
