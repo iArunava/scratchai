@@ -149,5 +149,5 @@ class TestLenet(unittest.TestCase):
   
   def test_lenet(self):
     n1 = torch.randn(2, 3, 32, 32)
-    out = nets.lenet(11)(n1)
+    out = nets.Lenet(11)(n1)
     self.assertEqual(list(out.shape), [2, 11], "out shape not looking good")
