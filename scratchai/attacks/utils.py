@@ -55,39 +55,39 @@ def optimize_linear(grads, eps, ordr):
 
 
 def clip_eta(eta, ord, eps):
-    """
-    Helper fucntion to clip the perturbation to epsilon norm ball.
+  """
+  Helper fucntion to clip the perturbation to epsilon norm ball.
 
-    Args:
-        eta: A tensor with the current perturbation
-        ord: Order of the norm (mimics Numpy)
-             Possible values: np.inf, 1 or 2.
-        eps: Epsilon, bound of the perturbation.
-    """
+  Args:
+      eta: A tensor with the current perturbation
+      ord: Order of the norm (mimics Numpy)
+           Possible values: np.inf, 1 or 2.
+      eps: Epsilon, bound of the perturbation.
+  """
 
-    # Clipping perturbation eta to self.ord norm ball
-    if ord not in [np.inf, 1, 2]:
-        raise ValueError('ord must be np.inf, 1, or 2.')
+  # Clipping perturbation eta to self.ord norm ball
+  if ord not in [np.inf, 1, 2]:
+    raise ValueError('ord must be np.inf, 1, or 2.')
 
-    reduce_ind = list(range(1, len(eta.shape)))
-    azdiv = torch.tensor(1e-12)
+  reduce_ind = list(range(1, len(eta.shape)))
+  azdiv = torch.tensor(1e-12)
 
-    if ord == np.inf:
-        eta = torch.clamp(eta, -eps, eps)
-    else:
-        if ord == 1:
-            raise NotImplementedError("The expression below is not the correct way"
-                                      " to project onto the L1 norm ball.")
-            norm = torch.max(azdiv, torch.mean(torch.abs(eta), reduce_ind))
+  if ord == np.inf:
+    eta = torch.clamp(eta, -eps, eps)
+  else:
+    if ord == 1:
+      raise NotImplementedError("The expression below is not the correct way"
+                                    " to project onto the L1 norm ball.")
+      norm = torch.max(azdiv, torch.mean(torch.abs(eta), reduce_ind))
 
-        elif ord == 2:
-            # azdiv(avoid_zero_div) must go inside sqrt to avoid a divide by zero
-            # in the gradient through this operation.
-            norm = torch.sqrt(torch.max(azdiv, torch.mean(eta**2, reduce_ind)))
-        
-        # We must clip to within the norm ball, not 'normalize' onto the
-        # surface of the ball
-        factor = min(1., eps / norm)
-        eta *= factor
+    elif ord == 2:
+    # azdiv(avoid_zero_div) must go inside sqrt to avoid a divide by zero
+    # in the gradient through this operation.
+    norm = torch.sqrt(torch.max(azdiv, torch.mean(eta**2, reduce_ind)))
+    
+    # We must clip to within the norm ball, not 'normalize' onto the
+    # surface of the ball
+    factor = min(1., eps / norm)
+    eta *= factor
 
-    return eta
+  return eta
