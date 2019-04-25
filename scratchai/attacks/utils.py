@@ -81,10 +81,10 @@ def clip_eta(eta, ord, eps):
       norm = torch.max(azdiv, torch.mean(torch.abs(eta), reduce_ind))
 
     elif ord == 2:
-    # azdiv(avoid_zero_div) must go inside sqrt to avoid a divide by zero
-    # in the gradient through this operation.
-    norm = torch.sqrt(torch.max(azdiv, torch.mean(eta**2, reduce_ind)))
-    
+      # azdiv(avoid_zero_div) must go inside sqrt to avoid a divide by zero
+      # in the gradient through this operation.
+      norm = torch.sqrt(torch.max(azdiv, torch.mean(eta**2, reduce_ind)))
+
     # We must clip to within the norm ball, not 'normalize' onto the
     # surface of the ball
     factor = min(1., eps / norm)
