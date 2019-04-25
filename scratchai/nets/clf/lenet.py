@@ -11,7 +11,7 @@ from scratchai.nets.clf.resnet import conv
 def conv(ic:int, oc:int, k:int, s:int, p:int):
   layers = [nn.Conv2d(ic, oc, kernel_size=5), nn.MaxPool2d(2), 
             nn.ReLU(inplace=True)]
-  return *layers
+  return layers
 
 class Lenet(nn.Module):
   """
@@ -20,12 +20,16 @@ class Lenet(nn.Module):
 
   Arguments
   ---------
-  mfact : int
+  nc : int
+       # of classes.
+  ex : int
+       Expansion factor
   """
-  def __init__(self):
+  def __init__(self, nc:int=10, ex:int=1):
     super().__init__()
 
-    self.net = nn.Sequential(*conv(3, 6), *conv(6, 16), nn.Linear(16*5*5, 120),
-                             nn.Linear(120, 84), nn.Linear(84, 10))
+    layers = [*conv(3, 6*ex), *conv(6*ex, 16*ex), nn.Linear(16*5*5*ex, 120*ex), 
+              nn.Linear(120*ex, 84*ex), nn.Linear(84*ex, nc)]
+    self.net = nn.Sequential(*layers)
 
   def forward(self, x): return self.net(x)
