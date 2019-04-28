@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 
 from scratchai.nets.common import Flatten
+from scratchai.utils import load_from_pth
+from scratchai.pretrained import urls
 
 __all__ = ['Lenet', 'lenet_mnist']
 
@@ -48,5 +50,5 @@ def lenet_mnist(pretrained=True, **kwargs):
   kwargs['ic'] = 1
   kwargs['inhw'] = 28
   net = Lenet(**kwargs)
-  if pretrained: net.load_state_dict(load_from_pth(urls.lenet_mnist, 'lenet_mnist'))
+  if pretrained: net.load_state_dict(load_from_pth(urls.lenet_mnist_url, 'lenet_mnist'))
   return net

@@ -207,3 +207,28 @@ def imshow(img):
   """
   if isinstance(img, torch.Tensor): img = t2i(img)
   plt.imshow(img); plt.show()
+
+
+def gray(img):
+  """
+  Converts RGB Image to Grayscale.
+  
+  Arguments
+  ---------
+  img : str, PIL.Image.Image
+        The Image which is to be grayscaled.
+
+  Returns
+  -------
+  img : PIL.Image.Image
+        The grayscaled Image.
+
+  References
+  ----------
+  https://stackoverflow.com/a/12201744
+  """
+
+  if isinstance(img, str):
+   img = load_img(img)
+  img = np.array(img)
+  return Image.fromarray(np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]))
