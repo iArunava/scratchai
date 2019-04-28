@@ -5,5 +5,5 @@ from scratchai.nets.clf.resnet import resnet18, resnet34, resnet50, resnet101, r
 
 from scratchai.nets.clf import *
 from scratchai.nets.style_transfer import *
-from scratchai.nets.debug import Debug
+from scratchai.nets.common import *
 

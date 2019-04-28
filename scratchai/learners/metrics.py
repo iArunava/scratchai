@@ -58,3 +58,28 @@ def miou(pred, gt, nc, c2n=None):
   #print (tabulate([list(iou.keys()), list(iou.values())]))
 
   return miou/nc
+
+
+def accuracy(pred, gt, k=1):
+  """
+  Function to help in measuring the accuracy of the predicted labels
+  against the true labels.
+
+  Arguments
+  ---------
+  pred : torch.Tensor, [N x C] or [... x C] where C is the dimension
+         along which the max is to be calculated.
+         The predicted labels
+  gt : torch.Tensor
+       The true labels
+  k : int
+      The number of top ks to show
+  """ 
+  # TODO Extend this to k > 1
+  
+  with torch.no_grad():
+    maxk = pred.topk(k, dim=1)
+    count = 0
+    for ii, (vals, idxs) in enumerate(zip(maxk[0], maxk[1])):
+      count += 1 if gt[ii] in idxs else 0
+    return count / pred.size(0)

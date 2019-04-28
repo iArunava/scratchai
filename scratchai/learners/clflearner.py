@@ -20,11 +20,15 @@ def clf_train(net, **kwargs):
   wd = kwargs['wd']
   mom = kwargs['mom']
   bs = kwargs['bs']
+  seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
   best_acc = 0.
+  
+  torch.manual_seed(seed)
+  print ('[INFO] Setting torch seed to {}'.format(seed))
 
   trf = transforms.Compose([transforms.ToTensor(), 
                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                 std=[0.229, 0.224, 0.225])
+                                                 std=[0.229, 0.224, 0.225])])
   
   # TODO Take the loaders as parameters to the function
   train = datasets.MNIST('./', train=True, download=True, transforms=trf)
@@ -58,9 +62,9 @@ def clf_train(net, **kwargs):
         acc = accuracy(out, labl)
       
     print ('Epoch: {}/{} .. Train Loss: {} .. Val Loss: {} .. Acc: {}'
-           .format(e, epochs, tloss.item(), vloss.item(), acc)
+           .format(e, epochs, tloss.item(), vloss.item(), acc))
     torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
-               'ckpt-{}-{}.pth'.format(e, acc)
+               'ckpt-{}-{}.pth'.format(e, acc))
 
 
 def adjust_lr(opti, epoch, lr):

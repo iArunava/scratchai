@@ -6,6 +6,8 @@ import sys
 import os
 import unittest
 import torch
+import torch.nn as nn
+
 import scratchai
 from scratchai import *
 
@@ -151,3 +153,16 @@ class TestLenet(unittest.TestCase):
     n1 = torch.randn(2, 3, 32, 32)
     out = nets.Lenet(11)(n1)
     self.assertEqual(list(out.shape), [2, 11], "out shape not looking good")
+
+
+class TestCommon(nn.Module):
+  
+  def test_flatten(self):
+    n1 = torch.randn(13, 3, 4, 2)
+    out = nets.Flatten()(n1)
+    self.assertTrue(out.shape, [13, 3*4*2], 'out shape not okay')
+
+  def test_debug(self):
+    is_imp = getattr(nets, 'debug')
+    if not callable(is_imp):
+      raise NotImplementedError
