@@ -9,6 +9,9 @@ class TestOneCalls(unittest.TestCase):
   url_1 = 'https://cdn.instructables.com/FVI/FJPH/FWYHRVGC/FVIFJPHFWYHRVGC.LARGE.jpg'
   lab_1 = 'rain barrel'
 
+  url_2 = 'https://ak4.picdn.net/shutterstock/videos/23708584/thumb/1.jpg'
+  lab_2 = 'four'
+
   def test_classify(self):
     """
     This function ensures the classify function is working properly.
@@ -18,4 +21,9 @@ class TestOneCalls(unittest.TestCase):
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
     self.assertTrue(pred == TestOneCalls.lab_1, 'Doesn\'t Work!')
 
-    # TODO Check that path works
+    # TODO Check that path in local works
+
+    # Check that mnist works
+    pred = classify(TestOneCalls.url_2, nstr='lenet_mnist', trf='rz28_tt')
+    self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
+    self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
