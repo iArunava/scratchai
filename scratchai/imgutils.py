@@ -7,6 +7,7 @@ import PIL
 import os
 import requests
 from PIL import Image
+from torchvision import transforms
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -232,3 +233,49 @@ def gray(img):
    img = load_img(img)
   img = np.array(img)
   return Image.fromarray(np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]))
+
+
+def get_trf(trfs:str):
+  """
+  A function to quickly get required transforms.
+
+  Arguments
+  ---------
+  trfs : str
+         An str that represents what transforms are needed. See Notes
+
+  Returns
+  -------
+  trf : torch.transforms
+        The transforms as a transforms object from torchvision.
+
+  Notes
+  -----
+  >>> get_trf('rz256_cc224_tt_normimgnet')
+  >>> transforms.Compose([transforms.Resize(256),
+                          transforms.CenterCrop(224),
+                          transforms.ToTensor(),
+                          transform.Normalize([0.485, 0.456, 0.406], 
+                                              [0.229, 0.224, 0.225])])
+  """
+  # TODO Write tests
+  # TODO Add more options
+  trf_list = []
+  for trf in trfs.split('_'):
+    if trf.startswith('rz'):
+      val = (int(trf[2:]), int(trf[2:]))
+      trf_list.append(transforms.Resize(val))
+    elif trf.startswith('cc'):
+      val = (int(trf[2:]), int(trf[2:]))
+      trf_list.append(transforms.CenterCrop(val))
+    elif trf == 'tt':
+      trf_list.append(transforms.ToTensor())
+    elif trf == 'normimgnet':
+      trf_list.append(transforms.Normalize([0.485, 0.456, 0.406],
+                                           [0.229, 0.224, 0.225]))
+    elif trf == 'fm255':
+      trf_list.append(transforms.Lambda(lambda x : x.mul(255)))
+    else:
+      raise NotImplementedError
+
+  return transforms.Compose(trf_list)

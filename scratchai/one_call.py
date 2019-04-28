@@ -40,7 +40,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   a resnet output the predicted value.
   """
 
-  trf = utils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
+  trf = imgutils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
 
   # Special Case: if net == 'lenet_mnist' then image needs to have one channel
   if nstr == 'lenet_mnist': img = trf(imgutils.gray(path)).unsqueeze(0)
