@@ -176,9 +176,15 @@ def t2i(img):
   -------
   img : PIL.Image.Image
         The converted PIL Image
+
+  Notes
+  -----
+  Expects a [1 x 3 x H x W] torch.Tensor or [3 x H x W] torch.Tensor
+  Converts it to a PIL.Image.Image of [H x W x 3]
   """
   return Image.fromarray(img.squeeze().clone().detach().cpu().clamp(0, 255)
-                            .numpy().transpose(1, 2, 0).astype('uint8'))
+                            .transpose(-3, -2).transpose(-2, -1).numpy()
+                            .astype('uint8'))
 
 
 def imsave(img, fname='random.png'):
