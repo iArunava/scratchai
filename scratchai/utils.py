@@ -29,3 +29,22 @@ def load_from_pth(url, fname='random', key='state_dict'):
     call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
   ckpt = torch.load('{}{}.pth'.format(prefix, fname), map_location='cpu')
   return ckpt[key] if key in ckpt else ckpt
+
+
+
+def count_modules(net:nn.Module):
+  """
+  TODO
+  """
+  allm = []
+  mdict = {}
+  for m in net.modules():
+    name = m.__class__.__name__
+    if name in allm:
+      mdict[name] += 1
+    else:
+      allm.append(name)
+      mdict[name] = 1
+
+  return mdict
+
