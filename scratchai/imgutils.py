@@ -178,8 +178,7 @@ def t2i(img):
         The converted PIL Image
   """
   return Image.fromarray(img.squeeze().clone().detach().cpu().clamp(0, 255)
-                            .numpy().transpose(1, 2, 0).astype('uint8'))
-
+                            .numpy().transpose(1, 2, 0).astype('uint8')) 
 
 def imsave(img, fname='random.png'):
   """

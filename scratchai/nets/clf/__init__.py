@@ -1,1 +1,1 @@
-from scratchai.nets.clf.lenet import Lenet
+from scratchai.nets.clf.lenet import *
