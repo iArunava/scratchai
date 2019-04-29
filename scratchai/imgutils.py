@@ -268,11 +268,15 @@ def get_trf(trfs:str):
     elif trf.startswith('cc'):
       val = (int(trf[2:]), int(trf[2:]))
       trf_list.append(transforms.CenterCrop(val))
+    elif trf.startswith('rr'):
+      trf_list.append(transforms.RandomRotation(int(trf[2:])))
     elif trf == 'tt':
       trf_list.append(transforms.ToTensor())
     elif trf == 'normimgnet':
       trf_list.append(transforms.Normalize([0.485, 0.456, 0.406],
                                            [0.229, 0.224, 0.225]))
+    elif trf == 'normmnist':
+      trf_list.append(transforms.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
       trf_list.append(transforms.Lambda(lambda x : x.mul(255)))
     else:

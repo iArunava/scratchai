@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -11,6 +13,26 @@ from scratchai.learners.metrics import accuracy
 # This will be later integrated completely within the library.
 # Lack of computational power to check things are working or not.
 
+def test_net(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
+  """
+  Test the network.
+  """
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  vcorr = 0
+  vloss = 0
+  net.to(device)
+  net.eval()
+  crit = crit()
+  with torch.no_grad():
+    for ii, (data, labl) in enumerate(tqdm(vloader)):
+      data, labl = data.to(device), labl.to(device)
+      out = net(data)
+      vloss += crit(out, labl).item()
+      vcorr += (out.argmax(dim=1) == labl).float().sum()
+  print ('\nAccuracy: {:.2f}%'.format(vcorr / (len(vloader)*vloader.batch_size)
+                                                           * 100))
+
+
 def clf_train(net, **kwargs):
   """
   This function is used to train the classification networks.
@@ -18,7 +40,6 @@ def clf_train(net, **kwargs):
   epochs = kwargs['epochs']
   lr = kwargs['lr']
   wd = kwargs['wd']
-  mom = kwargs['mom']
   bs = kwargs['bs']
   best_acc = 0.
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
@@ -28,10 +49,13 @@ def clf_train(net, **kwargs):
   print ('[INFO] Setting torch seed to {}'.format(seed))
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-  trf = transforms.Compose([transforms.ToTensor(), 
+  
+  if kwargs['trf'] is None:
+    trf = transforms.Compose([transforms.ToTensor(), 
                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                  std=[0.229, 0.224, 0.225])])
+  else:
+    trf = kwargs['trf']
   
   # TODO Take the loaders as parameters to the function
   train = datasets.MNIST('./', train=True, download=True, transforms=trf)
@@ -86,7 +110,6 @@ def clf_train(net, **kwargs):
                'ckpt-{}-{}.pth'.format(e, vacc))
 
 
-
 def train_mnist(net, **kwargs):
   """
   Train on MNIST with net.
@@ -103,7 +126,7 @@ def train_mnist(net, **kwargs):
   trf = transforms.Compose([transforms.RandomRotation(20),
                             transforms.ToTensor(),
                             transforms.Normalize((0.1307,), (0.3081,))])
-  train_clf(net, epochs=5, lr=3e-4, wd=1e-4, bs=16, seed=123, trf=trf)
+  clf_train(net, epochs=5, lr=3e-4, wd=1e-4, bs=16, seed=123, trf=trf)
 
 
 def adjust_lr(opti, epoch, lr):
