@@ -20,11 +20,14 @@ def clf_train(net, **kwargs):
   wd = kwargs['wd']
   mom = kwargs['mom']
   bs = kwargs['bs']
-  seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
   best_acc = 0.
+  seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
   
   torch.manual_seed(seed)
+  np.random.seed(seed)
   print ('[INFO] Setting torch seed to {}'.format(seed))
+
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
   trf = transforms.Compose([transforms.ToTensor(), 
                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -39,32 +42,68 @@ def clf_train(net, **kwargs):
   # TODO Take criterion as an option
   # TODO Take optimizer as an option
   crit = nn.CrossEntropyLoss()
-  opti = optim.SGD(net.parameters(), lr=lr, weight_decay=wd, momentum=mom)
+  opti = optim.Adam(net.parameters(), lr=lr, weight_decay=wd)
 
   for e in range(1, epochs+1):
     net.train()
-    adjust_lr(opti, e)
+    tcorr = 0
+    tloss = 0
+    #adjust_lr(opti, e)
     for ii, (data, labl) in enumerate(tqdm(tloader)):
       data, labl = data.to(device), labl.to(device)
       out = net(data)
-      tloss = crit(out, labl)
+      loss = crit(out, labl)
       opti.zero_grad()
-      tloss.backward()
+      loss.backward()
       opti.step()
-      acc = accuracy(out, labl)
-      best_acc = acc if acc > best_acc else best_acc
-
-    for ii, (data, labl) in enumerate(tqdm(vloader)):
       with torch.no_grad():
+        tloss += loss.item()
+        tcorr += (out.argmax(dim=1) == labl).float().sum()
+
+    vcorr = 0
+    vloss = 0
+    net.eval()
+    with torch.no_grad():
+      for ii, (data, labl) in enumerate(tqdm(vloader)):
         data, labl = data.to(device), labl.to(device)
         out = net(data)
-        vloss = crit(out, labl)
-        acc = accuracy(out, labl)
-      
-    print ('Epoch: {}/{} .. Train Loss: {} .. Val Loss: {} .. Acc: {}'
-           .format(e, epochs, tloss.item(), vloss.item(), acc))
+        vloss += crit(out, labl).item()
+        vcorr += (out.argmax(dim=1) == labl).float().sum()
+    
+    
+    tloss /= len(tloader)
+    vloss /= len(tloader)
+    
+    tacc = tcorr / (len(tloader)*bs)
+    vacc = vcorr / (len(vloader)*bs)
+    best_acc = vacc if vacc > best_acc else best_acc
+    
+    # TODO The tloss and vloss needs a recheck.
+    print ('Epoch: {}/{} - Train Loss: {:.3f} - Val Loss: {:.3f} - '
+           'Training Acc: {:.3f} - Val Acc: {:.3f}'
+           .format(e, epochs, tloss, vloss, tacc, vacc))
     torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
-               'ckpt-{}-{}.pth'.format(e, acc))
+               'ckpt-{}-{}.pth'.format(e, vacc))
+
+
+
+def train_mnist(net, **kwargs):
+  """
+  Train on MNIST with net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+
+  Returns
+  -------
+
+  """
+  trf = transforms.Compose([transforms.RandomRotation(20),
+                            transforms.ToTensor(),
+                            transforms.Normalize((0.1307,), (0.3081,))])
+  train_clf(net, epochs=5, lr=3e-4, wd=1e-4, bs=16, seed=123, trf=trf)
 
 
 def adjust_lr(opti, epoch, lr):
