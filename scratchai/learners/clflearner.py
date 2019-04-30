@@ -95,9 +95,9 @@ def clf_fit(net, tloader, vloader, **kwargs):
     best_acc = vacc if vacc > best_acc else best_acc
     
     # TODO The tloss and vloss needs a recheck.
-    print ('Epoch: {}/{} - Train Loss: {:.3f} - Val Loss: {:.3f} - '
-           'Training Acc: {:.3f} - Val Acc: {:.3f}'
-           .format(e, epochs, tloss, vloss, tacc, vacc))
+    print ('Epoch: {}/{} - Train Loss: {:.3f} - Training Acc: {:.3f}' 
+           ' - Val Loss: {:.3f} - Val Acc: {:.3f}'
+           .format(e, epochs, tloss, tacc, vloss, vacc))
     torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
                'ckpt-{}-{}.pth'.format(e, vacc))
 
