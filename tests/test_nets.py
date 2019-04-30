@@ -6,6 +6,8 @@ import sys
 import os
 import unittest
 import torch
+import torch.nn as nn
+
 import scratchai
 from scratchai import *
 
@@ -132,6 +134,13 @@ class TestResnet(unittest.TestCase):
       self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
       del net, out
 
+  def test_resnet18_mnist(self):
+    noise = torch.randn(2, 1, 28, 28)
+    net = getattr(scratchai.nets, 'resnet18_mnist')()
+    out = net(noise)
+    self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
+    del net, out
+    
 
 class TestITN(unittest.TestCase):
   
@@ -144,3 +153,21 @@ class TestITN(unittest.TestCase):
     out = nets.ITN_ST()(TestITN.n1)
     self.assertEqual(list(out.shape), [2, 3, 256, 256], "out shape not looking good")
 
+
+class TestLenet(unittest.TestCase):
+  
+  def test_lenet(self):
+    n1 = torch.randn(2, 3, 32, 32)
+    out = nets.Lenet(11)(n1)
+    self.assertEqual(list(out.shape), [2, 11], "out shape not looking good")
+
+
+class TestCommon(nn.Module):
+  
+  def test_flatten(self):
+    n1 = torch.randn(13, 3, 4, 2)
+    out = nets.Flatten()(n1)
+    self.assertTrue(out.shape, [13, 3*4*2], 'out shape not okay')
+
+  def test_debug(self):
+    utils.check_if_implemented(nets, 'debug')

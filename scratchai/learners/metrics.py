@@ -39,21 +39,49 @@ def miou(pred, gt, nc, c2n=None):
   assert len(list(pred.shape)) in [3, 2]
   # Assert batch_size, height and width matches
   assert pred.shape == gt.shape
-  # Convert torch.tensor to np.ndarray
-  if isinstance(pred, torch.Tensor):
-    pred = pred.detach().clone().cpu().numpy()
-  if isinstance(gt, torch.Tensor):
-    gt = gt.detach().clone().cpu().numpy()
   
-  iou = {}
-  miou = 0
-  for cls in range(nc):
-    inter = np.logical_and(pred == cls,  gt == cls).sum()
-    union = np.logical_or(pred == cls, gt == cls).sum()
-    iou[cls] = inter / union if inter != 0 and union != 0 else 1.
-    miou += iou[cls]
+  with torch.no_grad():
+    # Convert torch.tensor to np.ndarray
+    if isinstance(pred, torch.Tensor):
+      pred = pred.clone().detach().cpu().numpy()
+    if isinstance(gt, torch.Tensor):
+      gt = gt.clone().detach().cpu().numpy()
+
+    iou = {}
+    miou = 0
+    for cls in range(nc):
+      inter = np.logical_and(pred == cls,  gt == cls).sum()
+      union = np.logical_or(pred == cls, gt == cls).sum()
+      iou[cls] = inter / union if inter != 0 and union != 0 else 1.
+      miou += iou[cls]
   
   # TODO print the iou in table format
   #print (tabulate([list(iou.keys()), list(iou.values())]))
 
   return miou/nc
+
+
+def accuracy(pcorr, total):
+  """
+  Function to help in measuring the accuracy of the predicted labels
+  against the true labels.
+
+  Arguments
+  ---------
+  pcorr : int
+          Number of elements correctly classified.
+  total : int
+          Total number of elements.
+  """ 
+  
+  with torch.no_grad():
+    return pcorr / total
+    # TODO Extend this to k > 1
+    # TODO Generalize to top1 and top5 accuracy
+    '''
+    maxk = pred.topk(k, dim=1)
+    count = 0
+    for ii, (vals, idxs) in enumerate(zip(maxk[0], maxk[1])):
+      count += 1 if gt[ii] in idxs else 0
+    return count / pred.size(0)
+    '''

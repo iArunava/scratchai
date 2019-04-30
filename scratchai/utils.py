@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 import os
+from torchvision import transforms
 from subprocess import call
 from scratchai._config import home
+
 
 def load_from_pth(url, fname='random', key='state_dict'):
   """
@@ -31,6 +33,27 @@ def load_from_pth(url, fname='random', key='state_dict'):
   return ckpt[key] if key in ckpt else ckpt
 
 
+def check_if_implemented(module, func):
+  """
+  Function to check if a function func exists in module.
+
+  Arguments
+  ---------
+  module : any
+           The module where the presence of function needs
+           to be checked.
+  func : str
+         The name of the function in str whose presence 
+         needs to be confirmed.
+
+  Raises
+  ------
+  NotImplementedError : If the function is not present in module.
+  """
+  imp = getattr(module, func)
+  if not callable(imp):
+    raise NotImplementedError
+
 
 def count_modules(net:nn.Module):
   """
@@ -47,4 +70,3 @@ def count_modules(net:nn.Module):
       mdict[name] = 1
 
   return mdict
-

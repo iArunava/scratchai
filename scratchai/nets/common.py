@@ -1,9 +1,14 @@
 """
-This is a Debug Layer which helps print debugging outputs after each layer.
+Contains some commonly used functions b/w all modules.
 """
 
 import torch
 import torch.nn as nn
+
+class Flatten(nn.Module):
+  def forward(self, x):
+    return x.view(x.size(0), -1)
+
 
 class Debug(nn.Module):
   def __init__(self, debug_value=None):

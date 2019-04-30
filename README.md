@@ -12,6 +12,7 @@ Table of Contents:
 
 | Model | Paper | Implementation |
 | :--- | :-----: | :--: |
+| Lenet | http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/lenet.py) |
 | Resnet | https://arxiv.org/abs/1512.03385 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/resnet.py#L117) |
 | Resnext | https://arxiv.org/abs/1611.05431 | NA |
 

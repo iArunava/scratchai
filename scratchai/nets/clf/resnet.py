@@ -10,9 +10,9 @@ from scratchai.utils import load_from_pth
 from scratchai.nets.blocks.resblock import Resnext
 
 
-__all__ = ['resnet18', 'resnet34', 'resnet50', 'resnet50', 'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 'resnext101', 'resnext152']
-
-prtr= 'pretrained'
+__all__ = ['resnet18_mnist', 'resnet18', 'resnet34', 'resnet50', 'resnet50', 
+           'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 
+           'resnext101', 'resnext152']
 
 
 def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
@@ -121,18 +121,20 @@ class Resnet(nn.Module):
   Arguments:
   nc : int
        # of classes
+  ic : int
+       # of input channels to the network
   oc1 : int
-                # of channels for the output of the first stage
+        # of channels for the output of the first stage
   layers : TOFILL
   lconv : int
           # of conv layers in each Residual Block
   """
 
   def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=1, 
-       block:nn.Module=resblock, oc1:int=64, **kwargs):
+       block:nn.Module=resblock, ic:int=3, oc1:int=64, **kwargs):
     super().__init__()
 
-    layers = [*conv(3, oc1, 7, 2, 3),
+    layers = [*conv(ic, oc1, 7, 2, 3),
               nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
               *res_stage(block, oc1, oc1*ex, layers[0], dflag=False, **kwargs),
               *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
@@ -151,6 +153,17 @@ class Resnet(nn.Module):
     return x
 
 
+def resnet18_mnist(pretrained=False, **kwargs):
+  kwargs['layers'] = [2, 2, 2, 2]
+  kwargs['ic'] = 1
+  net = Resnet(**kwargs)
+  '''
+  if pretrained:
+    # TODO check inspect module and change the fname
+    net.load_state_dict(load_from_pth(urls.resnet18_url, 'resnet18'))
+  '''
+  return net
+  
 def resnet18(pretrained=True, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
   net = Resnet(**kwargs)
