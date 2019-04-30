@@ -13,36 +13,71 @@ from scratchai.learners.metrics import accuracy
 # This will be later integrated completely within the library.
 # Lack of computational power to check things are working or not.
 
-def test_net(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
+def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
   """
-  Test the network.
+  This function helps in quickly testing the network.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+  vloader : torch.nn.utils.DataLoader
+            or a generator which returns the images and the labels
+  
   """
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   vcorr = 0
   vloss = 0
   net.to(device)
   net.eval()
-  crit = crit()
+  try: crit = crit()
+  except: pass
   with torch.no_grad():
     for ii, (data, labl) in enumerate(tqdm(vloader)):
       data, labl = data.to(device), labl.to(device)
       out = net(data)
       vloss += crit(out, labl).item()
       vcorr += (out.argmax(dim=1) == labl).float().sum()
-  print ('\nAccuracy: {:.2f}%'.format(vcorr / (len(vloader)*vloader.batch_size)
-                                                           * 100))
+  
+    vacc = vcorr / (len(vloader)*vloader.batch_size)
+    vloss /= len(vloader)
+  return vacc, vloss
 
 
-def clf_train(net, **kwargs):
+def clf_train(net, tloader, opti, crit, **kwargs):
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  net.to(device)
+  net.train()
+  tcorr = 0
+  tloss = 0
+  try: crit = crit()
+  except: pass
+  for ii, (data, labl) in enumerate(tqdm(tloader)):
+    data, labl = data.to(device), labl.to(device)
+    out = net(data)
+    loss = crit(out, labl)
+    opti.zero_grad()
+    loss.backward()
+    opti.step()
+    with torch.no_grad():
+      tloss += loss.item()
+      tcorr += (out.argmax(dim=1) == labl).float().sum()
+
+  tloss /= len(tloader)
+  tacc = tcorr / (len(tloader)*tloader.batch_size)
+  return tacc, tloss
+
+
+def clf_fit(net, tloader, vloader, **kwargs):
   """
   This function is used to train the classification networks.
   """
   epochs = kwargs['epochs']
   lr = kwargs['lr']
   wd = kwargs['wd']
-  bs = kwargs['bs']
-  best_acc = 0.
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
+
+  best_acc = 0.
   
   torch.manual_seed(seed)
   np.random.seed(seed)
@@ -50,56 +85,15 @@ def clf_train(net, **kwargs):
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   
-  if kwargs['trf'] is None:
-    trf = transforms.Compose([transforms.ToTensor(), 
-                            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                 std=[0.229, 0.224, 0.225])])
-  else:
-    trf = kwargs['trf']
-  
-  # TODO Take the loaders as parameters to the function
-  train = datasets.MNIST('./', train=True, download=True, transforms=trf)
-  tloader = DataLoader(train, shuffle=True, batch_size=bs)
-  val = datasets.MNIST('./', train=False, download=True, transforms=trf)
-  vloader = DataLoader(val, shuffle=True, batch_size=bs)
-
   # TODO Take criterion as an option
   # TODO Take optimizer as an option
-  crit = nn.CrossEntropyLoss()
-  opti = optim.Adam(net.parameters(), lr=lr, weight_decay=wd)
+  crit = kwargs['crit']()
+  opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
 
   for e in range(1, epochs+1):
-    net.train()
-    tcorr = 0
-    tloss = 0
-    #adjust_lr(opti, e)
-    for ii, (data, labl) in enumerate(tqdm(tloader)):
-      data, labl = data.to(device), labl.to(device)
-      out = net(data)
-      loss = crit(out, labl)
-      opti.zero_grad()
-      loss.backward()
-      opti.step()
-      with torch.no_grad():
-        tloss += loss.item()
-        tcorr += (out.argmax(dim=1) == labl).float().sum()
-
-    vcorr = 0
-    vloss = 0
-    net.eval()
-    with torch.no_grad():
-      for ii, (data, labl) in enumerate(tqdm(vloader)):
-        data, labl = data.to(device), labl.to(device)
-        out = net(data)
-        vloss += crit(out, labl).item()
-        vcorr += (out.argmax(dim=1) == labl).float().sum()
+    tacc, tloss = clf_train(net, tloader, opti, crit)
+    vacc, vloss = clf_test(net, vloader, crit)
     
-    
-    tloss /= len(tloader)
-    vloss /= len(tloader)
-    
-    tacc = tcorr / (len(tloader)*bs)
-    vacc = vcorr / (len(vloader)*bs)
     best_acc = vacc if vacc > best_acc else best_acc
     
     # TODO The tloss and vloss needs a recheck.
@@ -123,10 +117,28 @@ def train_mnist(net, **kwargs):
   -------
 
   """
+  if 'optim' not in kwargs: kwargs['optim'] = optim.Adam
+  if 'crit' not in kwargs: kwargs['crit'] = nn.CrossEntropyLoss
+  if 'lr' not in kwargs: kwargs['lr'] = 3e-4
+  if 'wd' not in kwargs: kwargs['wd'] = 0
+  if 'bs' not in kwargs: kwargs['bs'] = 16
+  if 'seed' not in kwargs: kwargs['seed'] = 123
+  if 'epochs' not in kwargs: kwargs['epochs'] = 5
+  if 'root' not in kwargs: kwargs['root'] = './'
+  
+  for key, val in kwargs.items():
+    print ('[INFO] Setting {} to {}.'.format(key, val))
+
   trf = transforms.Compose([transforms.RandomRotation(20),
                             transforms.ToTensor(),
                             transforms.Normalize((0.1307,), (0.3081,))])
-  clf_train(net, epochs=5, lr=3e-4, wd=1e-4, bs=16, seed=123, trf=trf)
+
+  t = datasets.MNIST(kwargs['root'], train=True, download=True, transform=trf)
+  v = datasets.MNIST(kwargs['root'], train=False, download=True, transform=trf)
+  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
+  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
+
+  clf_fit(net, tloader, vloader, **kwargs)
 
 
 def adjust_lr(opti, epoch, lr):
