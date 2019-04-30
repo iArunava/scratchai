@@ -93,52 +93,72 @@ jobs:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "tests/test_one_calls.py" }}
-   
 
-  test_metrics:
-    docker:
-      - image: circleci/python:3.6.1
+test_metrics:
+  docker:
+    - image: circleci/python:3.6.1
+    
+  working_directory: ~/repo
 
-    working_directory: ~/repo
+  steps:
+    - checkout
 
-    steps:
-      - checkout
-
-      - run:
-          name: test_metrics
-          command: |
+    - run:
+        name: test_metrics
+        command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
             python3 -m unittest tests/test_metrics.py
+    - save_cache:
+        paths:
+          - ./venv
+        key: v1-dependencies-{{ checksum "tests/test_metrics.py" }}
 
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "tests/test_metrics.py" }}
+test_utils:
+  docker:
+    - image: circleci/python:3.6.1
+    
+  working_directory: ~/repo
 
-  test_learners:
-    docker:
-      - image: circleci/python:3.6.1
+  steps:
+    - checkout
 
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - run:
-          name: test_learners
+    - run:
+          name: test_utils
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
-            python3 -m unittest tests/test_learners.py
+            python3 -m unittest tests/test_utils.py
 
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "tests/test_learners.py" }}
+    - save_cache:
+        paths:
+          - ./venv
+        key: v1-dependencies-{{ checksum "tests/test_utils.py" }}
 
+test_learners:
+  docker:
+    - image: circleci/python:3.6.1
+
+  working_directory: ~/repo
+
+  steps:
+    - checkout
+
+    - run:
+        name: test_learners
+        command: |
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install -r requirements.txt
+          python3 -m unittest tests/test_learners.py
+
+    - save_cache:
+        paths:
+          - ./venv
+        key: v1-dependencies-{{ checksum "tests/test_learners.py" }}
+          
 workflows:
   version: 2
   build_and_test:
@@ -149,3 +169,4 @@ workflows:
       - test_one_calls
       - test_metrics
       - test_learners
+      - test_utils

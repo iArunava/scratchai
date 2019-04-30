@@ -53,3 +53,20 @@ def check_if_implemented(module, func):
   imp = getattr(module, func)
   if not callable(imp):
     raise NotImplementedError
+
+
+def count_modules(net:nn.Module):
+  """
+  TODO
+  """
+  allm = []
+  mdict = {}
+  for m in net.modules():
+    name = m.__class__.__name__
+    if name in allm:
+      mdict[name] += 1
+    else:
+      allm.append(name)
+      mdict[name] = 1
+
+  return mdict
