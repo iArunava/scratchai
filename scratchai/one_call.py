@@ -27,7 +27,8 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
          The name of the net to be used in string format.
   trf : str
         The transforms to be used in the image. 
-        The str is passed to utils.get_trf()
+        The str is passed to utils.get_trf(). 
+        Defaults to 'rz256_cc224_tt_normimgnet'
   Returns
   -------
   pred : str
@@ -49,7 +50,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
 
   # Edge Case: In case of 2D Images, the above line adds the channel dim
   # And then the batch dim needs to be added.
-  if len(img) == 3: img = img.unsqueeze(0)
+  if len(img.shape) == 3: img = img.unsqueeze(0)
   
   net = getattr(nets, nstr)().eval()
   pred = int(torch.argmax(net(img), dim=1))

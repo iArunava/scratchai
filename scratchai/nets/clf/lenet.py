@@ -24,17 +24,17 @@ class Lenet(nn.Module):
 
   Arguments
   ---------
-  ic : int
-       # of input channels
   nc : int
        # of classes.
+  ic : int
+       # of input channels
   ex : int
        Expansion factor
   inhw : int
          The height and width of the input image
          (assuming both are same)
   """
-  def __init__(self, ic:int=3, nc:int=10, ex:int=1, inhw:int=32):
+  def __init__(self, nc:int=10, ic:int=3, ex:int=1, inhw:int=32):
     super().__init__()
     # TODO Needs refactoring, as its hard coded for 32x32x3 and 28x28x1
     # Change the op a/c to the inhw

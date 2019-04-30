@@ -170,6 +170,4 @@ class TestCommon(nn.Module):
     self.assertTrue(out.shape, [13, 3*4*2], 'out shape not okay')
 
   def test_debug(self):
-    is_imp = getattr(nets, 'debug')
-    if not callable(is_imp):
-      raise NotImplementedError
+    utils.check_if_implemented(nets, 'debug')

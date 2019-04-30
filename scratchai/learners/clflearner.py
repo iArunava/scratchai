@@ -39,7 +39,7 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
       vloss += crit(out, labl).item()
       vcorr += (out.argmax(dim=1) == labl).float().sum()
   
-    vacc = vcorr / (len(vloader)*vloader.batch_size)
+    vacc = accuracy(vcorr, len(vloader)*vloader.batch_size)
     vloss /= len(vloader)
   return vacc, vloss
 
@@ -64,7 +64,7 @@ def clf_train(net, tloader, opti, crit, **kwargs):
       tcorr += (out.argmax(dim=1) == labl).float().sum()
 
   tloss /= len(tloader)
-  tacc = tcorr / (len(tloader)*tloader.batch_size)
+  tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
   return tacc, tloss
 
 
