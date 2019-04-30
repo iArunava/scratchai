@@ -9,9 +9,6 @@ from torchvision import datasets, transforms
 
 from scratchai.learners.metrics import accuracy
 
-# This function is written lossely with respect to the library.
-# This will be later integrated completely within the library.
-# Lack of computational power to check things are working or not.
 
 def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
   """
@@ -87,6 +84,16 @@ def clf_fit(net, tloader, vloader, **kwargs):
   
   crit = kwargs['crit']()
   opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
+  
+  # Resume from ckpt (if resume is True)
+  if kwargs['resume']:
+    ckpt = torch.load(kwargs['ckpt'])
+    print ('[INFO] Looking for ket "opti_sd" in ckpt file...')
+    opti.load_state_dict(ckpt['opti_sd'])
+    print ('[INFO] Found and loaded the optimizer state_dict')
+    print ('[INFO] Looking for ket "state_dict" in ckpt file...')
+    net.load_state_dict(ckpt['state_dict'])
+    print ('[INFO] Found and loaded the model state_dict')
 
   for e in range(1, epochs+1):
     tacc, tloss = clf_train(net, tloader, opti, crit)
@@ -100,43 +107,6 @@ def clf_fit(net, tloader, vloader, **kwargs):
            .format(e, epochs, tloss, tacc, vloss, vacc))
     torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
                'ckpt-{}-{}.pth'.format(e, vacc))
-
-
-def train_mnist(net, **kwargs):
-  """
-  Train on MNIST with net.
-
-  Arguments
-  ---------
-  net : nn.Module
-        The net which to train.
-
-  Returns
-  -------
-
-  """
-  if 'optim' not in kwargs: kwargs['optim'] = optim.Adam
-  if 'crit' not in kwargs: kwargs['crit'] = nn.CrossEntropyLoss
-  if 'lr' not in kwargs: kwargs['lr'] = 3e-4
-  if 'wd' not in kwargs: kwargs['wd'] = 0
-  if 'bs' not in kwargs: kwargs['bs'] = 16
-  if 'seed' not in kwargs: kwargs['seed'] = 123
-  if 'epochs' not in kwargs: kwargs['epochs'] = 5
-  if 'root' not in kwargs: kwargs['root'] = './'
-  
-  for key, val in kwargs.items():
-    print ('[INFO] Setting {} to {}.'.format(key, val))
-
-  trf = transforms.Compose([transforms.RandomRotation(20),
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))])
-
-  t = datasets.MNIST(kwargs['root'], train=True, download=True, transform=trf)
-  v = datasets.MNIST(kwargs['root'], train=False, download=True, transform=trf)
-  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
-  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
-
-  clf_fit(net, tloader, vloader, **kwargs)
 
 
 def adjust_lr(opti, epoch, lr):
