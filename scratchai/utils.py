@@ -31,3 +31,25 @@ def load_from_pth(url, fname='random', key='state_dict'):
     call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
   ckpt = torch.load('{}{}.pth'.format(prefix, fname), map_location='cpu')
   return ckpt[key] if key in ckpt else ckpt
+
+
+def check_if_implemented(module, func):
+  """
+  Function to check if a function func exists in module.
+
+  Arguments
+  ---------
+  module : any
+           The module where the presence of function needs
+           to be checked.
+  func : str
+         The name of the function in str whose presence 
+         needs to be confirmed.
+
+  Raises
+  ------
+  NotImplementedError : If the function is not present in module.
+  """
+  imp = getattr(module, func)
+  if not callable(imp):
+    raise NotImplementedError

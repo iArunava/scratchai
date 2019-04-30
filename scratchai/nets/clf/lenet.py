@@ -46,6 +46,7 @@ class Lenet(nn.Module):
 
   def forward(self, x): return self.net(x)
 
+
 def lenet_mnist(pretrained=True, **kwargs):
   kwargs['ic'] = 1
   kwargs['inhw'] = 28

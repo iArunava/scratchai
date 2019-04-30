@@ -134,6 +134,13 @@ class TestResnet(unittest.TestCase):
       self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
       del net, out
 
+  def test_resnet18_mnist(self):
+    noise = torch.randn(2, 1, 28, 28)
+    net = getattr(scratchai.nets, 'resnet18_mnist')()
+    out = net(noise)
+    self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
+    del net, out
+    
 
 class TestITN(unittest.TestCase):
   

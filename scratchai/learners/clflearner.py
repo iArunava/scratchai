@@ -142,6 +142,7 @@ def train_mnist(net, **kwargs):
 
 
 def adjust_lr(opti, epoch, lr):
+  # TODO Needs testing
   """
   Sets learning rate to the initial LR decayed by 10 every 30 epochs.
   """

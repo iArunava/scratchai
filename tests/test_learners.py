@@ -1,14 +1,25 @@
 import unittest
 import torch.nn as nn
-import scratchai
+from scratchai import *
 
 class TestLearners(unittest.TestCase):
     
-    def test_summary_exec(self):
-        '''
-        This test just ensures the learner.summary is working 
-        and it doesn't raise Exceptions
-        '''
-        net = scratchai.nets.UNet(3, 4)
-        l = scratchai.learners.Learner(net)
-        l.summary()
+  def test_clf_test(self):
+    # Check if the function is implemented
+    utils.check_if_implemented(learner.clflearner, 'clf_test')
+
+  def test_clf_train(self):
+    # Check if the function is implemented
+    utils.check_if_implemented(learner.clflearner, 'clf_train')
+
+  def test_clf_fit(self):
+    # Check if the function is implemented
+    utils.check_if_implemented(learner.clflearner, 'clf_fit')
+
+  def test_train_mnist(self):
+    # Check if the function is implemented
+    utils.check_if_implemented(learner.clflearner, 'train_mnist')
+
+  def test_adjust_lr(self):
+    # Check if the function is implemented
+    utils.check_if_implemented(learner.clflearner, 'adjust_lr')
