@@ -85,8 +85,6 @@ def clf_fit(net, tloader, vloader, **kwargs):
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   
-  # TODO Take criterion as an option
-  # TODO Take optimizer as an option
   crit = kwargs['crit']()
   opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
 
