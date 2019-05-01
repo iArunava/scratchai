@@ -4,10 +4,17 @@
 ```
 >>> from scratchai import *
 >>> net = nets.lenet_mnist(pretrained=False)
->>> learners.clflearner.train_mnist(net)
+>>> learners.quicktrain.mnist(net)
 ```
 
-2. Train a UNet [WIP]
+2. Train a net on CIFAR10
+```
+>>> from scratchai import *
+>>> net = nets.lenet_cifar10(pretrained=False)
+>>> learners.quicktrain.cifar10(net)
+```
+
+3. Train a UNet [WIP]
 ```
 >>> import scratchai
 >>> net = scratchai.nets.UNet(3, 32)
@@ -16,7 +23,7 @@
 >>> learner.fit()
 ```
 
-3. Train a ENet [WIP]
+4. Train a ENet [WIP]
 ```
 >>> import scratchai
 >>> net = scratchai.nets.ENet(32)
