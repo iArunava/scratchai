@@ -41,7 +41,7 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
   return vacc, vloss
 
 
-def clf_train(net, tloader, opti, crit, **kwargs):
+def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   net.to(device)
   net.train()
@@ -65,7 +65,7 @@ def clf_train(net, tloader, opti, crit, **kwargs):
   return tacc, tloss
 
 
-def clf_fit(net, tloader, vloader, **kwargs):
+def clf_fit(net, crit:nn.Module, opti:torch.optim, tloader, vloader, **kwargs):
   """
   This function is used to train the classification networks.
   """
@@ -74,7 +74,7 @@ def clf_fit(net, tloader, vloader, **kwargs):
   wd = kwargs['wd']
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
 
-  best_acc = 0.
+  bloss = float('inf')
   
   torch.manual_seed(seed)
   np.random.seed(seed)
@@ -82,32 +82,29 @@ def clf_fit(net, tloader, vloader, **kwargs):
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   
-  crit = kwargs['crit']()
-  opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
-  
-  # Resume from ckpt (if resume is True)
-  if kwargs['resume']:
-    ckpt = torch.load(kwargs['ckpt'])
-    print ('[INFO] Looking for ket "opti_sd" in ckpt file...')
-    opti.load_state_dict(ckpt['opti_sd'])
-    print ('[INFO] Found and loaded the optimizer state_dict')
-    print ('[INFO] Looking for ket "state_dict" in ckpt file...')
-    net.load_state_dict(ckpt['state_dict'])
-    print ('[INFO] Found and loaded the model state_dict')
+  tlist = []
+  vlist = []
 
   for e in range(1, epochs+1):
     tacc, tloss = clf_train(net, tloader, opti, crit)
     vacc, vloss = clf_test(net, vloader, crit)
     
-    best_acc = vacc if vacc > best_acc else best_acc
+    tlist.append((tacc, tloss))
+    vlist.append((vacc, vloss))
+
+    if vloss < bloss:
+      bloss = vloss
+      torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
+               'best_net-{}-{:.2f}.pth'.format(e, vacc))
     
     # TODO The tloss and vloss needs a recheck.
     print ('Epoch: {}/{} - Train Loss: {:.3f} - Training Acc: {:.3f}' 
            ' - Val Loss: {:.3f} - Val Acc: {:.3f}'
            .format(e, epochs, tloss, tacc, vloss, vacc))
-    torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
-               'ckpt-{}-{}.pth'.format(e, vacc))
+    torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
+               'net-{}-{:.2f}.pth'.format(e, vacc))
 
+    return tlist, vlist
 
 def adjust_lr(opti, epoch, lr):
   # TODO Needs testing

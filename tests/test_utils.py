@@ -6,6 +6,7 @@ import scratchai
 
 from PIL import Image
 from scratchai import imgutils
+from scratchai import *
 
 
 
@@ -80,7 +81,10 @@ class TestUtils(unittest.TestCase):
     if not callable(getattr(scratchai.utils, 'load_from_pth', None)):
       raise NotImplementedError
 
-
+  def test_name_from_object(self):
+    obj = nets.Lenet()
+    name = utils.name_from_object(obj)
+    self.assertTrue(name == 'lenet', 'doesn\t look good')
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py

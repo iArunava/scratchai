@@ -55,6 +55,27 @@ def check_if_implemented(module, func):
     raise NotImplementedError
 
 
+def name_from_object(obj):
+  """
+  This function returns the name of the object
+  from its initialized instance.
+
+  Arguments
+  ---------
+  obj : any
+        The object whose name needs to be returned.
+
+  Returns
+  -------
+  name : str
+         The name of the object
+  """
+  # str(obj,__class__) -> "<class 'torch.optim.adam.Adam'>"
+  # [1:-2] -> "class 'torch.optim.adam.Adam"
+  # .split('.')[-1] -> "Adam"
+  return str(obj.__class__)[1:-2].split('.')[-1].lower()
+
+
 def count_modules(net:nn.Module):
   """
   TODO
