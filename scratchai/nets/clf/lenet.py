@@ -48,9 +48,15 @@ class Lenet(nn.Module):
 
 
 def lenet_mnist(pretrained=True, **kwargs):
-  kwargs['ic'] = 1
-  kwargs['inhw'] = 28
+  kwargs['ic'] = 1; kwargs['inhw'] = 28
   net = Lenet(**kwargs)
   if pretrained: 
     net.load_state_dict(load_from_pth(urls.lenet_mnist_url, 'lenet_mnist'))
+  return net
+
+def lenet_cifar10(pretrained=False, **kwargs):
+  kwargs['ic'] = 3; kwargs['inhw'] = 32
+  net = Lenet(**kwargs)
+  if pretrained: 
+    net.load_state_dict(load_from_pth(urls.lenet_mnist_url, 'lenet_cifar10'))
   return net

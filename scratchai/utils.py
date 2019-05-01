@@ -71,9 +71,10 @@ def name_from_object(obj):
          The name of the object
   """
   # str(obj,__class__) -> "<class 'torch.optim.adam.Adam'>"
+  cls_str = str(obj.__class__) if str(obj.__class__) != str(type) else str(obj)
   # [1:-2] -> "class 'torch.optim.adam.Adam"
   # .split('.')[-1] -> "Adam"
-  return str(obj.__class__)[1:-2].split('.')[-1].lower()
+  return cls_str[1:-2].split('.')[-1].lower()
 
 
 def count_modules(net:nn.Module):

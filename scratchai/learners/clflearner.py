@@ -65,13 +65,12 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
   return tacc, tloss
 
 
-def clf_fit(net, crit:nn.Module, opti:torch.optim, tloader, vloader, **kwargs):
+def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader, 
+            **kwargs):
   """
   This function is used to train the classification networks.
   """
   epochs = kwargs['epochs']
-  lr = kwargs['lr']
-  wd = kwargs['wd']
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
 
   bloss = float('inf')
@@ -104,7 +103,7 @@ def clf_fit(net, crit:nn.Module, opti:torch.optim, tloader, vloader, **kwargs):
     torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
                'net-{}-{:.2f}.pth'.format(e, vacc))
 
-    return tlist, vlist
+  return tlist, vlist
 
 def adjust_lr(opti, epoch, lr):
   # TODO Needs testing
