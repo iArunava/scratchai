@@ -11,7 +11,7 @@ MNIST   = 'mnist'
 CIFAR10 = 'cifar10'
 
 
-def train_mnist(net, **kwargs):
+def mnist(net, **kwargs):
   """
   Train on MNIST with net.
 
@@ -42,6 +42,20 @@ def train_mnist(net, **kwargs):
          The root where the datasets is or
          needs to be downloaded.
 
+  Returns
+  -------
+  tlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for training
+  vlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for validation
   """
   
   opti, crit, kwargs = preprocess_opts(net, dset=MNIST, **kwargs)
@@ -56,7 +70,7 @@ def train_mnist(net, **kwargs):
   tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
 
 
-def train_cifar10(net, **kwargs):
+def cifar10(net, **kwargs):
   """
   Train on MNIST with net.
 
@@ -86,7 +100,21 @@ def train_cifar10(net, **kwargs):
   root : str
          The root where the datasets is or
          needs to be downloaded.
-
+  
+  Returns
+  -------
+  tlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for training
+  vlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for validation
   """
   opti, crit, kwargs = preprocess_opts(net, dset=CIFAR10, **kwargs)
 
@@ -97,7 +125,7 @@ def train_cifar10(net, **kwargs):
   tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
   vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
   
-  tlist, vlist = clf_fit(net, a, crit, opti, tloader, vloader, **kwargs)
+  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
 
 
 def preprocess_opts(net, dset:str=None, **kwargs):
@@ -131,11 +159,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'resume' not in kwargs: kwargs['resume'] = False
   if 'root' not in kwargs: kwargs['root'] = home
   
-  # Setting Dataset specific values if dset is not None
-  if dset == CIFAR10:
-    if 'optim' not in kwargs: kwargs['optim'] = optim.SGD
-  elif dset == MNIST:
-    if 'optim' not in kwargs: kwargs['optim'] = optim.Adam
+  # Set Dataset specific values if dset is not None here
 
   if kwargs['resume']: assert kwargs['ckpt'] is not None
   

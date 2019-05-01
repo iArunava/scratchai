@@ -10,7 +10,7 @@ from scratchai.nets.common import Flatten
 from scratchai.utils import load_from_pth
 from scratchai.pretrained import urls
 
-__all__ = ['Lenet', 'lenet_mnist']
+__all__ = ['Lenet', 'lenet_mnist', 'lenet_cifar10']
 
 def conv(ic:int, oc:int, k:int=5):
   layers = [nn.Conv2d(ic, oc, kernel_size=5), nn.MaxPool2d(2), 

@@ -1,4 +1,5 @@
 import unittest
+import torch
 import torch.nn as nn
 from scratchai import *
 
@@ -16,9 +17,18 @@ class TestLearners(unittest.TestCase):
     # Check if the function is implemented
     utils.check_if_implemented(learners.clflearner, 'clf_fit')
 
-  def test_train_mnist(self):
+  def test_imp_mnist_cifar10(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.clflearner, 'train_mnist')
+    utils.check_if_implemented(learners.quicktrain, 'mnist')
+    utils.check_if_implemented(learners.quicktrain, 'cifar10')
+  
+  @unittest.skipIf(torch.cuda.is_available() == False, 'no cuda')
+  def test_train_mnist_cifar10(self):
+    # Check if the function is implemented
+    net = nets.lenet_mnist()
+    learners.quicktrain.mnist(net, epochs=1)
+    net = nets.lenet_cifar10()
+    learners.quicktrain.cifar10(net, epochs=1)
 
   def test_adjust_lr(self):
     # Check if the function is implemented
