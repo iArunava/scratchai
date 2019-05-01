@@ -153,6 +153,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'bs' not in kwargs: kwargs['bs'] = 16
   if 'seed' not in kwargs: kwargs['seed'] = 123
   if 'epochs' not in kwargs: kwargs['epochs'] = 5
+  if 'lr_step' not in kwargs: kwargs['lr_step'] = None
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
   if 'root' not in kwargs: kwargs['root'] = home
   
