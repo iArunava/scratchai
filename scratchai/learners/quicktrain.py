@@ -2,6 +2,9 @@
 Wrappers to quickly train on common datasets.
 """
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 from scratchai.imgutils import get_trf
 from scratchai.learners.clflearner import *
 from scratchai._config import home
@@ -68,7 +71,7 @@ def mnist(net, **kwargs):
   vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
   
   tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
-
+  plt_tr_vs_tt(tlist, vlist)
 
 def cifar10(net, **kwargs):
   """
@@ -124,6 +127,7 @@ def cifar10(net, **kwargs):
   vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
   
   tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
+  plt_tr_vs_tt(tlist, vlist)
 
 
 def preprocess_opts(net, dset:str=None, **kwargs):
@@ -198,3 +202,18 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   kwargs.pop('crit', None); kwargs.pop('opti', None); 
 
   return opti, crit, kwargs
+
+
+def plt_tr_vs_tt(tlist, vlist):
+  tacc = list(map(lambda x : x[0], tlist))
+  tloss = list(map(lambda x : x[1], tlist))
+  vacc = list(map(lambda x : x[1], vlist))
+  vloss = list(map(lambda x : x[1], vlist))
+  epochs = np.arange(1, len(tlist)+1)
+  plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
+  plt.plot(epochs, vacc, 'b-', label='Val Accuracy')
+  plt.plot(epochs, tloss, 'o--', label='Train Loss')
+  plt.plot(epochs, vloss, 'o-', label='Val Loss')
+  plt.xlabel('Epochs')
+  plt.legend()
+  plt.show()
