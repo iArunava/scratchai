@@ -9,9 +9,6 @@ from torchvision import datasets, transforms
 
 from scratchai.learners.metrics import accuracy
 
-# This function is written lossely with respect to the library.
-# This will be later integrated completely within the library.
-# Lack of computational power to check things are working or not.
 
 def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
   """
@@ -44,7 +41,7 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
   return vacc, vloss
 
 
-def clf_train(net, tloader, opti, crit, **kwargs):
+def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   net.to(device)
   net.train()
@@ -68,16 +65,15 @@ def clf_train(net, tloader, opti, crit, **kwargs):
   return tacc, tloss
 
 
-def clf_fit(net, tloader, vloader, **kwargs):
+def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader, 
+            **kwargs):
   """
   This function is used to train the classification networks.
   """
   epochs = kwargs['epochs']
-  lr = kwargs['lr']
-  wd = kwargs['wd']
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
 
-  best_acc = 0.
+  bloss = float('inf')
   
   torch.manual_seed(seed)
   np.random.seed(seed)
@@ -85,59 +81,29 @@ def clf_fit(net, tloader, vloader, **kwargs):
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   
-  crit = kwargs['crit']()
-  opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
+  tlist = []
+  vlist = []
 
   for e in range(1, epochs+1):
     tacc, tloss = clf_train(net, tloader, opti, crit)
     vacc, vloss = clf_test(net, vloader, crit)
     
-    best_acc = vacc if vacc > best_acc else best_acc
+    tlist.append((tacc, tloss))
+    vlist.append((vacc, vloss))
+
+    if vloss < bloss:
+      bloss = vloss
+      torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
+               'best_net-{}-{:.2f}.pth'.format(e, vacc))
     
     # TODO The tloss and vloss needs a recheck.
     print ('Epoch: {}/{} - Train Loss: {:.3f} - Training Acc: {:.3f}' 
            ' - Val Loss: {:.3f} - Val Acc: {:.3f}'
            .format(e, epochs, tloss, tacc, vloss, vacc))
-    torch.save({'state_dict' : net.state_dict(), 'opti' : opti.state_dict()},
-               'ckpt-{}-{}.pth'.format(e, vacc))
+    torch.save({'net' : net.cpu().state_dict(), 'opti' : opti.state_dict()},
+               'net-{}-{:.2f}.pth'.format(e, vacc))
 
-
-def train_mnist(net, **kwargs):
-  """
-  Train on MNIST with net.
-
-  Arguments
-  ---------
-  net : nn.Module
-        The net which to train.
-
-  Returns
-  -------
-
-  """
-  if 'optim' not in kwargs: kwargs['optim'] = optim.Adam
-  if 'crit' not in kwargs: kwargs['crit'] = nn.CrossEntropyLoss
-  if 'lr' not in kwargs: kwargs['lr'] = 3e-4
-  if 'wd' not in kwargs: kwargs['wd'] = 0
-  if 'bs' not in kwargs: kwargs['bs'] = 16
-  if 'seed' not in kwargs: kwargs['seed'] = 123
-  if 'epochs' not in kwargs: kwargs['epochs'] = 5
-  if 'root' not in kwargs: kwargs['root'] = './'
-  
-  for key, val in kwargs.items():
-    print ('[INFO] Setting {} to {}.'.format(key, val))
-
-  trf = transforms.Compose([transforms.RandomRotation(20),
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))])
-
-  t = datasets.MNIST(kwargs['root'], train=True, download=True, transform=trf)
-  v = datasets.MNIST(kwargs['root'], train=False, download=True, transform=trf)
-  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
-  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
-
-  clf_fit(net, tloader, vloader, **kwargs)
-
+  return tlist, vlist
 
 def adjust_lr(opti, epoch, lr):
   # TODO Needs testing
