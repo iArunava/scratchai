@@ -100,7 +100,7 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
     print ('Epoch: {}/{} - Train Loss: {:.3f} - Training Acc: {:.3f}' 
            ' - Val Loss: {:.3f} - Val Acc: {:.3f}'
            .format(e, epochs, tloss, tacc, vloss, vacc))
-    torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
+    torch.save({'net' : net.cpu().state_dict(), 'opti' : opti.state_dict()},
                'net-{}-{:.2f}.pth'.format(e, vacc))
 
   return tlist, vlist

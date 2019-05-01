@@ -92,11 +92,9 @@ def cifar10(net, **kwargs):
          The particular seed to use.
   epochs : int
            The epcochs to train for.
-  ckpt : str
-         Path to the ckpt file.
-  resume : bool
-           If true, resume training from ckpt.
-           else not.
+  ckpt : str, None
+         Path to the ckpt file. If not None, training is started
+         using this ckpt file. Defaults to None
   root : str
          The root where the datasets is or
          needs to be downloaded.
@@ -156,13 +154,10 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'seed' not in kwargs: kwargs['seed'] = 123
   if 'epochs' not in kwargs: kwargs['epochs'] = 5
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
-  if 'resume' not in kwargs: kwargs['resume'] = False
   if 'root' not in kwargs: kwargs['root'] = home
   
   # Set Dataset specific values if dset is not None here
 
-  if kwargs['resume']: assert kwargs['ckpt'] is not None
-  
   for key, val in kwargs.items():
     print ('[INFO] Setting {} to {}.'.format(key, val))
   
@@ -180,11 +175,18 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   else:
     raise NotImplementedError
 
-  # Resume from ckpt (if resume is True)
-  if kwargs['resume']:
+  # Resume from ckpt (if ckpt is not None)
+  if kwargs['ckpt'] is not None:
     ckpt = torch.load(kwargs['ckpt'])
     print ('[INFO] Looking for key "opti" in ckpt file...')
     opti.load_state_dict(ckpt['opti'])
+    # If optimizer is SGD, then momentum buffers needs to be moved to device
+    # See: https://discuss.pytorch.org/t/runtimeerror-expected-type-torch-
+    # floattensor-but-got-torch-cuda-floattensor-while-resuming-training/37936
+    if opti_name == 'sgd':
+      for p in opti.state.keys():
+        buf = opti.state[p]['momentum_buffer']
+        opti.state[p]['momentum_buffer'] = buf.cuda()
     print ('[INFO] Found and loaded the optimizer state_dict')
     print ('[INFO] Looking for key "net" in ckpt file...')
     net.load_state_dict(ckpt['net'])
