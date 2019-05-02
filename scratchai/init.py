@@ -72,6 +72,30 @@ def kaiming_normal(m:nn.Module):
     nn.init.constant_(m.bias, 0)
 
 
+def kaiming_uniform(m:nn.Module):
+  """
+  Kaiming Normal Initialization to all the conv layers
+  And the weight of batch norm is initialized to 1
+  and the bias of the batch norm to 0
+
+  Arguments
+  ---------
+  m : nn.Module
+        The net which to init.
+  """
+
+  if isinstance(m, nn.Conv2d):
+    nn.init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
+    if m.bias is not None:
+      nn.init.zeros_(m.bias)
+  elif isinstance(m, nn.Linear):
+    nn.init.zeros_(m.bias)
+  # Add other norms (like nn.GroupNorm2d)
+  elif isinstance(m, nn.BatchNorm2d):
+    nn.init.constant_(m.weight, 1)
+    nn.init.constant_(m.bias, 0)
+
+
 def msr_init(m:nn.Module):
   """
   MSR Initialization to all the conv layers
