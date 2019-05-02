@@ -6,6 +6,7 @@ import operator
 import PIL
 import os
 import requests
+from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms
 
@@ -242,6 +243,23 @@ def gray(img):
   return Image.fromarray(np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]))
 
 
+def surface_plot(matrix:np.ndarray):
+  """
+  Function to make a surface plot for a 2D matirx.
+
+  Arguemnts
+  ---------
+  matrix : np.array
+           The matrix for which the surface needs to be plot.
+  """
+  x, y = np.meshgrid(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
+  fig = plt.figure()
+  ax = fig.add_subplot(111, projection='3d')
+  surf = ax.plot_surface(x, y, matrix, cmap=plt.cm.coolwarm)
+  #fig.colorbar(surf)
+  plt.show()
+
+
 def get_trf(trfs:str):
   """
   A function to quickly get required transforms.
@@ -277,6 +295,23 @@ def get_trf(trfs:str):
       trf_list.append(transforms.CenterCrop(val))
     elif trf.startswith('rr'):
       trf_list.append(transforms.RandomRotation(int(trf[2:])))
+    elif trf.startswith('rc'):
+      trf_list.append(transforms.RandomCrop(int(trf[2:])))
+    # TODO Add other padding modes
+    elif trf.startswith('pad'):
+      trf_list.append(transforms.Pad(int(trf[3:]), padding_mode='reflect'))
+    elif trf.startswith('rhf'):
+      val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
+      trf_list.append(transforms.RandomHorizontalFlip(val))
+    elif trf.startswith('rvf'):
+      val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
+      trf_list.append(transforms.RandomVerticalFlip(val))
+    # transforms.ColorJitter
+    # TODO Add a way to specify all three values
+    # As of we take just 1 value and pass 3 equal ones.
+    elif trf.startswith('cj'):
+      val = [float(trf[2:])] * 3
+      trf_list.append(transforms.ColorJitter(*val))
     elif trf == 'tt':
       trf_list.append(transforms.ToTensor())
     elif trf == 'normimgnet':
