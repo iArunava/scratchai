@@ -85,6 +85,9 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
   vlist = []
 
   for e in range(1, epochs+1):
+    if kwargs['lr_step'] is not None and e%kwargs['lr_step'] == 0:
+      adjust_lr(opti, e, kwargs['lr'], kwargs['lr_step'])
+      
     tacc, tloss = clf_train(net, tloader, opti, crit)
     vacc, vloss = clf_test(net, vloader, crit)
     
@@ -105,11 +108,23 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
 
   return tlist, vlist
 
-def adjust_lr(opti, epoch, lr):
-  # TODO Needs testing
+def adjust_lr(opti, epoch, lr, step):
   """
-  Sets learning rate to the initial LR decayed by 10 every 30 epochs.
+  Sets learning rate to the initial LR decayed by 10 every `step` epochs.
+
+  Arguments
+  ---------
+  opti : torch.optim
+         The optimizer
+  epoch : int
+          The number of epochs completed.
+  lr : float
+       The initial learning rate.
+  step : int
+         The lr_step, at what interval lr needs to be updated.
   """
-  lr = lr * (0.1 ** (epoch // 30))
+  # See: https://discuss.pytorch.org/t/adaptive-learning-rate/320/4
+  lr = lr * (0.1 ** (epoch // step))
   for pgroup in opti.param_groups:
     pgroup['lr'] = lr
+  print ('[INFO] Learning rate decreased to {}'.format(lr))
