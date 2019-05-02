@@ -74,7 +74,7 @@ def kaiming_normal(m:nn.Module):
 
 def kaiming_uniform(m:nn.Module):
   """
-  Kaiming Normal Initialization to all the conv layers
+  Kaiming Uniform Initialization to all the conv layers
   And the weight of batch norm is initialized to 1
   and the bias of the batch norm to 0
 
