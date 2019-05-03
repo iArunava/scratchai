@@ -5,6 +5,11 @@ The Noise Attack
 import numpy as np
 import torch
 
+from torchvision import transforms as T
+from torchvision import datasets
+from scratchai.learners.clflearner import clf_test
+
+
 
 def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
     """
@@ -37,3 +42,26 @@ def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
         adv_x = torch.clamp(adv_x, min=clip_min, max=clip_max)
 
     return adv_x
+
+
+###################################################################
+# A class to initialize the noise attack
+# This class is implemented mainly so this attack can be directly 
+# used along with torchvision.transforms
+
+class Noise():
+  def __init__(self, **kwargs):
+    self.kwargs = kwargs
+  def __call__(self, x):
+    return noise(x, **self.kwargs)
+  
+def benchmark_noise(net, root, bs=4, **kwargs):
+  trf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor(), 
+                   T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]), 
+                   #Noise(**kwargs)
+                   ])
+
+  dset = datasets.ImageFolder(root, transform=trf)
+  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
+  acc, loss = clf_test(net, loader)
+  print ('\nThe net had an accuracy of {:.2f}'.format(acc))

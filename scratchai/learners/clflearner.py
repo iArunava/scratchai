@@ -34,7 +34,7 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
       data, labl = data.to(device), labl.to(device)
       out = net(data)
       vloss += crit(out, labl).item()
-      vcorr += (out.argmax(dim=1) == labl).float().sum()
+      vcorr += (out.argmax(dim=1) == labl).float().sum().item()
     
     vacc = accuracy(vcorr, len(vloader)*vloader.batch_size)
     vloss /= len(vloader)
@@ -58,7 +58,7 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
     opti.step()
     with torch.no_grad():
       tloss += loss.item()
-      tcorr += (out.argmax(dim=1) == labl).float().sum()
+      tcorr += (out.argmax(dim=1) == labl).float().sum().item()
 
   tloss /= len(tloader)
   tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
