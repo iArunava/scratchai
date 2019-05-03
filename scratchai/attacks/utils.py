@@ -1,6 +1,41 @@
 import torch
 import numpy as np
 
+from torchvision import transforms as T
+from scratchai.attacks.attacks import *
+from scratchai.learners.clflearner import clf_test
+
+def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
+  """
+  Helper function to benchmark using a particular attack
+  on a particular dataset. All benchmarks that are present in this
+  repository are created using this function.
+
+  Arguments
+  ---------
+  atk : scratchai.attacks.attacks
+        The attack on which to use.
+  net : nn.Module
+        The net which is to be attacked.
+  root : str
+         The root directory of the dataset.
+  bs : int
+       The batch size. Defaults to 4.
+  
+  """
+
+  # TODO Replace the following with imgutils.get_trf
+  trf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor(),
+                   T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                   # Passing the net regardless of the attack being black box
+                   # For Implementation efficiency.
+                   atk(net, **kwargs)
+                  ])
+  dset = datasets.ImageFolder(root, transform=trf)
+  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
+  acc, loss = clf_test(net  lioader)
+  print ('\nThe net had an accuracy of {:.2f}'.format(acc))
+
 
 def optimize_linear(grads, eps, ordr):
   """
