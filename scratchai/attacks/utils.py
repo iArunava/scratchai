@@ -33,7 +33,7 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
                   ])
   dset = datasets.ImageFolder(root, transform=trf)
   loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
-  acc, loss = clf_test(net  lioader)
+  acc, loss = clf_test(net, lioader)
   print ('\nThe net had an accuracy of {:.2f}'.format(acc))
 
 

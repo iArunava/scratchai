@@ -80,3 +80,14 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
     adv_x = torch.clamp(adv_x, clip_min, clip_max)
   
   return adv_x
+
+###################################################################
+# A class to initialize the attack
+# This class is implemented mainly so this attack can be directly
+# used along with torchvision.transforms
+
+class Noise():
+  def __init__(self, **kwargs):
+    self.kwargs = kwargs
+  def __call__(self, x):
+    return noise(x, **self.kwargs)
