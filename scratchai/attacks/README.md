@@ -15,7 +15,7 @@ This section performs benchmarking of all the attacks and defences implemented h
 The benchmarks reproduced here uses the ILSVC2012 Imagenet test set.
 
 | Attack | Acc@1 w/o | Acc@5 w/o | Acc@1 w | Acc@5 w |
-| :----- | :---: | :---: | :---: | :---: | :---: |
+| :----- | :---: | :---: | :---: | :---: |
 | Noise  | NA | NA | NA | NA |
 | Semantic | NA | NA | NA | NA |
 | Fast Gradient Sign Method  | NA | NA | NA | NA |
