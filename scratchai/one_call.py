@@ -12,7 +12,7 @@ from scratchai.pretrained import urls
 from scratchai import *
 
 
-__all__ = ['classify']
+__all__ = ['classify', 'stransfer']
 
 
 def classify(path:str, nstr:str='resnet18', trf:str=None):
@@ -107,5 +107,7 @@ def stransfer(path:str, style:str=None, save:bool=False):
 
   net = ITN_ST(); net.load_state_dict(sdict); net.eval()
   out = net(img.unsqueeze(0)).squeeze().cpu()
+  out = Image.fromarray(out.squeeze().transpose(0, 1).transpose(1, 2).detach()
+             .clone().cpu().clamp(0, 255).numpy().astype('uint8'))
   if save: imgutils.imsave(out)
   imgutils.imshow(out)

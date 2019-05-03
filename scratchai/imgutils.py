@@ -184,8 +184,8 @@ def t2i(img):
   Expects a [1 x 3 x H x W] torch.Tensor or [3 x H x W] torch.Tensor
   Converts it to a PIL.Image.Image of [H x W x 3]
   """
-  #return T.ToPILImage()(img.squeeze().clone().detach().cpu())#.clamp(0, 255))
-  return T.ToPILImage()(img.squeeze())#.clone().detach().cpu())#.clamp(0, 255))
+  return Image.fromarray(img.squeeze().transpose(0, 1).transpose(1, 2).detach()  
+               .clone().cpu().mul(255).clamp(0, 255).numpy().astype('uint8'))
 
 
 def imsave(img, fname='random.png'):
@@ -205,16 +205,50 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img):
+def imshow(img, is_unnorm:bool=True, **kwargs):
   """
   Display image.
 
   Arguments
   ---------
   img : torch.Tensor
+        The image to display
+  is_unnorm : bool
+           If True, and if img is torch.Tensor then it unnormalizes the image
+           Defaults to True.
   """
-  if isinstance(img, torch.Tensor): img = t2i(img)
+  if isinstance(img, torch.Tensor):
+    img = t2i(unnorm(img) if is_unnorm else img)
   plt.imshow(img); plt.show()
+
+
+def unnorm(t:torch.Tensor, mean=None, std=None):
+  """
+  Given an image this unnormalizes the image and returns it
+
+  Arguments
+  ---------
+  t : torch.Tensor
+      The image to unnormalize
+  mean : list,(in case of >1 channels) else float
+         The mean to multiply to the image
+         Defaults to: [0.485, 0.456, 0.406],
+  std : list,(in case of >1 channels) else float
+         The std to add to the image
+         Defaults to: [0.229, 0.224, 0.225]
+
+  Returns
+  -------
+  t : torch.Tensor
+      The unnormalized image.
+  """
+  if mean is None: mean = torch.Tensor([0.485, 0.456, 0.406])
+  if std is None: std = torch.Tensor([0.229, 0.224, 0.225])
+  # Not sure how to change the dim while multiplying so
+  # changing the channel dimension from 0 to 2
+  # Performing the operations and then changing it back
+  t = (t.squeeze().transpose(0, 1).transpose(1, 2) * mean) + std
+  return t.transpose(2, 1).transpose(1, 0)
 
 
 def gray(img):
@@ -315,7 +349,7 @@ def get_trf(trfs:str):
       trf_list.append(T.ToTensor())
     elif trf == 'normimgnet':
       trf_list.append(T.Normalize([0.485, 0.456, 0.406],
-                                           [0.229, 0.224, 0.225]))
+                                  [0.229, 0.224, 0.225]))
     elif trf == 'normmnist':
       trf_list.append(T.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
