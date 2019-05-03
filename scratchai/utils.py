@@ -33,7 +33,7 @@ def load_from_pth(url, fname='random', key='state_dict'):
   return ckpt[key] if key in ckpt else ckpt
 
 
-def check_if_implemented(module, func):
+def implemented(module, func):
   """
   Function to check if a function func exists in module.
 

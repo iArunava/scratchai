@@ -170,7 +170,7 @@ class TestCommon(nn.Module):
     self.assertTrue(out.shape, [13, 3*4*2], 'out shape not okay')
 
   def test_debug(self):
-    utils.check_if_implemented(nets, 'debug')
+    utils.implemented(nets, 'debug')
 
 
 #############################################################

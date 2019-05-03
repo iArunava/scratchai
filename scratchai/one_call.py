@@ -69,7 +69,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   return label, val
 
 
-def stransfer(path:str, style:str=None, save:bool=False):
+def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   """
   One call to transfer the style of an image.
 
@@ -82,7 +82,8 @@ def stransfer(path:str, style:str=None, save:bool=False):
           If None, it picks up a style in random.
   save : bool
          If True, saves the image to disk. Default False.
-
+  show : bool
+         If true, it shows the image.
   Returns
   -------
   pred : str
@@ -111,4 +112,5 @@ def stransfer(path:str, style:str=None, save:bool=False):
   out = Image.fromarray(out.squeeze().transpose(0, 1).transpose(1, 2).detach()
              .clone().cpu().clamp(0, 255).numpy().astype('uint8'))
   if save: imgutils.imsave(out)
-  imgutils.imshow(out)
+  if show: imgutils.imshow(out)
+  return out

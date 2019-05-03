@@ -9,8 +9,7 @@ class TestMetrics(nn.Module):
   
   def test_miou(self):
     # TODO Add some more tests
-    is_imp = getattr(learners, 'miou')
-    if not callable(is_imp): raise NotImplementedError
+    utils.implemented(learners, 'miou')
 
   def test_accuracy(self):
     '''
@@ -20,5 +19,4 @@ class TestMetrics(nn.Module):
     self.assertEqual(acc, 
     '''
     # TODO Add some more tests
-    is_imp = getattr(learners, 'accuracy')
-    if not callable(is_imp): raise NotImplementedError
+    utils.implemented(learners, 'accuracy')
