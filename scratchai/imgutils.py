@@ -165,7 +165,7 @@ def load_img(path:str, rtype=PIL.Image.Image):
   return img
 
 
-def t2i(img):
+def t2i(img, rt=PIL.Image.Image):
   """
   Converts torch.Tensor images to PIL images.
 
@@ -173,7 +173,8 @@ def t2i(img):
   ---------
   img : torch.Tensor
         The tensor image which to convert.
-
+  rt : type
+       The type of Image to be returned
   Returns
   -------
   img : PIL.Image.Image
@@ -183,9 +184,17 @@ def t2i(img):
   -----
   Expects a [1 x 3 x H x W] torch.Tensor or [3 x H x W] torch.Tensor
   Converts it to a PIL.Image.Image of [H x W x 3]
+
+  Converting to PIL.Image.Image losses precision if source image
+  is of type float
   """
-  return Image.fromarray(img.squeeze().transpose(0, 1).transpose(1, 2).detach()  
-               .clone().cpu().mul(255).clamp(0, 255).numpy().astype('uint8'))
+  out= img.squeeze().transpose(0, 1).transpose(1, 2).detach() \
+               .clone().cpu().mul(255).clamp(0, 255).numpy()
+  if rt == PIL.Image.Image:
+    # Note: .astype('uint8') losses precision
+    return Image.fromarray(out.astype('uint8'))
+  elif rt == np.ndarray:
+    return out
 
 
 def imsave(img, fname='random.png'):
