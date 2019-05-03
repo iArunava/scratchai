@@ -58,7 +58,8 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   
   # Getting the image from net
   net = getattr(nets, nstr)().eval()
-  val, pred = int(torch.max(net(img), dim=1))
+  val, pred = torch.max(net(img), dim=1)
+  val = val.item(); pred = pred.item()
   
   # In case the net is trained on mnist
   if nstr == 'lenet_mnist': label = mnist_labels[pred]
