@@ -42,11 +42,14 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   """
 
   trf = imgutils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
-
-  # Special Case: if net == 'lenet_mnist' then image needs to have one channel
-  if nstr == 'lenet_mnist': img = trf(imgutils.gray(path)).unsqueeze(0)
-  # Normal Cases
-  else: img = trf(imgutils.load_img(path)).unsqueeze(0)
+  
+  if type(path) == str:
+    # Special Case: if net == 'lenet_mnist' then image needs to have one channel
+    if nstr == 'lenet_mnist': img = trf(imgutils.gray(path)).unsqueeze(0)
+    # Normal Cases
+    else: img = trf(imgutils.load_img(path)).unsqueeze(0)
+  else:
+    img = trf(path).unsqueeze(0)
 
   # Edge Case: In case of 2D Images, the above line adds the channel dim
   # And then the batch dim needs to be added.
@@ -94,7 +97,12 @@ def stransfer(path:str, style:str=None, save:bool=False):
 
   trf = transforms.Compose([transforms.ToTensor(),
                             transforms.Lambda(lambda x : x.mul(255))])
-  img = trf(imgutils.load_img(path))
+
+  if type(path) == str:
+    img = trf(imgutils.load_img(path))
+  else:
+    img = trf(path)
+
   net = ITN_ST(); net.load_state_dict(sdict); net.eval()
   out = net(img.unsqueeze(0)).squeeze().cpu()
   if save: imgutils.imsave(out)
