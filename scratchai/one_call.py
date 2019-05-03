@@ -43,6 +43,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
 
   trf = imgutils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
   
+  # Getting the image from `path`
   if type(path) == str:
     # Special Case: if net == 'lenet_mnist' then image needs to have one channel
     if nstr == 'lenet_mnist': img = trf(imgutils.gray(path)).unsqueeze(0)
@@ -55,6 +56,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   # And then the batch dim needs to be added.
   if len(img.shape) == 3: img = img.unsqueeze(0)
   
+  # Getting the image from net
   net = getattr(nets, nstr)().eval()
   pred = int(torch.argmax(net(img), dim=1))
   

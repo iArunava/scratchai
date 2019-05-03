@@ -7,7 +7,7 @@ import PIL
 import os
 import requests
 from PIL import Image
-from torchvision import transforms
+from torchvision import transforms as T
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -183,9 +183,8 @@ def t2i(img):
   Expects a [1 x 3 x H x W] torch.Tensor or [3 x H x W] torch.Tensor
   Converts it to a PIL.Image.Image of [H x W x 3]
   """
-  return Image.fromarray(img.squeeze().clone().detach().cpu().clamp(0, 255)
-                            .transpose(-3, -2).transpose(-2, -1).numpy()
-                            .astype('uint8'))
+  #return T.ToPILImage()(img.squeeze().clone().detach().cpu())#.clamp(0, 255))
+  return T.ToPILImage()(img.squeeze())#.clone().detach().cpu())#.clamp(0, 255))
 
 
 def imsave(img, fname='random.png'):
@@ -249,7 +248,7 @@ def get_trf(trfs:str):
   Arguments
   ---------
   trfs : str
-         An str that represents what transforms are needed. See Notes
+         An str that represents what T are needed. See Notes
 
   Returns
   -------
@@ -259,9 +258,9 @@ def get_trf(trfs:str):
   Notes
   -----
   >>> get_trf('rz256_cc224_tt_normimgnet')
-  >>> transforms.Compose([transforms.Resize(256),
-                          transforms.CenterCrop(224),
-                          transforms.ToTensor(),
+  >>> T.Compose([T.Resize(256),
+                          T.CenterCrop(224),
+                          T.ToTensor(),
                           transform.Normalize([0.485, 0.456, 0.406], 
                                               [0.229, 0.224, 0.225])])
   """
@@ -271,22 +270,22 @@ def get_trf(trfs:str):
   for trf in trfs.split('_'):
     if trf.startswith('rz'):
       val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(transforms.Resize(val))
+      trf_list.append(T.Resize(val))
     elif trf.startswith('cc'):
       val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(transforms.CenterCrop(val))
+      trf_list.append(T.CenterCrop(val))
     elif trf.startswith('rr'):
-      trf_list.append(transforms.RandomRotation(int(trf[2:])))
+      trf_list.append(T.RandomRotation(int(trf[2:])))
     elif trf == 'tt':
-      trf_list.append(transforms.ToTensor())
+      trf_list.append(T.ToTensor())
     elif trf == 'normimgnet':
-      trf_list.append(transforms.Normalize([0.485, 0.456, 0.406],
+      trf_list.append(T.Normalize([0.485, 0.456, 0.406],
                                            [0.229, 0.224, 0.225]))
     elif trf == 'normmnist':
-      trf_list.append(transforms.Normalize((0.1307,), (0.3081,)))
+      trf_list.append(T.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
-      trf_list.append(transforms.Lambda(lambda x : x.mul(255)))
+      trf_list.append(T.Lambda(lambda x : x.mul(255)))
     else:
       raise NotImplementedError
 
-  return transforms.Compose(trf_list)
+  return T.Compose(trf_list)
