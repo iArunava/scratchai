@@ -62,7 +62,6 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
 
   tloss /= len(tloader)
   tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
-  print (tacc)
   return tacc, tloss
 
 
