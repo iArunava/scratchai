@@ -77,6 +77,20 @@ def name_from_object(obj):
   return cls_str[1:-2].split('.')[-1].lower()
 
 
+def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None):
+  """
+  Helps in Loading Pretrained networks
+  """
+  net.load_state_dict(load_from_pth(url, fname))
+  # If nc != None, load a custom last linear layer
+  # After freezing the rest of the network
+  if nc is not None:
+    for p in net.parameters():
+      p.requires_grad_(False)
+    net.fc = nn.Linear(512, nc)
+  return net
+
+
 def count_modules(net:nn.Module):
   """
   TODO

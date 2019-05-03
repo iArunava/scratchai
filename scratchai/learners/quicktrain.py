@@ -73,9 +73,10 @@ def mnist(net, **kwargs):
   tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
   plt_tr_vs_tt(tlist, vlist)
 
+
 def cifar10(net, **kwargs):
   """
-  Train on MNIST with net.
+  Train on CIFAR10 with net.
 
   Arguments
   ---------
@@ -119,13 +120,66 @@ def cifar10(net, **kwargs):
   """
   opti, crit, kwargs = preprocess_opts(net, dset=CIFAR10, **kwargs)
 
-  trf = get_trf('rr2_tt_normimgnet')
+  trf = get_trf('pad4_rc32_tt_normimgnet')
 
   t = datasets.CIFAR10(kwargs['root'], train=True, download=True, transform=trf)
   v = datasets.CIFAR10(kwargs['root'], train=False, download=True, transform=trf)
   tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
   vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
   
+  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
+  plt_tr_vs_tt(tlist, vlist)
+
+
+def custom(net, tloader, vloader, **kwargs):
+  """
+  Train on a custom dataset with net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+  optim : nn.optim
+          The optimizer to use.
+  crit : nn.Module
+         The criterion to use.
+  lr : float
+       The learning rate.
+  wd : float
+       The weight decay.
+  bs : int
+       The batch size.
+  seed : int
+         The particular seed to use.
+  epochs : int
+           The epcochs to train for.
+  ckpt : str, None
+         Path to the ckpt file. If not None, training is started
+         using this ckpt file. Defaults to None
+  root : str
+         The root where the datasets is or
+         needs to be downloaded.
+  
+  Returns
+  -------
+  tlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for training
+  vlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for validation
+  """
+  opti, crit, kwargs = preprocess_opts(net, **kwargs)
+
+  #trf = get_trf('rz256_cc224_tt_normimgnet')
+  trf = get_trf('rz32_tt_normimgnet')
+
   tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
   plt_tr_vs_tt(tlist, vlist)
 
@@ -174,10 +228,11 @@ def preprocess_opts(net, dset:str=None, **kwargs):
 
   crit = kwargs['crit']()
   opti_name = utils.name_from_object(kwargs['optim'])
+  train_params = [p for p in net.parameters() if p.requires_grad]
   if  opti_name == 'adam':
-    opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
+    opti = kwargs['optim'](train_params, lr=lr, weight_decay=wd)
   elif opti_name == 'sgd':
-    opti = kwargs['optim'](net.parameters(), lr=lr, nesterov=kwargs['nestv'],
+    opti = kwargs['optim'](train_params, lr=lr, nesterov=kwargs['nestv'],
                            weight_decay=wd, momentum=mom)
   else:
     raise NotImplementedError
@@ -209,7 +264,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
 def plt_tr_vs_tt(tlist, vlist):
   tacc = list(map(lambda x : x[0], tlist))
   tloss = list(map(lambda x : x[1], tlist))
-  vacc = list(map(lambda x : x[1], vlist))
+  vacc = list(map(lambda x : x[0], vlist))
   vloss = list(map(lambda x : x[1], vlist))
   epochs = np.arange(1, len(tlist)+1)
   plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
