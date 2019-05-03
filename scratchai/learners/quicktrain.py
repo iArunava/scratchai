@@ -154,10 +154,12 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'lr' not in kwargs: kwargs['lr'] = 3e-4
   if 'wd' not in kwargs: kwargs['wd'] = 0
   if 'mom' not in kwargs: kwargs['mom'] = 0.9
+  if 'nestv' not in kwargs: kwargs['nestv'] = False
   if 'bs' not in kwargs: kwargs['bs'] = 16
   if 'seed' not in kwargs: kwargs['seed'] = 123
   if 'epochs' not in kwargs: kwargs['epochs'] = 5
   if 'lr_step' not in kwargs: kwargs['lr_step'] = None
+  if 'lr_decay' not in kwargs: kwargs['lr_decay'] = 0.2
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
   if 'root' not in kwargs: kwargs['root'] = home
   
@@ -175,7 +177,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if  opti_name == 'adam':
     opti = kwargs['optim'](net.parameters(), lr=lr, weight_decay=wd)
   elif opti_name == 'sgd':
-    opti = kwargs['optim'](net.parameters(), lr=lr, 
+    opti = kwargs['optim'](net.parameters(), lr=lr, nesterov=kwargs['nestv'],
                            weight_decay=wd, momentum=mom)
   else:
     raise NotImplementedError

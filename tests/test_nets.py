@@ -171,3 +171,19 @@ class TestCommon(nn.Module):
 
   def test_debug(self):
     utils.check_if_implemented(nets, 'debug')
+
+
+#############################################################
+######## Weght Initializations
+#############################################################
+
+class WeightInit(unittest.TestCase):
+
+  def test_weight_init(self):
+    net = nets.resnet18()
+    # TODO Add more tests
+    net.apply(init.xavier_normal)
+    net.apply(init.xavier_uniform)
+    net.apply(init.kaiming_normal)
+    net.apply(init.kaiming_uniform)
+    net.apply(init.msr_init)

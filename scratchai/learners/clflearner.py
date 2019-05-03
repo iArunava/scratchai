@@ -71,6 +71,9 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
   This function is used to train the classification networks.
   """
   epochs = kwargs['epochs']
+  lr = kwargs['lr']
+  lr_step = kwargs['lr_step']
+  lr_decay = kwargs['lr_decay']
   seed = kwargs['seed'] if kwargs['seed'] else np.random.randint(100)
 
   bloss = float('inf')
@@ -85,8 +88,10 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
   vlist = []
 
   for e in range(1, epochs+1):
-    if kwargs['lr_step'] is not None and e%kwargs['lr_step'] == 0:
-      adjust_lr(opti, e, kwargs['lr'], kwargs['lr_step'])
+    if lr_step is not None and type(lr_step) == int and e%lr_step == 0:
+      lr = adjust_lr(opti, lr, lr_decay)
+    if lr_step is not None and type(lr_step) == list and e in lr_step:
+      lr = adjust_lr(opti, lr, lr_decay)
       
     tacc, tloss = clf_train(net, tloader, opti, crit)
     vacc, vloss = clf_test(net, vloader, crit)
@@ -108,7 +113,7 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
 
   return tlist, vlist
 
-def adjust_lr(opti, epoch, lr, step):
+def adjust_lr(opti, lr, lr_decay):
   """
   Sets learning rate to the initial LR decayed by 10 every `step` epochs.
 
@@ -124,7 +129,7 @@ def adjust_lr(opti, epoch, lr, step):
          The lr_step, at what interval lr needs to be updated.
   """
   # See: https://discuss.pytorch.org/t/adaptive-learning-rate/320/4
-  lr = lr * (0.1 ** (epoch // step))
-  for pgroup in opti.param_groups:
-    pgroup['lr'] = lr
+  lr /= (1. / lr_decay)
+  for pgroup in opti.param_groups: pgroup['lr'] = lr
   print ('[INFO] Learning rate decreased to {}'.format(lr))
+  return lr
