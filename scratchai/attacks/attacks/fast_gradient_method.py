@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from scratchai.attacks.utils import optimize_linear
 
-def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None, 
+def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None, 
         clip_min=None, clip_max=None, targeted=False, sanity_checks=True):
   """
   Implementation of the Fast Gradient Method.
@@ -43,7 +43,6 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
   adv_x : torch.Tensor
           The adversarial example.
   """
-
   if ordr not in [np.inf, 1, 2]:
     raise ValueError('Norm order must be either np.inf, 1, or 2.')
 
@@ -86,8 +85,8 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
 # This class is implemented mainly so this attack can be directly
 # used along with torchvision.transforms
 
-class Noise():
+class FGM():
   def __init__(self, **kwargs):
     self.kwargs = kwargs
   def __call__(self, x):
-    return noise(x, **self.kwargs)
+    return fgm(x, **self.kwargs)

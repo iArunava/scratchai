@@ -8,7 +8,7 @@ import torch.nn as nn
 from scratchai.attacks.attacks import fgm
 from scratchai.attacks.utils import clip_eta
 
-def pgd(net:nn.Module, x:torch.Tensor, nb_iter:int=10, eps:float=0.3, 
+def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3, 
     eps_iter:float=0.05, rand_minmax:float=0.3, clip_min=None, clip_max=None, 
     y=None, ordr=np.inf, rand_init=None, targeted=False) -> torch.Tensor:
 
@@ -71,7 +71,7 @@ def pgd(net:nn.Module, x:torch.Tensor, nb_iter:int=10, eps:float=0.3,
     """
     Do a projected gradient step.
     """
-    adv_x = fgm(net, adv_x, eps=eps_iter, ordr=ordr, clip_min=clip_min,
+    adv_x = fgm(adv_x, net, eps=eps_iter, ordr=ordr, clip_min=clip_min,
                 clip_max=clip_max, y=y, targeted=targeted)
 
     # Clipping perturbation eta to ord norm ball

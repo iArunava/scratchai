@@ -25,3 +25,13 @@ def semantic(x, center:bool=True, max_val:float=1.):
   if center:
     return x*-1
   return max_val - x
+
+################################################################
+###### Class to initialize this attack
+###### mainly for the use with torchvision.transforms
+
+class Semantic():
+  def __init__(**kwargs):
+    self.kwargs = kwargs
+  def __call__(self, x):
+    semantic(x, **kwargs)

@@ -124,7 +124,7 @@ class TestAttacks(unittest.TestCase):
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
     elif t == FGM or t == PGD:
       img = TestAttacks.trf(img)
-      adv_x = atk(net, img.unsqueeze(0), y=y)
+      adv_x = atk(img.unsqueeze(0), net, y=y)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
       
     print (true_pred, adv_pred)
