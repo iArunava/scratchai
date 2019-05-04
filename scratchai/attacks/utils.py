@@ -9,6 +9,8 @@ from scratchai.utils import freeze
 from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
 from scratchai.learners.clflearner import clf_test
+from scratchai.imgutils import get_trf
+from scratchai.utils import name_from_obj
 
 
 def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
@@ -30,33 +32,39 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   
   """
 
-  # TODO Replace the following with imgutils.get_trf
-  trf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor(),
-                   T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-                   # Passing the net regardless of the attack being black box
-                   # For Implementation efficiency.
-                   #atk(net=net, **kwargs)
-                  ])
+  trf = get_trf('rz256_cc224_tt_normimgnet')
+  #bs = 2
   dset = datasets.ImageFolder(root, transform=trf)
   loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
-  #acc, loss = clf_test(net, loader)
+
   freeze(net)
+  print ('[INFO] Net Frozen!')
   atk = atk(net, **kwargs)
+  atk_name = name_from_obj(atk)
+  net_name = name_from_obj(net)
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  vcorr = 0; vloss = 0
+  corr = 0; loss = 0
+  adv_corr = 0; adv_loss = 0
   net.to(device); net.eval()
   crit = nn.CrossEntropyLoss()
 
   for ii, (data, labl) in enumerate(tqdm(loader)):
-    data, labl = atk(data.to(device)), labl.to(device)
-    out = net(data)
-    vloss += crit(out, labl).item()
-    vcorr += (out.argmax(dim=1) == labl).float().sum().item()
-  acc = accuracy(vcorr, len(loader)*loader.batch_size)
-  vloss /= len(loader)
+    adv_data, data = atk(data.to(device).clone()), data.to(device)
+    labl = labl.to(device)
+    adv_out = net(adv_data); out = net(data)
+    loss += crit(out, labl).item()
+    adv_loss += crit(adv_out, labl).item()
+    corr += (out.argmax(dim=1) == labl).float().sum().item()
+    adv_corr += (out.argmax(dim=1) == labl).float().sum().item()
+  acc = accuracy(corr, len(loader)*loader.batch_size)
+  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+  loss /= len(loader)
+  adv_loss /= len(loader)
 
-  print ('\nThe net had an accuracy of {:.2f}'.format(acc))
+  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
+       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
+       atk_name))
 
 
 def optimize_linear(grads, eps, ordr):
