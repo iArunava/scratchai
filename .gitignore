@@ -3,6 +3,7 @@ MNIST/
 vault/
 *.tgz
 *.tar.gz
+*.zip
 out
 *.swp
 datasets/files/
