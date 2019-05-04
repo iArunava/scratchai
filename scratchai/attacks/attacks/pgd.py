@@ -61,7 +61,6 @@ def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3,
   if y is None:
     # Use ground truth labels to avoid label leaking
     if len(x.shape) == 3: x.unsqueeze_(0)
-    #x.to('cuda' if next(net.parameters()).is_cuda else 'cpu')
     _, y = torch.max(net(x), dim=1)
   else:
     targeted = True
