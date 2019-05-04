@@ -40,8 +40,8 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   freeze(net)
   print ('[INFO] Net Frozen!')
   atk = atk(net, **kwargs)
-  atk_name = name_from_obj(atk)
-  net_name = name_from_obj(net)
+  atk_name = name_from_object(atk)
+  net_name = name_from_object(net)
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   corr = 0; loss = 0

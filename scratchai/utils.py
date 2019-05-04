@@ -55,7 +55,7 @@ def implemented(module, func):
     raise NotImplementedError
 
 
-def name_from_obj(obj):
+def name_from_object(obj):
   """
   This function returns the name of the object
   from its initialized instance.
