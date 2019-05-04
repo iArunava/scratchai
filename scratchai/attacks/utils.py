@@ -10,7 +10,7 @@ from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
 from scratchai.learners.clflearner import clf_test
 from scratchai.imgutils import get_trf
-from scratchai.utils import name_from_obj
+from scratchai.utils import name_from_object
 
 
 def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
