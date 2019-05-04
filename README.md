@@ -36,7 +36,13 @@ Table of Contents:
 | :--- | :-----: | :--: |
 | Image Transformation Network Justin et al. | [Perceptual Losses Paper](https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16.pdf) [Supplementary Material](https://cs.stanford.edu/people/jcjohns/papers/eccv16/JohnsonECCV16Supplementary.pdf) | [Implementation](https://github.com/iArunava/scratchai/blob/86d5011394592bde57eda40ba4682c8f26863b13/scratchai/nets/style_transfer/image_transformation_net.py#L75)
 
-5. Attacks
+5. Optimization
+
+| Algorithm | Paper | Implementation |
+| :--- | :-----: | :--: |
+| NES (Natural Evolution Strategies | http://www.jmlr.org/papers/volume15/wierstra14a/wierstra14a.pdf | NA |
+
+6. Attacks
 
 | Attacks | Paper | Implementation |
 | :--- | :-----: | :--: |
@@ -46,7 +52,7 @@ Table of Contents:
 | Fast Gradient Method | NS | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/fast_gradient_method.py)
 |Projected Gradient Descent | https://arxiv.org/pdf/1607.02533.pdf https://arxiv.org/pdf/1706.06083.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/fast_gradient_method.py)
   
-  
+
 ## Tutorials
 
 Tutorials on how to get the most out of scratchai can be found here: https://github.com/iArunava/scratchai/tree/master/tutorials
