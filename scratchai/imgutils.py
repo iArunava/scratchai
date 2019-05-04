@@ -8,7 +8,7 @@ import os
 import requests
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
-from torchvision import transforms
+from torchvision import transforms as T
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -165,7 +165,7 @@ def load_img(path:str, rtype=PIL.Image.Image):
   return img
 
 
-def t2i(img):
+def t2i(img, rt=PIL.Image.Image):
   """
   Converts torch.Tensor images to PIL images.
 
@@ -173,7 +173,8 @@ def t2i(img):
   ---------
   img : torch.Tensor
         The tensor image which to convert.
-
+  rt : type
+       The type of Image to be returned
   Returns
   -------
   img : PIL.Image.Image
@@ -183,10 +184,17 @@ def t2i(img):
   -----
   Expects a [1 x 3 x H x W] torch.Tensor or [3 x H x W] torch.Tensor
   Converts it to a PIL.Image.Image of [H x W x 3]
+
+  Converting to PIL.Image.Image losses precision if source image
+  is of type float
   """
-  return Image.fromarray(img.squeeze().clone().detach().cpu().clamp(0, 255)
-                            .transpose(-3, -2).transpose(-2, -1).numpy()
-                            .astype('uint8'))
+  out= img.squeeze().transpose(0, 1).transpose(1, 2).detach() \
+               .clone().cpu().mul(255).clamp(0, 255).numpy()
+  if rt == PIL.Image.Image:
+    # Note: .astype('uint8') losses precision
+    return Image.fromarray(out.astype('uint8'))
+  elif rt == np.ndarray:
+    return out
 
 
 def imsave(img, fname='random.png'):
@@ -206,16 +214,50 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img):
+def imshow(img, is_unnorm:bool=True, **kwargs):
   """
   Display image.
 
   Arguments
   ---------
   img : torch.Tensor
+        The image to display
+  is_unnorm : bool
+           If True, and if img is torch.Tensor then it unnormalizes the image
+           Defaults to True.
   """
-  if isinstance(img, torch.Tensor): img = t2i(img)
+  if isinstance(img, torch.Tensor):
+    img = t2i(unnorm(img) if is_unnorm else img)
   plt.imshow(img); plt.show()
+
+
+def unnorm(t:torch.Tensor, mean=None, std=None):
+  """
+  Given an image this unnormalizes the image and returns it
+
+  Arguments
+  ---------
+  t : torch.Tensor
+      The image to unnormalize
+  mean : list,(in case of >1 channels) else float
+         The mean to multiply to the image
+         Defaults to: [0.485, 0.456, 0.406],
+  std : list,(in case of >1 channels) else float
+         The std to add to the image
+         Defaults to: [0.229, 0.224, 0.225]
+
+  Returns
+  -------
+  t : torch.Tensor
+      The unnormalized image.
+  """
+  if mean is None: mean = torch.Tensor([0.485, 0.456, 0.406])
+  if std is None: std = torch.Tensor([0.229, 0.224, 0.225])
+  # Not sure how to change the dim while multiplying so
+  # changing the channel dimension from 0 to 2
+  # Performing the operations and then changing it back
+  t = (t.squeeze().transpose(0, 1).transpose(1, 2) * mean) + std
+  return t.transpose(2, 1).transpose(1, 0)
 
 
 def gray(img):
@@ -267,7 +309,7 @@ def get_trf(trfs:str):
   Arguments
   ---------
   trfs : str
-         An str that represents what transforms are needed. See Notes
+         An str that represents what T are needed. See Notes
 
   Returns
   -------
@@ -277,11 +319,11 @@ def get_trf(trfs:str):
   Notes
   -----
   >>> get_trf('rz256_cc224_tt_normimgnet')
-  >>> transforms.Compose([transforms.Resize(256),
-                          transforms.CenterCrop(224),
-                          transforms.ToTensor(),
-                          transform.Normalize([0.485, 0.456, 0.406], 
-                                              [0.229, 0.224, 0.225])])
+  >>> T.Compose([T.Resize(256),
+                          T.CenterCrop(224),
+                          T.ToTensor(),
+                          T.Normalize([0.485, 0.456, 0.406], 
+                                      [0.229, 0.224, 0.225])])
   """
   # TODO Write tests
   # TODO Add more options
@@ -289,39 +331,39 @@ def get_trf(trfs:str):
   for trf in trfs.split('_'):
     if trf.startswith('rz'):
       val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(transforms.Resize(val))
+      trf_list.append(T.Resize(val))
     elif trf.startswith('cc'):
       val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(transforms.CenterCrop(val))
+      trf_list.append(T.CenterCrop(val))
     elif trf.startswith('rr'):
-      trf_list.append(transforms.RandomRotation(int(trf[2:])))
+      trf_list.append(T.RandomRotation(int(trf[2:])))
     elif trf.startswith('rc'):
-      trf_list.append(transforms.RandomCrop(int(trf[2:])))
+      trf_list.append(T.RandomCrop(int(trf[2:])))
     # TODO Add other padding modes
     elif trf.startswith('pad'):
-      trf_list.append(transforms.Pad(int(trf[3:]), padding_mode='reflect'))
+      trf_list.append(T.Pad(int(trf[3:]), padding_mode='reflect'))
     elif trf.startswith('rhf'):
       val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
-      trf_list.append(transforms.RandomHorizontalFlip(val))
+      trf_list.append(T.RandomHorizontalFlip(val))
     elif trf.startswith('rvf'):
       val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
-      trf_list.append(transforms.RandomVerticalFlip(val))
-    # transforms.ColorJitter
+      trf_list.append(T.RandomVerticalFlip(val))
+    # T.ColorJitter
     # TODO Add a way to specify all three values
     # As of we take just 1 value and pass 3 equal ones.
     elif trf.startswith('cj'):
       val = [float(trf[2:])] * 3
-      trf_list.append(transforms.ColorJitter(*val))
+      trf_list.append(T.ColorJitter(*val))
     elif trf == 'tt':
-      trf_list.append(transforms.ToTensor())
+      trf_list.append(T.ToTensor())
     elif trf == 'normimgnet':
-      trf_list.append(transforms.Normalize([0.485, 0.456, 0.406],
-                                           [0.229, 0.224, 0.225]))
+      trf_list.append(T.Normalize([0.485, 0.456, 0.406],
+                                  [0.229, 0.224, 0.225]))
     elif trf == 'normmnist':
-      trf_list.append(transforms.Normalize((0.1307,), (0.3081,)))
+      trf_list.append(T.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
-      trf_list.append(transforms.Lambda(lambda x : x.mul(255)))
+      trf_list.append(T.Lambda(lambda x : x.mul(255)))
     else:
       raise NotImplementedError
 
-  return transforms.Compose(trf_list)
+  return T.Compose(trf_list)

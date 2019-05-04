@@ -61,13 +61,8 @@ class TestImgUtils(unittest.TestCase):
 
   def test_imsave_imshow(self):
     #TODO add tests for testing it further
-    if not callable(getattr(imgutils, 'imsave', None)):
-      raise NotImplementedError
-
-    #TODO add tests for testing it further
-    if not callable(getattr(imgutils, 'imshow', None)):
-      raise NotImplementedError
-
+    utils.implemented(imgutils, 'imsave')
+    utils.implemented(imgutils, 'imshow')
 
 
 #############################################

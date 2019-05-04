@@ -33,7 +33,7 @@ def load_from_pth(url, fname='random', key='state_dict'):
   return ckpt[key] if key in ckpt else ckpt
 
 
-def check_if_implemented(module, func):
+def implemented(module, func):
   """
   Function to check if a function func exists in module.
 
@@ -75,6 +75,35 @@ def name_from_object(obj):
   # [1:-2] -> "class 'torch.optim.adam.Adam"
   # .split('.')[-1] -> "Adam"
   return cls_str[1:-2].split('.')[-1].lower()
+
+
+def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None):
+  """
+  Helps in Loading Pretrained networks
+  """
+  net.load_state_dict(load_from_pth(url, fname))
+  # If nc != None, load a custom last linear layer
+  # After freezing the rest of the network
+  if nc is not None:
+    for p in net.parameters():
+      p.requires_grad_(False)
+    net.fc = nn.Linear(512, nc)
+  return net
+
+
+def freeze(net:nn.Module):
+  """
+  Freeze the net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net to freeze
+
+  """
+  for p in net.parameters():
+    if p.requires_grad:
+      p.requires_grad_(False)
 
 
 def count_modules(net:nn.Module):

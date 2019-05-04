@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import unittest
-import scratchai
-from scratchai.one_call import *
+
+from torchvision import transforms as T
+from scratchai import *
 
 class TestOneCalls(unittest.TestCase):
   
@@ -17,13 +18,21 @@ class TestOneCalls(unittest.TestCase):
     This function ensures the classify function is working properly.
     """
     # Check that url works.
-    pred = classify(TestOneCalls.url_1)
+    pred, val = one_call.classify(TestOneCalls.url_1)
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
     self.assertTrue(pred == TestOneCalls.lab_1, 'Doesn\'t Work!')
 
     # TODO Check that path in local works
 
     # Check that mnist works
-    pred = classify(TestOneCalls.url_2, nstr='lenet_mnist', trf='rz32_cc28_tt')
+    pred, val = one_call.classify(TestOneCalls.url_2, nstr='lenet_mnist', trf='rz32_cc28_tt')
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
     self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
+
+  def test_stransfer(self):
+    """
+    Ensures the stransfer function is working properly.
+    """
+    imgshape = T.ToTensor()(imgutils.load_img(TestOneCalls.url_1)).shape
+    simgshape = T.ToTensor()(one_call.stransfer(TestOneCalls.url_1, show=False)).shape
+    self.assertTrue(imgshape == simgshape, 'doesn\'t look good')

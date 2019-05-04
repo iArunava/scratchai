@@ -18,6 +18,7 @@ class TestUNet(unittest.TestCase):
     as shown in the paper.
     '''
     noise = torch.randn(2, 3, 572, 572)
+    # TODO Assert device is on cpu after initialization
 
     unet1 = scratchai.nets.UNet(3, 4, sos=False)
     out = unet1(noise)
@@ -131,6 +132,7 @@ class TestResnet(unittest.TestCase):
     for model in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
       net = getattr(scratchai.nets, model)()
       out = net(noise)
+      # TODO Assert device is on cpu after initialization
       self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
       del net, out
 
@@ -138,6 +140,7 @@ class TestResnet(unittest.TestCase):
     noise = torch.randn(2, 1, 28, 28)
     net = getattr(scratchai.nets, 'resnet18_mnist')()
     out = net(noise)
+    # TODO Assert device is on cpu after initialization
     self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
     del net, out
     
@@ -159,6 +162,7 @@ class TestLenet(unittest.TestCase):
   def test_lenet(self):
     n1 = torch.randn(2, 3, 32, 32)
     out = nets.Lenet(11)(n1)
+    # TODO Assert device is on cpu after initialization
     self.assertEqual(list(out.shape), [2, 11], "out shape not looking good")
 
 
@@ -170,7 +174,7 @@ class TestCommon(nn.Module):
     self.assertTrue(out.shape, [13, 3*4*2], 'out shape not okay')
 
   def test_debug(self):
-    utils.check_if_implemented(nets, 'debug')
+    utils.implemented(nets, 'debug')
 
 
 #############################################################

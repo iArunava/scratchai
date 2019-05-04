@@ -7,20 +7,20 @@ class TestLearners(unittest.TestCase):
     
   def test_clf_test(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.clflearner, 'clf_test')
+    utils.implemented(learners.clflearner, 'clf_test')
 
   def test_clf_train(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.clflearner, 'clf_train')
+    utils.implemented(learners.clflearner, 'clf_train')
 
   def test_clf_fit(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.clflearner, 'clf_fit')
+    utils.implemented(learners.clflearner, 'clf_fit')
 
   def test_imp_mnist_cifar10(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.quicktrain, 'mnist')
-    utils.check_if_implemented(learners.quicktrain, 'cifar10')
+    utils.implemented(learners.quicktrain, 'mnist')
+    utils.implemented(learners.quicktrain, 'cifar10')
   
   @unittest.skipIf(torch.cuda.is_available() == False, 'no cuda')
   def test_train_mnist_cifar10(self):
@@ -32,4 +32,4 @@ class TestLearners(unittest.TestCase):
 
   def test_adjust_lr(self):
     # Check if the function is implemented
-    utils.check_if_implemented(learners.clflearner, 'adjust_lr')
+    utils.implemented(learners.clflearner, 'adjust_lr')
