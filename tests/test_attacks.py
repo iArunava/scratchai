@@ -3,10 +3,14 @@ import torch
 import torch.nn as nn
 import unittest
 import requests
+import zipfile
+import io
 import numpy as np
 from torchvision import models, transforms
 from PIL import Image
 import matplotlib.pyplot as plt
+
+from scratchai import *
 
 NOISE = 'noise'
 SEMANTIC = 'semantic'
@@ -23,6 +27,8 @@ class TestAttacks(unittest.TestCase):
                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
               ])
   
+  url_dset = 'https://www.dropbox.com/s/6bg8ntqcs4r98i9/testdataset.zip?dl=1'
+
   def test_noise_atk(self):
     """
     Tests to check that the Noise Attack works
@@ -101,7 +107,16 @@ class TestAttacks(unittest.TestCase):
       self.check_atk(net, img, scratchai.attacks.fgm, t=FGM)
       print ('[INFO] Attack worked successfully!')
       del net
+  
+  def test_benchmark(self):
+    net = nets.resnet18()
+    if not os.path.exists('/tmp/imgnet/'):
+      r = requests.get(TestAttacks.url_dset)
+      z = zipfile.ZipFile(io.BytesIO(r.content))
+      z.extractall('/tmp/')
 
+    atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD]
+    for atk in atks: attacks.benchmark_atk(atk, net, '/tmp/imgnet/')
 
   def scale(self, img):
     return img * (255. / img.max())

@@ -2,9 +2,14 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+from tqdm import tqdm
 from torchvision import transforms as T
+from torchvision import datasets
+from scratchai.utils import freeze
+from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
 from scratchai.learners.clflearner import clf_test
+
 
 def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   """
@@ -30,11 +35,27 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
                    T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
                    # Passing the net regardless of the attack being black box
                    # For Implementation efficiency.
-                   atk(net, **kwargs)
+                   #atk(net=net, **kwargs)
                   ])
   dset = datasets.ImageFolder(root, transform=trf)
   loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
-  acc, loss = clf_test(net, lioader)
+  #acc, loss = clf_test(net, loader)
+  freeze(net)
+  atk = atk(net, **kwargs)
+
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  vcorr = 0; vloss = 0
+  net.to(device); net.eval()
+  crit = nn.CrossEntropyLoss()
+
+  for ii, (data, labl) in enumerate(tqdm(loader)):
+    data, labl = atk(data.to(device)), labl.to(device)
+    out = net(data)
+    vloss += crit(out, labl).item()
+    vcorr += (out.argmax(dim=1) == labl).float().sum().item()
+  acc = accuracy(vcorr, len(loader)*loader.batch_size)
+  vloss /= len(loader)
+
   print ('\nThe net had an accuracy of {:.2f}'.format(acc))
 
 

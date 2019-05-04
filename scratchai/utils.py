@@ -91,6 +91,21 @@ def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None):
   return net
 
 
+def freeze(net:nn.Module):
+  """
+  Freeze the net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net to freeze
+
+  """
+  for p in net.parameters():
+    if p.requires_grad:
+      p.requires_grad_(False)
+
+
 def count_modules(net:nn.Module):
   """
   TODO

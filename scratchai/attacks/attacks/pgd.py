@@ -8,6 +8,10 @@ import torch.nn as nn
 from scratchai.attacks.attacks import fgm
 from scratchai.attacks.utils import clip_eta
 
+
+__all__ = ['pgd', 'PGD']
+
+
 def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3, 
     eps_iter:float=0.05, rand_minmax:float=0.3, clip_min=None, clip_max=None, 
     y=None, ordr=np.inf, rand_init=None, targeted=False) -> torch.Tensor:
@@ -56,6 +60,8 @@ def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3,
   
   if y is None:
     # Use ground truth labels to avoid label leaking
+    if len(x.shape) == 3: x.unsqueeze_(0)
+    #x.to('cuda' if next(net.parameters()).is_cuda else 'cpu')
     _, y = torch.max(net(x), dim=1)
   else:
     targeted = True
@@ -95,3 +101,14 @@ def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3,
     assert (eps <= (1e6 + clip_max - clip_min)) 
   
   return adv_x
+
+
+##########################################################################
+###### Class to initialize the attack for use with torchvision.transforms
+
+class PGD():
+  def __init__(self, net, **kwargs):
+    self.net = net
+    self.kwargs = kwargs
+  def __call__(self, x):
+    return pgd(x, self.net, **self.kwargs)

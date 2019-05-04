@@ -9,7 +9,7 @@ from torchvision import transforms as T
 from torchvision import datasets
 from scratchai.learners.clflearner import clf_test
 
-
+__all__ = ['noise', 'Noise']
 
 def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
     """
@@ -33,8 +33,7 @@ def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
 
     if order != np.inf: raise NotImplementedError(ord)
     
-    eta = torch.FloatTensor(*x.shape, device=x.device) \
-               .uniform_(-eps, eps)
+    eta = torch.FloatTensor(*x.shape).uniform_(-eps, eps).to(x.device)
 
     adv_x = x.float() + eta
 
@@ -50,7 +49,7 @@ def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
 # used along with torchvision.transforms
 
 class Noise():
-  def __init__(self, **kwargs):
+  def __init__(self, net=None, **kwargs):
     self.kwargs = kwargs
   def __call__(self, x):
     return noise(x, **self.kwargs)

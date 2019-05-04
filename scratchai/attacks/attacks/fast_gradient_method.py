@@ -8,6 +8,9 @@ import torch.nn as nn
 
 from scratchai.attacks.utils import optimize_linear
 
+
+__all__ = ['fgm', 'FGM']
+
 def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None, 
         clip_min=None, clip_max=None, targeted=False, sanity_checks=True):
   """
@@ -51,10 +54,13 @@ def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None,
   if clip_max:
     assert torch.all(x < torch.tensor(clip_max, device=x.device, dtype=x.dtype))
 
-  # x needs to be a leaf variable, of floating point type and have requires_grad
-  # being True for its grad to be computed and stored properly in a backward call
-  x = x.clone().detach().float().requires_grad_(True)
+  # x needs to have requires_grad set to True 
+  # for its grad to be computed and stored properly in a backward call
+  x = x.clone().detach().requires_grad_(True)
   if y is None:
+    # Inplace operations not working for some bug #15070
+    # TODO Update when fixed
+    if len(x.shape) == 3: x = x.unsqueeze(0)
     _, y = torch.max(net(x), dim=1)
 
   # Compute loss
@@ -86,7 +92,8 @@ def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None,
 # used along with torchvision.transforms
 
 class FGM():
-  def __init__(self, **kwargs):
+  def __init__(self, net, **kwargs):
+    self.net = net
     self.kwargs = kwargs
   def __call__(self, x):
-    return fgm(x, **self.kwargs)
+    return fgm(x, self.net, **self.kwargs)

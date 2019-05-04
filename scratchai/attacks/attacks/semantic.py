@@ -2,6 +2,8 @@
 Semantic adversarial Examples
 """
 
+__all__ = ['semantic', 'Semantic']
+
 def semantic(x, center:bool=True, max_val:float=1.):
   """
   Semantic adversarial examples.
@@ -31,7 +33,7 @@ def semantic(x, center:bool=True, max_val:float=1.):
 ###### mainly for the use with torchvision.transforms
 
 class Semantic():
-  def __init__(**kwargs):
+  def __init__(self, net=None, **kwargs):
     self.kwargs = kwargs
   def __call__(self, x):
-    semantic(x, **kwargs)
+    return semantic(x, **self.kwargs)
