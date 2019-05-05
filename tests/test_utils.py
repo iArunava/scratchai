@@ -81,6 +81,11 @@ class TestUtils(unittest.TestCase):
     name = utils.name_from_object(obj)
     self.assertTrue(name == 'lenet', 'doesn\t look good')
 
+  def test_avgmeter(self):
+    mtr = utils.AvgMeter('name', '.:2f')
+
+    
+
 #############################################
 ### Check the functions in scratchai/attacks/utils.py
 #############################################

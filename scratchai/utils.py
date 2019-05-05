@@ -137,6 +137,7 @@ class AvgMeter():
   def __str__(self):
     return '{name} - {avg}'.format(**self.__dict__)
 
+
 def count_modules(net:nn.Module):
   """
   TODO
