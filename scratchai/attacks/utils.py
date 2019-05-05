@@ -157,7 +157,7 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
     loss += crit(out, labl).item()
     adv_loss += crit(adv_out, labl).item()
     corr += (out.argmax(dim=1) == labl).float().sum().item()
-    adv_corr += (out.argmax(dim=1) == labl).float().sum().item()
+    adv_corr += (adv_out.argmax(dim=1) == labl).float().sum().item()
   acc = accuracy(corr, len(loader)*loader.batch_size)
   adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
   loss /= len(loader)
@@ -195,9 +195,16 @@ def pre_benchmark_atk(**kwargs):
       loader = kwargs['loader']
   
   # Set dataset specific functions here
-  elif kwargs['dset'] == IMGNET12:
-    dset = datasets.ImageNet(kwargs['root'], split='test',
-                    download=kwargs['download'], transform=kwargs['trf'])
+  else:
+    if kwargs['dset'] == IMGNET12:
+      dset = datasets.ImageNet(kwargs['root'], split='test',
+                      download=kwargs['download'], transform=kwargs['trf'])
+    elif kwargs['dset'] == MNIST:
+      trf = get_trf('tt_normmnist')
+      dset = datasets.MNIST(kwargs['root'], train=False, 
+                     download=kwargs['download'], transform=trf)
+    else: raise
+
     loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
     
   # Deleting keys that is used just for benchmark_atk() function is 
