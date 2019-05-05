@@ -15,8 +15,6 @@ This section performs benchmarking of all the attacks and defences implemented h
 The benchmarks reproduced here uses the ILSVC2012 Imagenet test set. The columns with Acc@n indicate the top-n accuracy 
 and columns with `w/o` indicates the accuracy without the attack and the ones with `w` indicate the accuracy with the attack.
 
-The table lists information in the following way:
-
 | Attack | Alexnet | VGG16 | VGG19 | Resnet18 |
 | :----- | :---: | :---: | :---: | :---: |
 | Noise  | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> <tr> <th> MNIST </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> <tr> <th> ILSVRC2012 </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> </tr> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> <tr> <th> MNIST </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> <tr> <th> ILSVRC2012 </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> </tr> </tr> </table>| <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> <tr> <th> MNIST </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> <tr> <th> ILSVRC2012 </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> </tr> </tr> </table>| <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> <tr> <th> MNIST </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> <tr> <th> ILSVRC2012 </th> <th> NA </th> <th> NA </th> <th> NA </th> <th> NA </th> </tr> </tr> </table> |
