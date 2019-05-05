@@ -123,13 +123,22 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
         The net which is to be attacked.
   root : str
          The root directory of the dataset.
+  dfunc : function
+          The function that can take the root and torchvision.transforms
+          and return a torchvision.Datasets object
+          Defaults to datasets.ImageFolder
+  trf : torchvision.Transforms
+        The transforms that you want to apply.
+        Defaults to (get_trf('rz256_cc224_tt_normimgnet')
   bs : int
        The batch size. Defaults to 4.
   
   """
+  
+  if 'trf' not in kwargs: kwargs['trf'] = get_trf('rz256_cc224_tt_normimgnet')
+  if 'dfunc' not in kwargs: kwargs['dfunc'] = datasets.ImageFolder
 
-  trf = get_trf('rz256_cc224_tt_normimgnet')
-  dset = datasets.ImageFolder(root, transform=trf)
+  dset = kwargs['dfunc'](root, transform=kwargs['trf'])
   loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
 
   freeze(net)
@@ -160,3 +169,12 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
        '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
        atk_name))
+
+
+def benchmark_atk_on_imagenet(atk, net:nn.Module, **kwargs):
+  """
+  Helper function to easily benchmark a attack on the imagenet 2012 dataset.
+
+  """
+  kwargs['dfunc'] = datasets.ImageNet
+  benchmark_atk(atk, net, **kwargs)
