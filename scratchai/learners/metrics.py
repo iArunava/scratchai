@@ -36,7 +36,8 @@ def miou(pred, gt, nc, c2n=None):
   where each matrix in lab is have each pixel value in the range of [0, C)
   where C is the number of classes.
   """
-  
+  # TODO This function needs testing
+
   assert len(list(pred.shape)) in [3, 2]
   # Assert batch_size, height and width matches
   assert pred.shape == gt.shape
@@ -62,7 +63,7 @@ def miou(pred, gt, nc, c2n=None):
   return miou/nc
 
 
-def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)):
+def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)) -> list:
   """
   Function to help in measuring the accuracy of the predicted labels
   against the true labels.
@@ -76,17 +77,10 @@ def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)):
   """ 
   
   with torch.no_grad():
-    #return pcorr / total
-    # TODO Extend this to k > 1
-    # TODO Generalize to top1 and top5 accuracy
-
     _, pred = out.topk(max(topk), 1, True, True); pred.t_()
     corr = pred.eq(target.view(1, -1).expand_as(pred))
-
     acc_list = []
     for k in topk:
-      corr_k = corr[:, :k].sum().item()
-      assert corr_k <= target.size(0)#; print (corr_k)
-      acc_list.append(corr_k / target.size(0))
-    #print (acc_list)
+      corr_k = corr[:k].sum().item()
+      acc_list.append(corr_k / out.size(0))
     return acc_list
