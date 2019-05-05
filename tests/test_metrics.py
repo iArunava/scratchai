@@ -35,7 +35,7 @@ class TestMetrics(unittest.TestCase):
                           [0.1487, 0.1719, 0.9073, 0.8438, 0.0470]])
                       
     # topk index        #1 #1 #1 #3 #3 #3 #5 #5 #3 #5
-    gt = torch.Tensor([[4, 3, 4, 2, 2, 3, 3, 0, 3, 4]]).long()
+    gt = torch.Tensor([[4, 3, 4, 2, 2, 3, 3, 0, 3, 4]]).view(-1, 1).long()
     out = learners.accuracy(pred, gt, topk=(1, 3, 5))
     self.assertTrue(out == [3/10, 7/10, 10/10], 'result bad!')
 

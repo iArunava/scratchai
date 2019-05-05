@@ -70,13 +70,15 @@ def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)) -> list:
 
   Arguments
   ---------
-  pcorr : int
-          Number of elements correctly classified.
-  total : int
+  out : torch.Tensor, [N x C] where C is the number of classes
+        The predicted logits 
+  pred : torch.Tensor, [N,]
           Total number of elements.
   """ 
   
   with torch.no_grad():
+    assert out.shape[0] == target.shape[0]
+    assert max(target) <= out.shape[1]
     _, pred = out.topk(max(topk), 1, True, True); pred.t_()
     corr = pred.eq(target.view(1, -1).expand_as(pred))
     acc_list = []
