@@ -176,29 +176,29 @@ def pre_benchmark_atk(**kwargs):
 
   # Set the Default options if nothing explicit provided
   def_dict = {
-    'trf'      : get_trf('rz256_cc224_tt_normimgnet'),
     'bs'       : 4,
+    'trf'      : get_trf('rz256_cc224_tt_normimgnet'),
+    'dset'     : 'NA',
     'root'     : './',
     'dfunc'    : datasets.ImageFolder,
-    'dset'     : 'NA',
     'download' : True,
   }
 
   for key, val in def_dict.items():
     if key not in kwargs: kwargs[key] = val
-
-  if 'loader' not in kwargs:
-    dset = kwargs['dfunc'](kwargs['root'], transform=kwargs['trf'])
-    loader = DataLoader(dset, batch_size=kwargs['bs'], num_workers=2)
-  else:
-    loader = kwargs['loader']
+  
+  if kwargs['dset'] == 'NA':
+    if 'loader' not in kwargs:
+      dset = kwargs['dfunc'](kwargs['root'], transform=kwargs['trf'])
+      loader = DataLoader(dset, batch_size=kwargs['bs'], num_workers=2)
+    else:
+      loader = kwargs['loader']
   
   # Set dataset specific functions here
-  if kwargs['dset'] == IMGNET12:
+  elif kwargs['dset'] == IMGNET12:
     dset = datasets.ImageNet(kwargs['root'], split='test',
                     download=kwargs['download'], transform=kwargs['trf'])
-    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'], 
-                        split='val')
+    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
     
   # Deleting keys that is used just for benchmark_atk() function is 
   # important as the same kwargs dict is passed to initialize the attack
