@@ -17,13 +17,9 @@ and columns with `w/o` indicates the accuracy without the attack and the ones wi
 
 The table lists information in the following way:
 
-| Attack | Model |
-| :----- | :-----: |
-| Attack Name | top-1 acc of the model w/o attack <br/> top-5 acc of the model w/o attack <br/> top-1 acc of the model w/ attack <br/> top-5/ acc of the model w/ attack |
-
 | Attack | Alexnet | VGG16 | VGG19 | Resnet18 |
 | :----- | :---: | :---: | :---: | :---: |
-| Noise  | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w |
-| Semantic | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w |
-| Fast Gradient Sign Method  | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w |
-| Projected Gradient Descent  | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w | acc@1 w/o<br/>acc@5 w/o<br/>acc@1 w<br/>acc@5 w |
+| Noise  | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> |
+| Semantic  | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> |
+| Fast Gradient Sign Method | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> |
+| Projected Gradient Descent  | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> | <table> <tr> <th> Dataset </th> <th> Acc@1 w/ </th> <th> Acc@5 w/ </th> <th> Acc@1 w/o </th> <th> Acc@5 w/o </th> </tr> </table> |
