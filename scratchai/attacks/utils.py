@@ -176,12 +176,12 @@ def pre_benchmark_atk(**kwargs):
 
   # Set the Default options if nothing explicit provided
   def_dict = {
-    'trf' : get_trf('rz256_cc224_tt_normimgnet'),
-    'bs'  : 4,
-    'root': './',
+    'trf'      : get_trf('rz256_cc224_tt_normimgnet'),
+    'bs'       : 4,
+    'root'     : './',
+    'dfunc'    : datasets.ImageFolder,
+    'dset'     : 'NA',
     'download' : True,
-    'dfunc' : datasets.ImageFolder,
-    'dset' : 'NA',
   }
 
   for key, val in def_dict.items():
@@ -197,7 +197,8 @@ def pre_benchmark_atk(**kwargs):
   if kwargs['dset'] == IMGNET12:
     dset = datasets.ImageNet(kwargs['root'], split='test',
                     download=kwargs['download'], transform=kwargs['trf'])
-    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
+    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'], 
+                        split='val')
     
   # Deleting keys that is used just for benchmark_atk() function is 
   # important as the same kwargs dict is passed to initialize the attack
