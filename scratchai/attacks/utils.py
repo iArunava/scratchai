@@ -13,60 +13,6 @@ from scratchai.imgutils import get_trf
 from scratchai.utils import name_from_object
 
 
-def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
-  """
-  Helper function to benchmark using a particular attack
-  on a particular dataset. All benchmarks that are present in this
-  repository are created using this function.
-
-  Arguments
-  ---------
-  atk : scratchai.attacks.attacks
-        The attack on which to use.
-  net : nn.Module
-        The net which is to be attacked.
-  root : str
-         The root directory of the dataset.
-  bs : int
-       The batch size. Defaults to 4.
-  
-  """
-
-  trf = get_trf('rz256_cc224_tt_normimgnet')
-  #bs = 2
-  dset = datasets.ImageFolder(root, transform=trf)
-  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
-
-  freeze(net)
-  print ('[INFO] Net Frozen!')
-  atk = atk(net, **kwargs)
-  atk_name = name_from_object(atk)
-  net_name = name_from_object(net)
-
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  corr = 0; loss = 0
-  adv_corr = 0; adv_loss = 0
-  net.to(device); net.eval()
-  crit = nn.CrossEntropyLoss()
-
-  for ii, (data, labl) in enumerate(tqdm(loader)):
-    adv_data, data = atk(data.to(device).clone()), data.to(device)
-    labl = labl.to(device)
-    adv_out = net(adv_data); out = net(data)
-    loss += crit(out, labl).item()
-    adv_loss += crit(adv_out, labl).item()
-    corr += (out.argmax(dim=1) == labl).float().sum().item()
-    adv_corr += (out.argmax(dim=1) == labl).float().sum().item()
-  acc = accuracy(corr, len(loader)*loader.batch_size)
-  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
-  loss /= len(loader)
-  adv_loss /= len(loader)
-
-  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
-       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
-       atk_name))
-
-
 def optimize_linear(grads, eps, ordr):
   """
   Solves for optimal input to a linear function under a norm constraint.
@@ -156,3 +102,61 @@ def clip_eta(eta, ord, eps):
     eta *= factor
 
   return eta
+
+
+
+##################################################################
+######### Functions to help benchmark attacks ####################
+##################################################################
+
+def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
+  """
+  Helper function to benchmark using a particular attack
+  on a particular dataset. All benchmarks that are present in this
+  repository are created using this function.
+
+  Arguments
+  ---------
+  atk : scratchai.attacks.attacks
+        The attack on which to use.
+  net : nn.Module
+        The net which is to be attacked.
+  root : str
+         The root directory of the dataset.
+  bs : int
+       The batch size. Defaults to 4.
+  
+  """
+
+  trf = get_trf('rz256_cc224_tt_normimgnet')
+  dset = datasets.ImageFolder(root, transform=trf)
+  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
+
+  freeze(net)
+  print ('[INFO] Net Frozen!')
+  atk = atk(net, **kwargs)
+  atk_name = name_from_object(atk)
+  net_name = name_from_object(net)
+
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  corr = 0; loss = 0
+  adv_corr = 0; adv_loss = 0
+  net.to(device); net.eval()
+  crit = nn.CrossEntropyLoss()
+
+  for ii, (data, labl) in enumerate(tqdm(loader)):
+    adv_data, data = atk(data.to(device).clone()), data.to(device)
+    labl = labl.to(device)
+    adv_out = net(adv_data); out = net(data)
+    loss += crit(out, labl).item()
+    adv_loss += crit(adv_out, labl).item()
+    corr += (out.argmax(dim=1) == labl).float().sum().item()
+    adv_corr += (out.argmax(dim=1) == labl).float().sum().item()
+  acc = accuracy(corr, len(loader)*loader.batch_size)
+  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+  loss /= len(loader)
+  adv_loss /= len(loader)
+
+  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
+       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
+       atk_name))
