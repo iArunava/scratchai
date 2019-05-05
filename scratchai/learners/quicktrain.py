@@ -12,6 +12,7 @@ from scratchai import utils
 
 MNIST   = 'mnist'
 CIFAR10 = 'cifar10'
+IMGNET12 = 'imagenet12'
 
 
 def mnist(net, **kwargs):
@@ -22,28 +23,6 @@ def mnist(net, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str
-         Path to the ckpt file.
-  resume : bool
-           If true, resume training from ckpt.
-           else not.
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
 
   Returns
   -------
@@ -82,26 +61,6 @@ def cifar10(net, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str, None
-         Path to the ckpt file. If not None, training is started
-         using this ckpt file. Defaults to None
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
   
   Returns
   -------
@@ -131,6 +90,47 @@ def cifar10(net, **kwargs):
   plt_tr_vs_tt(tlist, vlist)
 
 
+def imagenet12(net, **kwargs):
+  """
+  Train on ILSVRC12 with net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+  
+  Returns
+  -------
+  tlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for training
+  vlist : list
+          Contains list of n 2-tuples. where n == epochs
+          and a tuple (a, b) where,
+          a -> is the acc for the corresponding index
+          b -> is the loss for the corresponding index
+          for validation
+  """
+  opti, crit, kwargs = preprocess_opts(net, dset=IMGNET12, **kwargs)
+
+  trf = get_trf('rz256_cc224 _tt_normimgnet')
+
+  t = datasets.ImageNet(kwargs['root'], split='train', 
+              download=kwargs['download'], transform=trf)
+  v = datasets.ImageNet(kwargs['root'], split='val', 
+              download=kwargs['download'], transform=trf)
+
+  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
+  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
+  
+  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
+  plt_tr_vs_tt(tlist, vlist)
+  return tlist, vlist
+
+
 def custom(net, tloader, vloader, **kwargs):
   """
   Train on a custom dataset with net.
@@ -139,26 +139,6 @@ def custom(net, tloader, vloader, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str, None
-         Path to the ckpt file. If not None, training is started
-         using this ckpt file. Defaults to None
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
   
   Returns
   -------
@@ -193,6 +173,25 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   ---------
   net : nn.Module
         The net to train.
+  optim : nn.optim
+          The optimizer to use.
+  crit : nn.Module
+         The criterion to use.
+  lr : float
+       The learning rate.
+  wd : float
+       The weight decay.
+  bs : int
+       The batch size.
+  seed : int
+         The particular seed to use.
+  epochs : int
+           The epcochs to train for.
+  ckpt : str
+         Path to the ckpt file.
+  root : str
+         The root where the datasets is or
+         needs to be downloaded.
   dset : str, None
          Name of the dataset.
   kwargs : dict
@@ -216,6 +215,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'lr_decay' not in kwargs: kwargs['lr_decay'] = 0.2
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
   if 'root' not in kwargs: kwargs['root'] = home
+  if 'download' not in kwargs: kwargs['download'] = True
   
   # Set Dataset specific values if dset is not None here
 
