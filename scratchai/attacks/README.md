@@ -15,7 +15,7 @@ This section performs benchmarking of all the attacks and defences implemented h
 The benchmarks reproduced here uses the ILSVC2012 Imagenet test set. The columns with Acc@n indicate the top-n accuracy 
 and columns with `w/o` indicates the accuracy without the attack and the ones with `w` indicate the accuracy with the attack.
 
-The table lists information in the following way:
+`NA` Indicates that it has not been measured yet.
 
 | Attack | Lenet | Alexnet | VGG16 | VGG19 | Resnet18 |
 | :----- | :---: | :---: | :---: | :---: | :---: |
