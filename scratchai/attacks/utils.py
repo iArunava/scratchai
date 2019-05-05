@@ -5,12 +5,13 @@ import numpy as np
 from tqdm import tqdm
 from torchvision import transforms as T
 from torchvision import datasets
+from torch.utils.data import DataLoader
 from scratchai.utils import freeze
 from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
-from scratchai.learners.clflearner import clf_test
 from scratchai.imgutils import get_trf
 from scratchai.utils import name_from_object
+from scratchai._config import CIFAR10, MNIST, IMGNET12
 
 
 def optimize_linear(grads, eps, ordr):
@@ -109,7 +110,7 @@ def clip_eta(eta, ord, eps):
 ######### Functions to help benchmark attacks ####################
 ##################################################################
 
-def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
+def benchmark_atk(atk, net:nn.Module, **kwargs):
   """
   Helper function to benchmark using a particular attack
   on a particular dataset. All benchmarks that are present in this
@@ -135,11 +136,7 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   
   """
   
-  if 'trf' not in kwargs: kwargs['trf'] = get_trf('rz256_cc224_tt_normimgnet')
-  if 'dfunc' not in kwargs: kwargs['dfunc'] = datasets.ImageFolder
-
-  dset = kwargs['dfunc'](root, transform=kwargs['trf'])
-  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
+  loader, kwargs = pre_benchmark_atk(**kwargs)
 
   freeze(net)
   print ('[INFO] Net Frozen!')
@@ -171,10 +168,42 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
        atk_name))
 
 
-def benchmark_atk_on_imagenet(atk, net:nn.Module, **kwargs):
+def pre_benchmark_atk(**kwargs):
   """
-  Helper function to easily benchmark a attack on the imagenet 2012 dataset.
+  Helper function that sets all the defaults while performing checks
+  for all the options passed before benchmarking attacks.
+  """
 
-  """
-  kwargs['dfunc'] = datasets.ImageNet
-  benchmark_atk(atk, net, **kwargs)
+  # Set the Default options if nothing explicit provided
+  def_dict = {
+    'trf' : get_trf('rz256_cc224_tt_normimgnet'),
+    'bs'  : 4,
+    'root': './',
+    'download' : True,
+    'dfunc' : datasets.ImageFolder,
+    'dset' : 'NA',
+  }
+
+  for key, val in def_dict.items():
+    if key not in kwargs: kwargs[key] = val
+
+  if 'loader' not in kwargs:
+    dset = kwargs['dfunc'](kwargs['root'], transform=kwargs['trf'])
+    loader = DataLoader(dset, batch_size=kwargs['bs'], num_workers=2)
+  else:
+    loader = kwargs['loader']
+  
+  # Set dataset specific functions here
+  if kwargs['dset'] == IMGNET12:
+    dset = datasets.ImageNet(kwargs['root'], split='test',
+                    download=kwargs['download'], transform=kwargs['trf'])
+    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
+    
+  # Deleting keys that is used just for benchmark_atk() function is 
+  # important as the same kwargs dict is passed to initialize the attack
+  # So, otherwise the attack will throw an exception
+  for key in def_dict:
+    del kwargs[key]
+  if 'loader' in kwargs: del kwargs['loader']
+
+  return loader, kwargs

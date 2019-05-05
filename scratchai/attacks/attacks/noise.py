@@ -7,7 +7,6 @@ import torch
 
 from torchvision import transforms as T
 from torchvision import datasets
-from scratchai.learners.clflearner import clf_test
 
 __all__ = ['noise', 'Noise']
 
