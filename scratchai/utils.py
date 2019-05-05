@@ -106,6 +106,37 @@ def freeze(net:nn.Module):
       p.requires_grad_(False)
 
 
+class AvgMeter():
+  """
+  Computes and stores the current avg value.
+
+  Arguments
+  ---------
+  name : str
+         The name of the meter
+  fmt : str
+        The format in which to show the results
+  """
+  def __init__(self, name, fmt=':f'):
+    self.name = name
+    self.fmt = fmt
+    self.reset()
+  
+  def __call__(self, val, cnt):
+    self.val = val
+    self.sum += val * cnt
+    self.cnt += cnt
+    self.avg = self.sum / self.cnt
+    #print (self.name, self.avg, self.val, self.cnt)
+    #import time; time.sleep(5)
+
+  def reset(self):
+    self.val = 0; self.sum = 0
+    self.cnt = 0; self.avg = 0
+  
+  def __str__(self):
+    return '{name} - {avg}'.format(**self.__dict__)
+
 def count_modules(net:nn.Module):
   """
   TODO

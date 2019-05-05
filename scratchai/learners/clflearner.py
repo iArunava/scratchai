@@ -8,9 +8,10 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 from scratchai.learners.metrics import accuracy
+from scratchai.utils import AvgMeter
 
 
-def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
+def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
   """
   This function helps in quickly testing the network.
 
@@ -22,8 +23,13 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
             or a generator which returns the images and the labels
   
   """
+  # TODO Fix this
+  if topk != (1, 5):
+    raise Exception('topk other than (1, 5) not supported for now.')
+
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  vcorr = 0
+  a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
+  #vcorr = 0
   vloss = 0
   net.to(device)
   net.eval()
@@ -34,18 +40,25 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss):
       data, labl = data.to(device), labl.to(device)
       out = net(data)
       vloss += crit(out, labl).item()
-      vcorr += (out.argmax(dim=1) == labl).float().sum().item()
+      acc1, acc5 = accuracy(out, labl, topk=topk) #
+      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0)) #
+      #vcorr += (out.argmax(dim=1) == labl).float().sum().item()
     
-    vacc = accuracy(vcorr, len(vloader)*vloader.batch_size)
+    #acc1, acc5 = accuracy(vcorr, len(vloader)*vloader.batch_size)
     vloss /= len(vloader)
-  return vacc, vloss
+  return (a1mtr.avg, a5mtr.avg), vloss
 
 
 def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
+  # TODO Fix this
+  if kwargs['topk'] != (1, 5):
+    raise Exception('topk other than (1, 5) not supported for now.')
+
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   net.to(device)
   net.train()
-  tcorr = 0
+  a1mtr = AvgMeter('train_acc1'); a5mtr = AvgMeter('train_acc5') #
+  #tcorr = 0
   tloss = 0
   try: crit = crit()
   except: pass
@@ -58,11 +71,13 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
     opti.step()
     with torch.no_grad():
       tloss += loss.item()
-      tcorr += (out.argmax(dim=1) == labl).float().sum().item()
+      acc1, acc5 = accuracy(out, labl, topk=kwargs['topk']) #
+      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0)) #
+      #tcorr += (out.argmax(dim=1) == labl).float().sum().item()
 
   tloss /= len(tloader)
-  tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
-  return tacc, tloss
+  #tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
+  return (a1mtr.avg, a5mtr.avg), tloss
 
 
 def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader, 
@@ -93,8 +108,8 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
     if lr_step is not None and type(lr_step) == list and e in lr_step:
       lr = adjust_lr(opti, lr, lr_decay)
       
-    tacc, tloss = clf_train(net, tloader, opti, crit)
-    vacc, vloss = clf_test(net, vloader, crit)
+    tacc, tloss = clf_train(net, tloader, opti, crit, topk=kwargs['topk'])
+    vacc, vloss = clf_test(net, vloader, crit, topk=kwargs['topk'])
     
     tlist.append((tacc, tloss))
     vlist.append((vacc, vloss))
@@ -102,14 +117,16 @@ def clf_fit(net:nn.Module, crit:nn.Module, opti:torch.optim, tloader, vloader,
     if vloss < bloss:
       bloss = vloss
       torch.save({'net' : net.state_dict(), 'opti' : opti.state_dict()},
-               'best_net-{}-{:.2f}.pth'.format(e, vacc))
+               'best_net-{}-{:.2f}.pth'.format(e, vacc[0]))
     
     # TODO The tloss and vloss needs a recheck.
-    print ('Epoch: {}/{} - Train Loss: {:.3f} - Training Acc: {:.3f}' 
-           ' - Val Loss: {:.3f} - Val Acc: {:.3f}'
-           .format(e, epochs, tloss, tacc, vloss, vacc))
+    print ('Epoch: {}/{} - Train Loss: {:.3f} - Train Acc@1: {:.3f}' 
+           '- Train Acc@5: {:.3f} - Val Loss: {:.3f} - Val Acc@1: {:.3f}'
+           '- Val Acc@5: {:.3f}'.format(e, epochs, tloss, tacc[0], tacc[1], 
+           vloss, vacc[0], vacc[1]))
+
     torch.save({'net' : net.cpu().state_dict(), 'opti' : opti.state_dict()},
-               'net-{}-{:.2f}.pth'.format(e, vacc))
+               'net-{}-{:.2f}.pth'.format(e, vacc[0]))
 
   return tlist, vlist
 

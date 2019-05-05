@@ -3,8 +3,9 @@ The metrics used to measure the performance of models.
 """
 
 import torch
-from tabulate import tabulate
 import numpy as np
+from tabulate import tabulate
+
 
 def miou(pred, gt, nc, c2n=None):
   """
@@ -61,7 +62,7 @@ def miou(pred, gt, nc, c2n=None):
   return miou/nc
 
 
-def accuracy(pcorr, total):
+def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)):
   """
   Function to help in measuring the accuracy of the predicted labels
   against the true labels.
@@ -75,13 +76,17 @@ def accuracy(pcorr, total):
   """ 
   
   with torch.no_grad():
-    return pcorr / total
+    #return pcorr / total
     # TODO Extend this to k > 1
     # TODO Generalize to top1 and top5 accuracy
-    '''
-    maxk = pred.topk(k, dim=1)
-    count = 0
-    for ii, (vals, idxs) in enumerate(zip(maxk[0], maxk[1])):
-      count += 1 if gt[ii] in idxs else 0
-    return count / pred.size(0)
-    '''
+
+    _, pred = out.topk(max(topk), 1, True, True); pred.t_()
+    corr = pred.eq(target.view(1, -1).expand_as(pred))
+
+    acc_list = []
+    for k in topk:
+      corr_k = corr[:, :k].sum().item()
+      assert corr_k <= target.size(0)#; print (corr_k)
+      acc_list.append(corr_k / target.size(0))
+    #print (acc_list)
+    return acc_list
