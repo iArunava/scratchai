@@ -33,7 +33,6 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   """
 
   trf = get_trf('rz256_cc224_tt_normimgnet')
-  #bs = 2
   dset = datasets.ImageFolder(root, transform=trf)
   loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
 
@@ -44,8 +43,8 @@ def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
   net_name = name_from_object(net)
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  corr = 0; loss = 0
-  adv_corr = 0; adv_loss = 0
+  loss = 0; adv_loss = 0
+  corr = 0; adv_corr = 0;
   net.to(device); net.eval()
   crit = nn.CrossEntropyLoss()
 

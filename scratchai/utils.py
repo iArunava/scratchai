@@ -122,7 +122,7 @@ class AvgMeter():
   When you call an instance of this class, make sure to call it
   with (val/cnt, cnt) where the val is already divided by cnt.
   """
-  def __init__(self, name, fmt=':f'):
+  def __init__(self, name, fmt=':.2f'):
     self.name = name
     self.fmt = fmt
     self.reset()
