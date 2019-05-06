@@ -9,9 +9,7 @@ from scratchai.imgutils import get_trf
 from scratchai.learners.clflearner import *
 from scratchai._config import home
 from scratchai import utils
-
-MNIST   = 'mnist'
-CIFAR10 = 'cifar10'
+from scratchai._config import CIFAR10, MNIST
 
 
 def mnist(net, **kwargs):

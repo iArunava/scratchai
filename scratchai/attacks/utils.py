@@ -5,65 +5,13 @@ import numpy as np
 from tqdm import tqdm
 from torchvision import transforms as T
 from torchvision import datasets
+from torch.utils.data import DataLoader
 from scratchai.utils import freeze
 from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
-from scratchai.learners.clflearner import clf_test
 from scratchai.imgutils import get_trf
 from scratchai.utils import name_from_object
-
-
-def benchmark_atk(atk, net:nn.Module, root:str, bs:int=4, **kwargs):
-  """
-  Helper function to benchmark using a particular attack
-  on a particular dataset. All benchmarks that are present in this
-  repository are created using this function.
-
-  Arguments
-  ---------
-  atk : scratchai.attacks.attacks
-        The attack on which to use.
-  net : nn.Module
-        The net which is to be attacked.
-  root : str
-         The root directory of the dataset.
-  bs : int
-       The batch size. Defaults to 4.
-  
-  """
-
-  trf = get_trf('rz256_cc224_tt_normimgnet')
-  dset = datasets.ImageFolder(root, transform=trf)
-  loader = torch.utils.data.DataLoader(dset, batch_size=bs, num_workers=2)
-
-  freeze(net)
-  print ('[INFO] Net Frozen!')
-  atk = atk(net, **kwargs)
-  atk_name = name_from_object(atk)
-  net_name = name_from_object(net)
-
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  loss = 0; adv_loss = 0
-  corr = 0; adv_corr = 0;
-  net.to(device); net.eval()
-  crit = nn.CrossEntropyLoss()
-
-  for ii, (data, labl) in enumerate(tqdm(loader)):
-    adv_data, data = atk(data.to(device).clone()), data.to(device)
-    labl = labl.to(device)
-    adv_out = net(adv_data); out = net(data)
-    loss += crit(out, labl).item()
-    adv_loss += crit(adv_out, labl).item()
-    corr += (out.argmax(dim=1) == labl).float().sum().item()
-    adv_corr += (out.argmax(dim=1) == labl).float().sum().item()
-  acc = accuracy(corr, len(loader)*loader.batch_size)
-  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
-  loss /= len(loader)
-  adv_loss /= len(loader)
-
-  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
-       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
-       atk_name))
+from scratchai._config import CIFAR10, MNIST, IMGNET12
 
 
 def optimize_linear(grads, eps, ordr):
@@ -155,3 +103,115 @@ def clip_eta(eta, ord, eps):
     eta *= factor
 
   return eta
+
+
+
+##################################################################
+######### Functions to help benchmark attacks ####################
+##################################################################
+
+def benchmark_atk(atk, net:nn.Module, **kwargs):
+  """
+  Helper function to benchmark using a particular attack
+  on a particular dataset. All benchmarks that are present in this
+  repository are created using this function.
+
+  Arguments
+  ---------
+  atk : scratchai.attacks.attacks
+        The attack on which to use.
+  net : nn.Module
+        The net which is to be attacked.
+  root : str
+         The root directory of the dataset.
+  dfunc : function
+          The function that can take the root and torchvision.transforms
+          and return a torchvision.Datasets object
+          Defaults to datasets.ImageFolder
+  trf : torchvision.Transforms
+        The transforms that you want to apply.
+        Defaults to (get_trf('rz256_cc224_tt_normimgnet')
+  bs : int
+       The batch size. Defaults to 4.
+  
+  """
+  
+  loader, kwargs = pre_benchmark_atk(**kwargs)
+
+  freeze(net)
+  print ('[INFO] Net Frozen!')
+  atk = atk(net, **kwargs)
+  atk_name = name_from_object(atk)
+  net_name = name_from_object(net)
+
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  corr = 0; loss = 0
+  adv_corr = 0; adv_loss = 0
+  net.to(device); net.eval()
+  crit = nn.CrossEntropyLoss()
+
+  for ii, (data, labl) in enumerate(tqdm(loader)):
+    adv_data, data = atk(data.to(device).clone()), data.to(device)
+    labl = labl.to(device)
+    adv_out = net(adv_data); out = net(data)
+    loss += crit(out, labl).item()
+    adv_loss += crit(adv_out, labl).item()
+    corr += (out.argmax(dim=1) == labl).float().sum().item()
+    adv_corr += (adv_out.argmax(dim=1) == labl).float().sum().item()
+  acc = accuracy(corr, len(loader)*loader.batch_size)
+  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+  loss /= len(loader)
+  adv_loss /= len(loader)
+
+  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
+       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
+       atk_name))
+
+
+def pre_benchmark_atk(**kwargs):
+  """
+  Helper function that sets all the defaults while performing checks
+  for all the options passed before benchmarking attacks.
+  """
+
+  # Set the Default options if nothing explicit provided
+  def_dict = {
+    'bs'       : 4,
+    'trf'      : get_trf('rz256_cc224_tt_normimgnet'),
+    'dset'     : 'NA',
+    'root'     : './',
+    'dfunc'    : datasets.ImageFolder,
+    'download' : True,
+  }
+
+  for key, val in def_dict.items():
+    if key not in kwargs: kwargs[key] = val
+  
+  if kwargs['dset'] == 'NA':
+    if 'loader' not in kwargs:
+      dset = kwargs['dfunc'](kwargs['root'], transform=kwargs['trf'])
+      loader = DataLoader(dset, batch_size=kwargs['bs'], num_workers=2)
+    else:
+      loader = kwargs['loader']
+  
+  # Set dataset specific functions here
+  else:
+    if kwargs['dset'] == IMGNET12:
+      dset = datasets.ImageNet(kwargs['root'], split='test',
+                      download=kwargs['download'], transform=kwargs['trf'])
+    elif kwargs['dset'] == MNIST:
+      trf = get_trf('tt_normmnist')
+      dset = datasets.MNIST(kwargs['root'], train=False, 
+                     download=kwargs['download'], transform=trf)
+    else: raise
+
+    loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
+    
+  # Deleting keys that is used just for benchmark_atk() function is 
+  # important as the same kwargs dict is passed to initialize the attack
+  # So, otherwise the attack will throw an exception
+  for key in def_dict:
+    del kwargs[key]
+  if 'loader' in kwargs: del kwargs['loader']
+
+  return loader, kwargs

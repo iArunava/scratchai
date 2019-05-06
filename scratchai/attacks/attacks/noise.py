@@ -7,7 +7,6 @@ import torch
 
 from torchvision import transforms as T
 from torchvision import datasets
-from scratchai.learners.clflearner import clf_test
 
 __all__ = ['noise', 'Noise']
 
@@ -25,12 +24,12 @@ def noise(x, eps=0.3, order=np.inf, clip_min=None, clip_max=None):
         of an attack building recipe combining many different optimizers to
         yield a strong optimizer.
 
-    Args:
-        model: Model
-        dtype: dtype of the data
-        kwargs: passed through the super constructor
+    Arguments
+    ---------
+    x : torch.Tensor
+        The input image.
     """
-
+    
     if order != np.inf: raise NotImplementedError(ord)
     
     eta = torch.FloatTensor(*x.shape).uniform_(-eps, eps).to(x.device)
