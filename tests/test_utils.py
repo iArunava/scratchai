@@ -82,7 +82,19 @@ class TestUtils(unittest.TestCase):
     self.assertTrue(name == 'lenet', 'doesn\t look good')
 
   def test_avgmeter(self):
-    mtr = utils.AvgMeter('name', '.:2f')
+    name = 'name'; fmt = '.:2f'
+    mtr = utils.AvgMeter(name, fmt)
+    self.assertEqual(mtr.name, name, 'initialization went wrong!')
+    self.assertEqual(mtr.fmt, fmt, 'initialization went wrong!')
+    self.assertEqual(mtr.val + mtr.sum + mtr.cnt + mtr.avg, 0, 'result bad!')
+    
+    val = 0; cnt = 0
+    for _ in range(torch.randint(0, 10, ())):
+      val += torch.randint(0, 10, ()); cnt += torch.randint(0, 10, ())
+      mtr(val/cnt, cnt)
+      self.assertEqual(mtr.avg, (val / cnt), 'result bad!')
+
+    self.assertEqual(str(mtr), '{} - {}'.format(name, val/cnt))
 
     
 

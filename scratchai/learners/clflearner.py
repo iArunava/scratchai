@@ -29,7 +29,6 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
-  #vcorr = 0
   vloss = 0
   net.to(device)
   net.eval()
@@ -40,11 +39,9 @@ def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
       data, labl = data.to(device), labl.to(device)
       out = net(data)
       vloss += crit(out, labl).item()
-      acc1, acc5 = accuracy(out, labl, topk=topk) #
-      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0)) #
-      #vcorr += (out.argmax(dim=1) == labl).float().sum().item()
+      acc1, acc5 = accuracy(out, labl, topk=topk)
+      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
     
-    #acc1, acc5 = accuracy(vcorr, len(vloader)*vloader.batch_size)
     vloss /= len(vloader)
   return (a1mtr.avg, a5mtr.avg), vloss
 
@@ -57,8 +54,7 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   net.to(device)
   net.train()
-  a1mtr = AvgMeter('train_acc1'); a5mtr = AvgMeter('train_acc5') #
-  #tcorr = 0
+  a1mtr = AvgMeter('train_acc1'); a5mtr = AvgMeter('train_acc5')
   tloss = 0
   try: crit = crit()
   except: pass
@@ -71,12 +67,10 @@ def clf_train(net, tloader, opti:torch.optim, crit:nn.Module, **kwargs):
     opti.step()
     with torch.no_grad():
       tloss += loss.item()
-      acc1, acc5 = accuracy(out, labl, topk=kwargs['topk']) #
-      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0)) #
-      #tcorr += (out.argmax(dim=1) == labl).float().sum().item()
+      acc1, acc5 = accuracy(out, labl, topk=kwargs['topk'])
+      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
 
   tloss /= len(tloader)
-  #tacc = accuracy(tcorr, len(tloader)*tloader.batch_size)
   return (a1mtr.avg, a5mtr.avg), tloss
 
 

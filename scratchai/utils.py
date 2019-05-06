@@ -116,6 +116,11 @@ class AvgMeter():
          The name of the meter
   fmt : str
         The format in which to show the results
+
+  Notes
+  -----
+  When you call an instance of this class, make sure to call it
+  with (val/cnt, cnt) where the val is already divided by cnt.
   """
   def __init__(self, name, fmt=':f'):
     self.name = name
@@ -127,8 +132,6 @@ class AvgMeter():
     self.sum += val * cnt
     self.cnt += cnt
     self.avg = self.sum / self.cnt
-    #print (self.name, self.avg, self.val, self.cnt)
-    #import time; time.sleep(5)
 
   def reset(self):
     self.val = 0; self.sum = 0
