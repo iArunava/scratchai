@@ -116,7 +116,7 @@ class TestAttacks(unittest.TestCase):
       z.extractall('/tmp/')
 
     atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD]
-    for atk in atks: attacks.benchmark_atk(atk, net, '/tmp/imgnet/')
+    for atk in atks: attacks.benchmark_atk(atk, net, root='/tmp/imgnet/')
 
   def scale(self, img):
     return img * (255. / img.max())
