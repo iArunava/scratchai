@@ -92,7 +92,7 @@ class TestUtils(unittest.TestCase):
   def test_topk(self):
     name = 'Acc'; cnt = 50
     for _ in range(torch.randint(1, 10, ())):
-      topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
+      topk = tuple(torch.randint(2, 10, size=(5,)).numpy())
       obj = utils.Topk(name, topk)
       topk = sorted(tuple(set(topk)))
       val = torch.zeros(1, len(topk))
@@ -107,7 +107,7 @@ class TestUtils(unittest.TestCase):
         
       self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
       self.assertEqual(obj.ks, len(topk), 'not working!')
-      self.assertRaises(AssertionError, 
+      if len(topk) > 2: self.assertRaises(AssertionError, 
                         lambda: obj.update(val[:, :len(topk)-1], cnt))
       
     topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
@@ -122,10 +122,12 @@ class TestUtils(unittest.TestCase):
     self.assertEqual(mtr.fmt, fmt, 'initialization went wrong!')
     self.assertEqual(mtr.val + mtr.sum + mtr.cnt + mtr.avg, 0, 'result bad!')
     
-    val = 0; cnt = 0
-    for _ in range(torch.randint(0, 10, ())):
-      val += torch.randint(0, 10, ()); cnt += torch.randint(0, 10, ())
-      mtr(val/cnt, cnt)
+    val = 0.; cnt = 0.
+    for _ in range(torch.randint(1, 10, ())):
+      curr_val = torch.randint(1, 10, ()).float()
+      curr_cnt = torch.randint(1, 10, ()).float()
+      mtr(curr_val/curr_cnt, curr_cnt)
+      val += curr_val; cnt += curr_cnt
       self.assertEqual(mtr.avg, (val / cnt), 'result bad!')
 
     self.assertEqual(str(mtr), '{} - {}'.format(name, val/cnt))

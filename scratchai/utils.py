@@ -134,8 +134,8 @@ class AvgMeter():
     self.avg = self.sum / self.cnt
 
   def reset(self):
-    self.val = 0; self.sum = 0
-    self.cnt = 0; self.avg = 0
+    self.val = 0.; self.sum = 0.
+    self.cnt = 0.; self.avg = 0.
   
   def __str__(self):
     return '{name} - {avg}'.format(**self.__dict__)
