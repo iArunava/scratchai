@@ -85,9 +85,35 @@ class TestUtils(unittest.TestCase):
     net = nets.resnet18()
     for p in net.parameters():
       self.assertTrue(p.requires_grad, 'initialization already frozen!')
-    freeze(net)
+    utils.freeze(net)
     for p in net.parameters():
       self.assertFalse(p.requires_grad, 'not working!')
+
+  def test_topk(self):
+    name = 'Acc'; cnt = 50
+    for _ in range(torch.randint(1, 10, ())):
+      topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
+      obj = utils.Topk(name, topk)
+      topk = sorted(tuple(set(topk)))
+      val = torch.zeros(1, len(topk))
+
+      for i in range(1, torch.randint(1, 10, size=())):
+        val += torch.randint(0, 50, size=(len(topk),)).float()
+        obj.update(val/cnt, cnt)
+        k = np.random.choice(topk)
+        #print (val[:, topk.index(k)])
+        #self.assertEqual(obj.avgmtrs[name+str(k)].avg, 
+                         #val[:, topk.index(k)]/(cnt*i), 'nope!')
+        
+      self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
+      self.assertEqual(obj.ks, len(topk), 'not working!')
+      self.assertRaises(AssertionError, 
+                        lambda: obj.update(val[:, :len(topk)-1], cnt))
+      
+    topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
+    obj = utils.Topk(name, topk)
+    self.assertEqual(name, obj.name, 'dude!')
+    self.assertRaises(AssertionError, lambda: utils.Topk('A', (1, 3, 0)))
 
   def test_avgmeter(self):
     name = 'name'; fmt = '.:2f'
