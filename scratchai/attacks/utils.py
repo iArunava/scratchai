@@ -145,8 +145,8 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
   net_name = name_from_object(net)
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  corr = 0; loss = 0
-  adv_corr = 0; adv_loss = 0
+  loss = 0; adv_loss = 0
+  a1mtr = AvgMeter('acc1'); a5mtr = AvgMeter('acc5')
   net.to(device); net.eval()
   crit = nn.CrossEntropyLoss()
 
@@ -156,10 +156,13 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
     adv_out = net(adv_data); out = net(data)
     loss += crit(out, labl).item()
     adv_loss += crit(adv_out, labl).item()
-    corr += (out.argmax(dim=1) == labl).float().sum().item()
-    adv_corr += (adv_out.argmax(dim=1) == labl).float().sum().item()
-  acc = accuracy(corr, len(loader)*loader.batch_size)
-  adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+    acc = accuracy(out, labl)
+    adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+    # FIXME
+    #corr += (out.argmax(dim=1) == labl).float().sum().item()
+    #adv_corr += (adv_out.argmax(dim=1) == labl).float().sum().item()
+  #acc = accuracy(corr, len(loader)*loader.batch_size)
+  #adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
   loss /= len(loader)
   adv_loss /= len(loader)
 
@@ -180,6 +183,7 @@ def pre_benchmark_atk(**kwargs):
     'trf'      : get_trf('rz256_cc224_tt_normimgnet'),
     'dset'     : 'NA',
     'root'     : './',
+    'topk'     : (1, 5),
     'dfunc'    : datasets.ImageFolder,
     'download' : True,
   }

@@ -80,6 +80,14 @@ class TestUtils(unittest.TestCase):
     obj = nets.Lenet()
     name = utils.name_from_object(obj)
     self.assertTrue(name == 'lenet', 'doesn\t look good')
+  
+  def test_freeze(self):
+    net = nets.resnet18()
+    for p in net.parameters():
+      self.assertTrue(p.requires_grad, 'initialization already frozen!')
+    freeze(net)
+    for p in net.parameters():
+      self.assertFalse(p.requires_grad, 'not working!')
 
   def test_avgmeter(self):
     name = 'name'; fmt = '.:2f'
