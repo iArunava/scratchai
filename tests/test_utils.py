@@ -80,6 +80,60 @@ class TestUtils(unittest.TestCase):
     obj = nets.Lenet()
     name = utils.name_from_object(obj)
     self.assertTrue(name == 'lenet', 'doesn\t look good')
+  
+  def test_freeze(self):
+    net = nets.resnet18()
+    for p in net.parameters():
+      self.assertTrue(p.requires_grad, 'initialization already frozen!')
+    utils.freeze(net)
+    for p in net.parameters():
+      self.assertFalse(p.requires_grad, 'not working!')
+
+  def test_topk(self):
+    name = 'Acc'; cnt = 50
+    for _ in range(torch.randint(1, 10, ())):
+      topk = tuple(torch.randint(2, 10, size=(5,)).numpy())
+      obj = utils.Topk(name, topk)
+      topk = sorted(tuple(set(topk)))
+      val = np.zeros(len(topk))
+
+      for i in range(1, torch.randint(1, 10, size=())):
+        curr_val = np.random.randint(0, 50, size=(len(topk),)).astype('float')
+        obj.update(curr_val/cnt, cnt)
+        val += curr_val
+        k = np.random.choice(topk)
+        self.assertEqual(obj.avgmtrs[name+str(k)].avg, 
+                         val[topk.index(k)]/(cnt*i), 'nope!')
+        
+      self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
+      self.assertEqual(obj.ks, len(topk), 'not working!')
+      # If len(topk) < 2: then a 0-d tensor will be passed which will throw exp
+      if len(topk) > 2: self.assertRaises(AssertionError, 
+                        lambda: obj.update(val[:len(topk)-1], cnt))
+      
+    topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
+    obj = utils.Topk(name, topk)
+    self.assertEqual(name, obj.name, 'dude!')
+    self.assertRaises(AssertionError, lambda: utils.Topk('A', (1, 3, 0)))
+
+  def test_avgmeter(self):
+    name = 'name'; fmt = '.:2f'
+    mtr = utils.AvgMeter(name, fmt)
+    self.assertEqual(mtr.name, name, 'initialization went wrong!')
+    self.assertEqual(mtr.fmt, fmt, 'initialization went wrong!')
+    self.assertEqual(mtr.val + mtr.sum + mtr.cnt + mtr.avg, 0, 'result bad!')
+    
+    val = 0.; cnt = 0.
+    for _ in range(torch.randint(1, 10, ())):
+      curr_val = torch.randint(1, 10, ()).float()
+      curr_cnt = torch.randint(1, 10, ()).float()
+      mtr(curr_val/curr_cnt, curr_cnt)
+      val += curr_val; cnt += curr_cnt
+      self.assertEqual(mtr.avg, (val / cnt), 'result bad!')
+
+    self.assertEqual(str(mtr), '{} - {}'.format(name, val/cnt))
+
+    
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py

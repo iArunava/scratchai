@@ -106,6 +106,85 @@ def freeze(net:nn.Module):
       p.requires_grad_(False)
 
 
+class AvgMeter():
+  """
+  Computes and stores the current avg value.
+
+  Arguments
+  ---------
+  name : str
+         The name of the meter
+  fmt : str
+        The format in which to show the results
+
+  Notes
+  -----
+  When you call an instance of this class, make sure to call it
+  with (val/cnt, cnt) where the val is already divided by cnt.
+  """
+  def __init__(self, name, fmt=':.2f'):
+    self.name = name
+    self.fmt = fmt
+    self.reset()
+  
+  def __call__(self, val, cnt):
+    self.val = val
+    self.sum += val * cnt
+    self.cnt += cnt
+    self.avg = self.sum / self.cnt
+
+  def reset(self):
+    self.val = 0.; self.sum = 0.
+    self.cnt = 0.; self.avg = 0.
+  
+  def __str__(self):
+    return '{name} - {avg}'.format(**self.__dict__)
+
+
+class Topk():
+  """
+  A class that helps easily maintain the topk values.
+  And maintains a seperate AvgMeter for each k.
+
+  Arguments
+  ---------
+  topk : tuple
+         The topk values that needs to be handled.
+  """
+  def __init__(self, name:str, topk:tuple=(1,)):
+    assert 0 not in topk
+    self.name = name
+    self.topk = tuple(sorted(set(topk)))
+    self.ks = len(self.topk)
+    self.avgmtrs = {}
+    for k in topk:
+      n = name + str(k)
+      self.avgmtrs[n] = AvgMeter(n)
+
+  def update(self, vals, cnt):
+    """
+    Updates all the meters and values.
+    
+    Arguments
+    ---------
+    vals : tuple, list
+           Stores all the values for each k. Even if there's 
+           just 1 k, pass it as a tuple. Assumes all the passed
+           value are in sorted fashion, like the first element is
+           for first k, the second element for the second k and so on.
+    cnt : int, float
+          The total number of elements.
+    """
+    assert len(vals) == self.ks
+    for i, val in enumerate(vals):
+      self.avgmtrs[self.name + str(int(self.topk[i]))](val, cnt)
+      
+  def __str__(self):
+    s = ''
+    for name, mtr in self.avgmtrs.items():
+      s += 'Top {} {} is {}\n'.format(name[-1], self.name, mtr.avg)
+    return s
+
 def count_modules(net:nn.Module):
   """
   TODO

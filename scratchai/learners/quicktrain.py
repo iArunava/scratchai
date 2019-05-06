@@ -210,6 +210,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'bs' not in kwargs: kwargs['bs'] = 16
   if 'seed' not in kwargs: kwargs['seed'] = 123
   if 'epochs' not in kwargs: kwargs['epochs'] = 5
+  if 'topk' not in kwargs: kwargs['topk'] = (1, 5)
   if 'lr_step' not in kwargs: kwargs['lr_step'] = None
   if 'lr_decay' not in kwargs: kwargs['lr_decay'] = 0.2
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
@@ -260,9 +261,9 @@ def preprocess_opts(net, dset:str=None, **kwargs):
 
 
 def plt_tr_vs_tt(tlist, vlist):
-  tacc = list(map(lambda x : x[0], tlist))
+  tacc = list(map(lambda x : x[0][0], tlist))
   tloss = list(map(lambda x : x[1], tlist))
-  vacc = list(map(lambda x : x[0], vlist))
+  vacc = list(map(lambda x : x[0][0], vlist))
   vloss = list(map(lambda x : x[1], vlist))
   epochs = np.arange(1, len(tlist)+1)
   plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
