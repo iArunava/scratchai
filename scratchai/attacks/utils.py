@@ -210,7 +210,7 @@ def pre_benchmark_atk(**kwargs):
     else: raise
 
     loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
-    topk = kwargs['topk']
+  topk = kwargs['topk']
     
   # Deleting keys that is used just for benchmark_atk() function is 
   # important as the same kwargs dict is passed to initialize the attack
