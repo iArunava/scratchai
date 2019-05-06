@@ -175,14 +175,14 @@ class Topk():
     cnt : int, float
           The total number of elements.
     """
-    assert len(vals.squeeze()) == self.ks
+    assert len(vals) == self.ks
     for i, val in enumerate(vals):
-      self.avgmtrs[self.name + str(self.topk[i].item())](val, cnt)
+      self.avgmtrs[self.name + str(int(self.topk[i]))](val, cnt)
       
   def __str__(self):
     s = ''
     for name, mtr in self.avgmtrs.items():
-      s += 'Top{} {} is {}'.format(self.name, name[-1], mtr.avg)
+      s += 'Top {} {} is {}\n'.format(name[-1], self.name, mtr.avg)
     return s
 
 def count_modules(net:nn.Module):

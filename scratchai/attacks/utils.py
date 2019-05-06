@@ -6,7 +6,7 @@ from tqdm import tqdm
 from torchvision import transforms as T
 from torchvision import datasets
 from torch.utils.data import DataLoader
-from scratchai.utils import freeze
+from scratchai.utils import freeze, Topk
 from scratchai.learners.metrics import accuracy
 from scratchai.attacks.attacks import *
 from scratchai.imgutils import get_trf
@@ -136,7 +136,7 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
   
   """
   
-  loader, kwargs = pre_benchmark_atk(**kwargs)
+  loader, topk, kwargs = pre_benchmark_atk(**kwargs)
 
   freeze(net)
   print ('[INFO] Net Frozen!')
@@ -146,7 +146,8 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
   loss = 0; adv_loss = 0
-  a1mtr = AvgMeter('acc1'); a5mtr = AvgMeter('acc5')
+  oatopk = Topk('original accuracy', topk)
+  aatopk = Topk('adversarial accuracy', topk)
   net.to(device); net.eval()
   crit = nn.CrossEntropyLoss()
 
@@ -156,19 +157,17 @@ def benchmark_atk(atk, net:nn.Module, **kwargs):
     adv_out = net(adv_data); out = net(data)
     loss += crit(out, labl).item()
     adv_loss += crit(adv_out, labl).item()
-    acc = accuracy(out, labl)
-    adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
-    # FIXME
-    #corr += (out.argmax(dim=1) == labl).float().sum().item()
-    #adv_corr += (adv_out.argmax(dim=1) == labl).float().sum().item()
-  #acc = accuracy(corr, len(loader)*loader.batch_size)
-  #adv_acc = accuracy(adv_corr, len(loader)*loader.batch_size)
+    acc = accuracy(out, labl, topk)
+    adv_acc = accuracy(adv_out, labl, topk)
+    oatopk.update(acc, data.size(0)); aatopk.update(adv_acc, data.size(0))
   loss /= len(loader)
   adv_loss /= len(loader)
-
-  print ('\n{} had an accuracy of {:.2f} w/o {} attack\n{} had an accuracy of '
-       '{:.2f} w/ {} attack'.format(net_name, acc, atk_name, net_name, adv_acc,
-       atk_name))
+  
+  print ('\nAttack Summary on {} with {} attack:'.format(net_name, atk_name))
+  print ('-'*45)
+  print (oatopk)
+  print ('-'*35)
+  print (aatopk)
 
 
 def pre_benchmark_atk(**kwargs):
@@ -190,6 +189,7 @@ def pre_benchmark_atk(**kwargs):
 
   for key, val in def_dict.items():
     if key not in kwargs: kwargs[key] = val
+    print ('[INFO] Setting {} to {}.'.format(key, kwargs[key]))
   
   if kwargs['dset'] == 'NA':
     if 'loader' not in kwargs:
@@ -210,6 +210,7 @@ def pre_benchmark_atk(**kwargs):
     else: raise
 
     loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
+    topk = kwargs['topk']
     
   # Deleting keys that is used just for benchmark_atk() function is 
   # important as the same kwargs dict is passed to initialize the attack
@@ -218,4 +219,4 @@ def pre_benchmark_atk(**kwargs):
     del kwargs[key]
   if 'loader' in kwargs: del kwargs['loader']
 
-  return loader, kwargs
+  return loader, topk, kwargs

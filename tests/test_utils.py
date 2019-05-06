@@ -95,20 +95,21 @@ class TestUtils(unittest.TestCase):
       topk = tuple(torch.randint(2, 10, size=(5,)).numpy())
       obj = utils.Topk(name, topk)
       topk = sorted(tuple(set(topk)))
-      val = torch.zeros(1, len(topk))
+      val = np.zeros(len(topk))
 
       for i in range(1, torch.randint(1, 10, size=())):
-        val += torch.randint(0, 50, size=(len(topk),)).float()
-        obj.update(val/cnt, cnt)
+        curr_val = np.random.randint(0, 50, size=(len(topk),)).astype('float')
+        obj.update(curr_val/cnt, cnt)
+        val += curr_val
         k = np.random.choice(topk)
-        #print (val[:, topk.index(k)])
-        #self.assertEqual(obj.avgmtrs[name+str(k)].avg, 
-                         #val[:, topk.index(k)]/(cnt*i), 'nope!')
+        self.assertEqual(obj.avgmtrs[name+str(k)].avg, 
+                         val[topk.index(k)]/(cnt*i), 'nope!')
         
       self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
       self.assertEqual(obj.ks, len(topk), 'not working!')
+      # If len(topk) < 2: then a 0-d tensor will be passed which will throw exp
       if len(topk) > 2: self.assertRaises(AssertionError, 
-                        lambda: obj.update(val[:, :len(topk)-1], cnt))
+                        lambda: obj.update(val[:len(topk)-1], cnt))
       
     topk = tuple(torch.randint(1, 10, size=(5,)).numpy())
     obj = utils.Topk(name, topk)
