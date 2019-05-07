@@ -141,6 +141,12 @@ class TestUtils(unittest.TestCase):
     t = net.net[0]; utils.setatrib(net, 'net[0]', val)
     self.assertEqual(net.net[0], val, 'not working!')
     self.assertFalse(t == val, 'not working!')
+  
+  def test_count_params(self):
+    net = nn.Conv2d(3, 4, 5, 2, 1)
+    num = utils.count_params(net)
+    self.assertEqual(num, (4*5*5*3) + 4, 'nope!')
+
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py
