@@ -46,7 +46,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   # Getting the image from `path`
   if type(path) == str:
     # Special Case: if net == 'lenet_mnist' then image needs to have one channel
-    if nstr == 'lenet_mnist': img = trf(imgutils.gray(path)).unsqueeze(0)
+    if nstr.endswith('_mnist'): img = trf(imgutils.gray(path)).unsqueeze(0)
     # Normal Cases
     else: img = trf(imgutils.load_img(path)).unsqueeze(0)
   else:
@@ -62,7 +62,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   val = val.item(); pred = pred.item()
   
   # In case the net is trained on mnist
-  if nstr == 'lenet_mnist': label = mnist_labels[pred]
+  if nstr.endswith('_mnist'): label = mnist_labels[pred]
   # In case the net is trained on Imagenet
   else: label = imagenet_labels[pred]
   
