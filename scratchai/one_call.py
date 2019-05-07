@@ -40,7 +40,7 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   normalizes it using imagenet specific normalization values and passes it to 
   a resnet output the predicted value.
   """
-
+  assert isinstance(trf, str)
   trf = imgutils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
   
   # Getting the image from `path`

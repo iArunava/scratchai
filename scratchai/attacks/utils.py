@@ -187,9 +187,8 @@ def pre_benchmark_atk(**kwargs):
     'download' : True,
   }
 
-  for key, val in def_dict.items():
+  for key, val in def_dict.items(): 
     if key not in kwargs: kwargs[key] = val
-    print ('[INFO] Setting {} to {}.'.format(key, kwargs[key]))
   
   if kwargs['dset'] == 'NA':
     if 'loader' not in kwargs:
@@ -204,14 +203,18 @@ def pre_benchmark_atk(**kwargs):
       dset = datasets.ImageNet(kwargs['root'], split='test',
                       download=kwargs['download'], transform=kwargs['trf'])
     elif kwargs['dset'] == MNIST:
-      trf = get_trf('tt_normmnist')
-      dset = datasets.MNIST(kwargs['root'], train=False, 
-                     download=kwargs['download'], transform=trf)
+      kwargs['trf'] = get_trf('tt_normmnist')
+      kwargs['dfunc'] = datasets.MNIST
+      dset = kwargs['dfunc'](kwargs['root'], train=False, 
+                     download=kwargs['download'], transform=kwargs['trf'])
     else: raise
 
     loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
   topk = kwargs['topk']
     
+  for key, val in def_dict.items():
+    print ('[INFO] Setting {} to {}.'.format(key, kwargs[key]))
+
   # Deleting keys that is used just for benchmark_atk() function is 
   # important as the same kwargs dict is passed to initialize the attack
   # So, otherwise the attack will throw an exception
