@@ -138,7 +138,7 @@ class TestResnet(unittest.TestCase):
       # TODO Assert device is on cpu after initialization
       self.assertEqual(list(out.shape), [2, nc], "out shape not looking good")
 
-      net = getattr(scratchai.nets, model)()
+      net = getattr(scratchai.nets, model)(pretrained=False)
       out = net(noise)
       self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
       del net, out
@@ -176,9 +176,9 @@ class TestLenet(unittest.TestCase):
 class TestAlexnet(unittest.TestCase):
   def test_alexnet(self):
     n1 = torch.randn(2, 3, 224, 224)
-    net = nets.alexnet(nc=11); out = net(n1)
+    net = nets.alexnet(nc=11, pretrained=False); out = net(n1)
     self.assertEqual(list(out.shape), [2, 11], "out shape not looking good")
-    out = nets.alexnet()(n1)
+    out = nets.alexnet(pretrained=False)(n1)
     self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
 
     conv_dict = {0 : [(11, 11), (4, 4), (2, 2)],
@@ -199,7 +199,7 @@ class TestAlexnet(unittest.TestCase):
 
   def test_alexnet_mnist(self):
     n1 = torch.randn(2, 1, 28, 28)
-    out = nets.alexnet_mnist()(n1)
+    out = nets.alexnet_mnist(pretrained=False)(n1)
     self.assertEqual(list(out.shape), [2, 10], "out shape not looking good")
     
 
@@ -221,7 +221,7 @@ class TestCommon(nn.Module):
 class WeightInit(unittest.TestCase):
 
   def test_weight_init(self):
-    net = nets.resnet18()
+    net = nets.resnet18(pretrained=False)
     # TODO Add more tests
     net.apply(init.xavier_normal)
     net.apply(init.xavier_uniform)
