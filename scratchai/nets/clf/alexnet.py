@@ -12,7 +12,7 @@ import torch.nn as nn
 from scratchai.nets.common import Flatten
 
 
-__all__ = ['Alexnet', 'alexnet', 'alexnet_mnist']
+__all__ = ['alexnet', 'alexnet_mnist']
 
 
 def conv(ic:int, oc:int, k:int=3, s:int=1, p:int=1, pool:bool=True):
@@ -25,13 +25,13 @@ def linear(inn:int, otn:int):
 
 class Alexnet(nn.Module):
   """
-  Implmentation of Alexnet.
+  Implmentation of Alexnet.  
   
-  Arguments
-  ---------
-  nc : int
-       # of classes
-  ic : int
+  Arguments 
+  --------- 
+  nc : int 
+       # of classes 
+  ic : int 
        # of channels
 
   References
@@ -61,5 +61,9 @@ def alexnet_mnist(pretrained=True, **kwargs):
   return Alexnet(**kwargs)
 
 def alexnet(pretrained=True, **kwargs):
-  print ('[INFO] Pretrained network not available!')
-  return Alexnet(**kwargs)
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
+  net = Alexnet(**kwargs)
+  if pretrained:
+    return load_pretrained(net, urls.alexnet_url, 'alexnet', nc=cust_nc)
+  return net
