@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 
 from scratchai.nets.common import Flatten
+from scratchai.utils import load_pretrained
+from scratchai.pretrained import urls
 
 
 __all__ = ['alexnet', 'alexnet_mnist']
@@ -65,5 +67,6 @@ def alexnet(pretrained=True, **kwargs):
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Alexnet(**kwargs)
   if pretrained:
-    return load_pretrained(net, urls.alexnet_url, 'alexnet', nc=cust_nc)
+    return load_pretrained(net, urls.alexnet_url, 'alexnet', nc=cust_nc, 
+                           attr='net[21]', inn=4096)
   return net

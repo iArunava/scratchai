@@ -1,9 +1,14 @@
 import torch
 import torch.nn as nn
 import os
+
 from torchvision import transforms
 from subprocess import call
 from scratchai._config import home
+
+
+__all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
+           'load_pretrained', 'Topk', 'freeze', 'AvgMeter']
 
 
 def load_from_pth(url, fname='random', key='state_dict'):
@@ -77,7 +82,31 @@ def name_from_object(obj):
   return cls_str[1:-2].split('.')[-1].lower()
 
 
-def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None):
+def setatrib(obj, attr:str, val):
+  """
+  Overiding the default getattr
+
+  Arguments
+  ---------
+  obj : object
+        The object from which to get the attribute.
+  attr : str
+         The attribute in string format.
+  """
+  attrs = attr.split('[')
+  for ii in range(len(attrs)):
+    # ie its a list
+    if attrs[ii][-1] == ']': attr = attrs[ii][:-1]
+    else: attr = attrs[ii]
+
+    if ii == len(attrs)-1:
+      setattr(obj, attr, val)
+    else:
+      obj = getattr(obj, attr)
+
+
+def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
+                    inn:int=512):
   """
   Helps in Loading Pretrained networks
   """
@@ -87,7 +116,7 @@ def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None):
   if nc is not None:
     for p in net.parameters():
       p.requires_grad_(False)
-    net.fc = nn.Linear(512, nc)
+    setatrib(net, attr, nn.Linear(inn, nc))
   return net
 
 
