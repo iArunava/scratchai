@@ -8,6 +8,7 @@ import scratchai.pretrained.urls as urls
 
 from scratchai.utils import load_from_pth, load_pretrained
 from scratchai.nets.blocks.resblock import Resnext
+from scratchai.nets.common import Debug
 
 
 __all__ = ['resnet18_mnist', 'resnet18', 'resnet34', 'resnet50', 'resnet50', 
@@ -140,6 +141,7 @@ class Resnet(nn.Module):
               *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
               *res_stage(block, oc1*ex*2, oc1*ex*4, layers[2], **kwargs),
               *res_stage(block, oc1*ex*4, oc1*ex*8, layers[3], **kwargs),
+              Debug(),
               nn.AdaptiveAvgPool2d((1, 1))]
     self.net = nn.Sequential(*layers)
     
@@ -191,8 +193,7 @@ def resnet50(pretrained=True, **kwargs):
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    return load_pretrained(net, urls.resnet50_url, 'resnet50', nc=cust_nc, 
-                           inn=512*kwargs['ex'])
+    return load_pretrained(net, urls.resnet50_url, 'resnet50', nc=cust_nc)
   return net
 
 def resnet101(pretrained=True, **kwargs):
@@ -203,8 +204,7 @@ def resnet101(pretrained=True, **kwargs):
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    return load_pretrained(net, urls.resnet101_url, 'resnet101', nc=cust_nc,
-                           inn=512*kwargs['ex'])
+    return load_pretrained(net, urls.resnet101_url, 'resnet101', nc=cust_nc)
   return net
 
 def resnet152(pretrained=True, **kwargs):
@@ -215,8 +215,7 @@ def resnet152(pretrained=True, **kwargs):
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    return load_pretrained(net, urls.resnet152_url, 'resnet152', nc=cust_nc,
-                           inn=512*kwargs['ex'])
+    return load_pretrained(net, urls.resnet152_url, 'resnet152', nc=cust_nc)
   return net
 
 # FIXME The resnet blocks work okay but resnext needs a check

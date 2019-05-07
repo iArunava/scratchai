@@ -1,5 +1,6 @@
 import unittest
 import torch
+import torch.nn as nn
 import PIL
 import numpy as np
 import scratchai
@@ -133,7 +134,13 @@ class TestUtils(unittest.TestCase):
 
     self.assertEqual(str(mtr), '{} - {}'.format(name, val/cnt))
 
-    
+  def test_setatrib(self):
+    # TODO Needs more tests
+    net = nets.alexnet()
+    val = nn.Identity()
+    t = net.net[0]; utils.setatrib(net, 'net[0]', val)
+    self.assertEqual(net.net[0], val, 'not working!')
+    self.assertFalse(t == val, 'not working!')
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py
