@@ -40,6 +40,9 @@ class TestOneCalls(unittest.TestCase):
       self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
       self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
+    self.assertRaises(AssertionError, one_call.classify(TestOneCalls.url_1, 
+                                      trf=imgutils.get_trf('tt')))
+
   def test_stransfer(self):
     """
     Ensures the stransfer function is working properly.
