@@ -9,7 +9,7 @@ from Alex Krizhevsky Ilya Sutskever Geoffrey E. Hinton
 import torch
 import torch.nn as nn
 
-from scratchai.nets.common import Flatten
+from scratchai.nets.common import Flatten, Debug
 
 
 __all__ = ['Alexnet', 'alexnet', 'alexnet_mnist']
@@ -41,18 +41,21 @@ class Alexnet(nn.Module):
   """
   def __init__(self, nc:int=1000, ic:int=3):
     super().__init__()
-    
-    layers = [*conv(ic, 64, 11, 4, 2), *conv(64, 192, 5, p=2),
-             *conv(192, 384), *conv(384, 256), *conv(256, 256), 
-             nn.AdaptiveAvgPool2d((6, 6)), Flatten(), nn.Dropout(),
-             *linear(256*6*6, 4096), *linear(4096, 4096), nn.Linear(4096, nc)]
+    # Special Case: MNIST.
+    ic2 = 64 if ic == 3 else 1
+    layers = [*conv(ic, 64, 11, 4, 2), *conv(ic2, 192, 5, p=2), *conv(192, 384),
+              *conv(384, 256), *conv(256, 256), nn.AdaptiveAvgPool2d((6, 6)), 
+              Flatten(), *linear(256*6*6, 4096), *linear(4096, 4096), 
+              nn.Linear(4096, nc)]
+    # Special Case: MNIST. Removing the first conv->relu->pool layer
+    if ic == 1: layers.pop(0); layers.pop(0); layers.pop(0)
     self.net = nn.Sequential(*layers)
     
   def forward(self, x): return self.net(x)
 
 
 def alexnet_mnist(pretrained=True, **kwargs):
-  kwargs['ic'] = 1
+  kwargs['ic'] = 1; kwargs['nc'] = 10
   print ('[INFO] Pretrained network not available!')
   return Alexnet(**kwargs)
 
