@@ -7,6 +7,7 @@ import os
 import unittest
 import torch
 import torch.nn as nn
+import numpy as np
 
 import scratchai
 from scratchai import *
@@ -129,14 +130,15 @@ class TestResnet(unittest.TestCase):
   
   def test_resnet_init(self):
     noise = torch.randn(2, 3, 224, 224)
-    net = getattr(scratchai.nets, model)()
-    out = net(noise)
-    self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
     for model in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
       nc = np.random.randint(1, 1000)
       net = getattr(scratchai.nets, model)(nc=nc); out = net(noise)
       # TODO Assert device is on cpu after initialization
       self.assertEqual(list(out.shape), [2, nc], "out shape not looking good")
+
+      net = getattr(scratchai.nets, model)()
+      out = net(noise)
+      self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
       del net, out
 
   def test_resnet18_mnist(self):
