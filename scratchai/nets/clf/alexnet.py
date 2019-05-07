@@ -58,9 +58,13 @@ class Alexnet(nn.Module):
 
 
 def alexnet_mnist(pretrained=True, **kwargs):
+  cust_nc = kwargs['nc'] if 'nc' in kwargs else None
   kwargs['ic'] = 1; kwargs['nc'] = 10
-  print ('[INFO] Pretrained network not available!')
-  return Alexnet(**kwargs)
+  net = Alexnet(**kwargs)
+  if pretrained:
+    return load_pretrained(net, urls.alexnet_mnist_url, 'alexnet_mnist', 
+                           nc=cust_nc, attr='net[21]', inn=4096)
+  return net
 
 def alexnet(pretrained=True, **kwargs):
   cust_nc = None

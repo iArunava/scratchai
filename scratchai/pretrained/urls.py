@@ -7,6 +7,7 @@ elephant_skin_url = 'https://www.dropbox.com/s/xak3qtgy426nwig/elephant_skin%281
 snake_skin_url = 'https://www.dropbox.com/s/98nmx8gcsce49zr/snake_skin.pth?dl=1'
 lenet_mnist_url = 'https://www.dropbox.com/s/0ylrj6a8gx1iiuw/lenet_mnist.pth?dl=1'
 alexnet_url = 'https://www.dropbox.com/s/hogfy6yap8an5x9/alexnet.pth?dl=1'
+alexnet_mnist_url = 'https://www.dropbox.com/s/u123zs9t6rcco18/alexnet_mnist.pth?dl=1'
 
 # This is a test dataset which is very small in size and 
 # helps ensures things are working as they are supposed to

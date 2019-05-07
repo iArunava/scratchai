@@ -33,10 +33,12 @@ class TestOneCalls(unittest.TestCase):
     # TODO Check that path in local works
 
     # Check that mnist works
-    pred, val = one_call.classify(TestOneCalls.url_2, nstr='lenet_mnist', 
-                                  trf='rz32_cc28_tt')
-    self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
-    self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
+    mnist_ns = ['lenet_mnist', 'alexnet_mnist']
+    for n in mnist_ns:
+      pred, val = one_call.classify(TestOneCalls.url_2, nstr=n, 
+                                    trf='rz32_cc28_tt')
+      self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
+      self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
   def test_stransfer(self):
     """
