@@ -8,7 +8,11 @@ from scratchai._config import home
 
 
 __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
-           'load_pretrained', 'Topk', 'freeze', 'AvgMeter']
+           'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params']
+
+
+def count_params(net):
+  return sum(p.numel() for p in net.parameters() if p.requires_grad)
 
 
 def load_from_pth(url, fname='random', key='state_dict'):
