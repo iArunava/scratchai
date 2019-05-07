@@ -176,7 +176,7 @@ class TestAlexnet(unittest.TestCase):
 
     conv_dict = {0 : [(11, 11), (4, 4), (2, 2)],
                  3 : [(5, 5), (1, 1), (2, 2)],
-                 (6, 9, 12) : [(3, 3), (1, 1), (1, 1)]}
+                 (6, 8, 10) : [(3, 3), (1, 1), (1, 1)]}
     for key, val in conv_dict.items():
       if isinstance(key, tuple):
         for k in key:
@@ -187,7 +187,7 @@ class TestAlexnet(unittest.TestCase):
         self.assertEqual(net.net[key].kernel_size, val[0], 'not good!')
         self.assertEqual(net.net[key].stride, val[1], 'not good!')
         self.assertEqual(net.net[key].padding, val[2], 'not good!')
-    for i in [1, 4, 7, 10, 13, 19, 22]:
+    for i in [1, 4, 7, 9, 11, 17, 20]:
       self.assertIsInstance(net.net[i], nn.ReLU, 'not good!')
 
   def test_alexnet_mnist(self):

@@ -9,15 +9,15 @@ from Alex Krizhevsky Ilya Sutskever Geoffrey E. Hinton
 import torch
 import torch.nn as nn
 
-from scratchai.nets.common import Flatten, Debug
+from scratchai.nets.common import Flatten
 
 
 __all__ = ['Alexnet', 'alexnet', 'alexnet_mnist']
 
 
-def conv(ic:int, oc:int, k:int=3, s:int=1, p:int=1, bk:int=3, bs:int=2):
+def conv(ic:int, oc:int, k:int=3, s:int=1, p:int=1, pool:bool=True):
   layers = [nn.Conv2d(ic, oc, k, s, p), nn.ReLU(inplace=True)]
-  layers += [nn.MaxPool2d(bk, bs)]
+  if pool: layers += [nn.MaxPool2d(3, 2)]
   return layers
 
 def linear(inn:int, otn:int):
@@ -43,8 +43,9 @@ class Alexnet(nn.Module):
     super().__init__()
     # Special Case: MNIST.
     ic2 = 64 if ic == 3 else 1
-    layers = [*conv(ic, 64, 11, 4, 2), *conv(ic2, 192, 5, p=2), *conv(192, 384),
-              *conv(384, 256), *conv(256, 256), nn.AdaptiveAvgPool2d((6, 6)), 
+    layers = [*conv(ic, 64, 11, 4, 2), *conv(ic2, 192, 5, p=2), 
+              *conv(192, 384, pool=False), *conv(384, 256, pool=False), 
+              *conv(256, 256), nn.AdaptiveAvgPool2d((6, 6)), 
               Flatten(), *linear(256*6*6, 4096), *linear(4096, 4096), 
               nn.Linear(4096, nc)]
     # Special Case: MNIST. Removing the first conv->relu->pool layer
