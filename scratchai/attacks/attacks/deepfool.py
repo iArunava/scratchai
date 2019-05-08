@@ -19,53 +19,52 @@ def deepfool(x, net:nn.Module, eta:float=0.02, nc:int=10, max_iter:int=50):
   # Set net to eval
   net.eval()
   
-  # x is the initial advesarial image
-  x = x.detach().clone().unsqueeze(0).requires_grad_(True)
-  # Get the logits (since x is not perturbed yet, the logits are true logits)
-  logits = net(x).data.cpu().numpy().flatten()
+  # x_idt is the initial advesarial image
+  x_idt = x.detach().clone().unsqueeze(0).requires_grad_(True)
+  # Get the logits (since x_idt is not perturbed yet, the logits are true logits)
+  logits = net(x_idt).squeeze()
   # Get the top nc classes that the net is most confident about
-  psort = logits.argsort()[::-1]; psort = psort[:nc]
-  # Get the corresponding logits for each predicted class
-  llist = [logits[psort[k]] for k in psort]
+  psort = logits.data.cpu().numpy().flatten().argsort()[::-1][:nc]
   
-  # TODO Remove print
-  print (logits, psort, llist)
-
   tlabl = psort[0] # True Label
   plabl = tlabl    # Pert label
 
-  x_shape = x.squeeze().shape() # [C x H x W]
+  x_shape = x_idt.squeeze().shape # [C x H x W]
   w = np.zeros(x_shape)         # [C x H x W]
   rt = np.zeros(x_shape)     # [C x H x W]
   
   i = 0
-  while plabl == tlabl and i < max_iter:
+  while plabl == tlabl or i < max_iter:
     # Initial Perturbation
     pert = np.inf
-    llist[tlabl].backward(retain_graph=True)
-    ograd = x.grad.data.cpu().numpy().copy()
+    logits[tlabl].backward(retain_graph=True)
+    print (i)
+    ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, nc):
-      zgrad(x)
-      llist[c].backward(retain_graph=True)
-      cgrad = x.grad.data.numpy.copy()
+      zgrad(x_idt)
+      logits[c].backward(retain_graph=True)
+      cgrad = x_idt.grad.data.numpy().copy()
 
       # Get new wk and fk
       wk = cgrad - ograd
-      fk = (llist[c] - llist[tlabl]).item().numpy().copy()
+      fk = (logits[c] - logits[tlabl]).item()
 
       cpert = abs(fk) / np.linalg.norm(wk.flatten())
       if cpert < pert: pert = cpert; w = wk
     
     # Added 1e-4 for numerical stability
     ri =  (pert+1e-4) * w / np.linalg.norm(w.flatten())
-    rt += ri
+    rt += ri.squeeze()
     
-    x = x + ri
-    llist = net(x).squeeze().data.cpu().numpy().copy().flatten()
-    plabl = np.argmax(llist)
+    x_idt = x + ((1+eta) * torch.from_numpy(rt).unsqueeze(0)).float()
+    logits = net(x_idt.requires_grad_(True)).squeeze()
+    plabl = torch.argmax(logits, dim=0).item()
 
-  return x
+    i += 1
+  
+  rt = (1+eta) * rt
+  return x_idt, rt
 
 ##################################################################
 
