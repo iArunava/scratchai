@@ -170,7 +170,7 @@ def load_img(path:str, rtype=PIL.Image.Image):
   return img
 
 
-def t2i(img, rt=PIL.Image.Image):
+def t2i(img, rt=PIL.Image.Image, no255=False):
   """
   Converts torch.Tensor images to PIL images.
 
@@ -193,8 +193,9 @@ def t2i(img, rt=PIL.Image.Image):
   Converting to PIL.Image.Image losses precision if source image
   is of type float
   """
-  out= img.squeeze().transpose(0, 1).transpose(1, 2).detach() \
-               .clone().cpu().mul(255).clamp(0, 255).numpy()
+  out= img.squeeze().transpose(0, 1).transpose(1, 2).detach().clone().cpu()
+  if not no255: out = out.mul(255).clamp(0, 255)
+  out = out.numpy()
   if rt == PIL.Image.Image:
     # Note: .astype('uint8') losses precision
     return Image.fromarray(out.astype('uint8'))
@@ -232,7 +233,7 @@ def imshow(img, normd:bool=True, **kwargs):
           Defaults to True.
   """
   if isinstance(img, torch.Tensor):
-    img = t2i(unnorm(img) if normd else img)
+    img = t2i(unnorm(img) if normd else img, **kwargs)
   plt.imshow(img); plt.show()
 
 
@@ -337,7 +338,7 @@ def diff_imgs(img1, img2, show=False, **kwargs):
   img2 : torch.Tensor, [C x H x W]
          The image which to be substracted.
   """
-  dimg = img1.squeeze() - img2.squeeze()
+  dimg = img1.float().squeeze() - img2.float().squeeze()
   if show: imshow(dimg, **kwargs)
   return dimg
 
