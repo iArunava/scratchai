@@ -118,7 +118,7 @@ def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   return out
 
 
-def attack(x, atk=attacks.Noise, nstr='resnet18', save:bool=False, **kwargs):
+def attack(x, atk=attacks.FGM, nstr='resnet18', save:bool=False, **kwargs):
   """
   One call to perform an attack on an image.
 
@@ -127,19 +127,26 @@ def attack(x, atk=attacks.Noise, nstr='resnet18', save:bool=False, **kwargs):
   x : str, torch.Tensor
       The input image.
   atk : scratchai.attack.attack
-        The attack which to perform. Defaults to Noise attack.
+        The attack which to perform. Defaults to FGM attack.
   nstr : str
          The net to use. (if needed) Defaults to None.
         For black box attacks, no need of passing the net.
   save : bool
          If true, saves the image. Defaults to False.
   """
+  assert not atk == attacks.Noise, 'Noise attack not supported due to a diff '\
+                                   'preprocessing pipeline for noise attacks.'\
+                                   ' Will support in future'
+  
   x = imgutils.load_img(x) if isinstance(x, str) else x
-  trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
   tlabl = classify(x, nstr) if nstr is not None else classify(x)
   net = getattr(nets, nstr)().eval()
   atk = atk(net=net, **kwargs)
+
+  # Preprocess image for attack
+  trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
   advx = atk(trf(x).unsqueeze(0))
+
     
   ## TODO Uncomment these 2 lines and comment the 2 lines below these
   ## after figuring out how to convert the adversarial image to PIL 
