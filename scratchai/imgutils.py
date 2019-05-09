@@ -13,7 +13,7 @@ from torchvision import transforms as T
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
            'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
-           'diff_imgs']
+           'diff_imgs', 'mean', 'std']
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
