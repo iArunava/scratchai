@@ -51,3 +51,7 @@ class TestOneCalls(unittest.TestCase):
     imgshape = tt(imgutils.load_img(TestOneCalls.url_1)).shape
     simgshape = tt(one_call.stransfer(TestOneCalls.url_1, show=False)).shape
     self.assertTrue(imgshape == simgshape, 'doesn\'t look good')
+
+  def test_attack(self):
+    # TODO Think of some tests as the function doesn't return anything
+    utils.implemented(one_call, 'attack')
