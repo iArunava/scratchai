@@ -11,6 +11,11 @@ from PIL import Image
 from torchvision import transforms as T
 
 
+__all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
+           'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
+           'diff_imgs']
+
+
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
   """
   This function is used to threshold the image to a certain color.
@@ -214,7 +219,7 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img, is_unnorm:bool=True, **kwargs):
+def imshow(img, normd:bool=True, **kwargs):
   """
   Display image.
 
@@ -222,12 +227,12 @@ def imshow(img, is_unnorm:bool=True, **kwargs):
   ---------
   img : torch.Tensor
         The image to display
-  is_unnorm : bool
-           If True, and if img is torch.Tensor then it unnormalizes the image
-           Defaults to True.
+  normd : bool
+          If True, and if img is torch.Tensor then it unnormalizes the image
+          Defaults to True.
   """
   if isinstance(img, torch.Tensor):
-    img = t2i(unnorm(img) if is_unnorm else img)
+    img = t2i(unnorm(img) if normd else img)
   plt.imshow(img); plt.show()
 
 
@@ -256,8 +261,44 @@ def unnorm(t:torch.Tensor, mean=None, std=None):
   # Not sure how to change the dim while multiplying so
   # changing the channel dimension from 0 to 2
   # Performing the operations and then changing it back
-  t = (t.squeeze().transpose(0, 1).transpose(1, 2) * mean) + std
+  t = (t.squeeze().transpose(0, 1).transpose(1, 2) * std) + mean
   return t.transpose(2, 1).transpose(1, 0)
+
+
+def mean(t):
+  """
+  Calculates and returns the mean of a tensor
+
+  Arguments
+  ---------
+  t : torch.Tensor
+      The tensor whose mean is to be calculated
+  
+  Returns
+  -------
+  m : float
+      The mean of the tensor
+  """
+  if isinstance(t, torch.Tensor): t = t.numpy()
+  return t.sum() / t.size
+
+
+def std(t):
+  """
+  Calculates and returns the standard deviation of a tensor
+
+  Arguments
+  ---------
+  t : torch.Tensor
+      The tensor whose std is to be calculated
+  
+  Returns
+  -------
+  m : float
+      The std of the tensor
+  """
+  if isinstance(t, torch.Tensor): t = t.numpy()
+  return np.sqrt(((t - mean(t)) ** 2).sum() / t.size)
 
 
 def gray(img):
@@ -283,6 +324,22 @@ def gray(img):
    img = load_img(img)
   img = np.array(img)
   return Image.fromarray(np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]))
+
+
+def diff_imgs(img1, img2, show=False, **kwargs):
+  """
+  Returns the difference of 2 images.
+
+  Arguments
+  ---------
+  img1 : torch.Tensor, [C x H x W]
+         The image from which to be subtracted.
+  img2 : torch.Tensor, [C x H x W]
+         The image which to be substracted.
+  """
+  dimg = img1.squeeze() - img2.squeeze()
+  if show: imshow(dimg, **kwargs)
+  return dimg
 
 
 def surface_plot(matrix:np.ndarray):
