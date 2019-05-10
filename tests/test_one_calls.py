@@ -73,4 +73,4 @@ class TestOneCalls(unittest.TestCase):
     y = torch.randint(0, 1000, ())
     limgs, tlabl, plabl = one_call.attack(TestOneCalls.url_1, atk=attacks.PGD, 
                                    y=y.item(), ret=True)
-    self.assertTrue(plabl[0] == imagenet_labels[y.item()].split(',')[0], 'no!')
+    self.assertTrue(plabl[0] == imagenet_labels[y.item()], 'not working!')
