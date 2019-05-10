@@ -21,11 +21,7 @@ class TestAttacks(unittest.TestCase):
   
   # TODO Shorten the url
   url = 'https://www.publicdomainpictures.net/pictures/210000/nahled/tiger-in-the-water-14812069667ks.jpg'
-  trf = transforms.Compose([transforms.Resize(256),
-               transforms.CenterCrop(224),
-               transforms.ToTensor(),
-               transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-              ])
+  trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
   
   url_dset = 'https://www.dropbox.com/s/6bg8ntqcs4r98i9/testdataset.zip?dl=1'
 

@@ -3,6 +3,7 @@ import torch.nn as nn
 import unittest
 
 from torchvision import transforms as T
+from scratchai.datasets.labels import imagenet_labels
 from scratchai import *
 
 class TestOneCalls(unittest.TestCase):
@@ -51,3 +52,25 @@ class TestOneCalls(unittest.TestCase):
     imgshape = tt(imgutils.load_img(TestOneCalls.url_1)).shape
     simgshape = tt(one_call.stransfer(TestOneCalls.url_1, show=False)).shape
     self.assertTrue(imgshape == simgshape, 'doesn\'t look good')
+
+  def test_attack(self):
+    """
+    Ensures the one_call.attack function is working as expected.
+    """
+    atks = [attacks.FGM, attacks.PGD, attacks.Semantic]
+    for atk in atks:
+      limgs, tlabl, plabl = one_call.attack(TestOneCalls.url_1, atk=atk, ret=1)
+      self.assertFalse(tlabl == plabl, 'attack didn\t work')
+      self.assertTrue(limgs[1].sum() != 0., 'attack didn\t work')
+    # Noise attack not supported through one_call
+    self.assertRaises(AssertionError, lambda: \
+        one_call.attack(TestOneCalls.url_1, atk=attacks.Noise))
+    # Label should be between 0 and 1000 (1000 excluded)
+    self.assertRaises(AssertionError, lambda: \
+        one_call.attack(TestOneCalls.url_1, atk=attacks.PGD, y=1000))
+
+    
+    y = torch.randint(0, 1000, ())
+    limgs, tlabl, plabl = one_call.attack(TestOneCalls.url_1, atk=attacks.PGD, 
+                                   y=y.item(), ret=True)
+    self.assertTrue(plabl[0] == imagenet_labels[y.item()], 'not working!')

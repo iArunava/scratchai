@@ -5,8 +5,8 @@ from scratchai import nets
 from scratchai import init
 from scratchai import attacks
 from scratchai import pretrained
-import scratchai.imgutils
-import scratchai.one_call
+from scratchai import imgutils
+from scratchai import one_call
 from scratchai._config import *
 
 import os

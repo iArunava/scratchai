@@ -11,9 +11,9 @@ from scratchai import *
 
 
 
-################################
-### Check functions for imgutils
-################################
+#############################################
+### Check functions for scratchai/imgutils.py
+#############################################
 
 class TestImgUtils(unittest.TestCase):
   
@@ -65,13 +65,48 @@ class TestImgUtils(unittest.TestCase):
     utils.implemented(imgutils, 'imsave')
     utils.implemented(imgutils, 'imshow')
 
+  def test_diff_imgs(self):
+    t1 = torch.randn(3, 150, 150)
+    t2 = torch.randn(3, 150, 150)
+    self.assertTrue(imgutils.diff_imgs(t1, t1, normd=False).sum().item() == 0, 
+               'nope!')
+    self.assertTrue(imgutils.diff_imgs(t2, t2, normd=False).sum().item() == 0, 
+               'nope!')
+    self.assertFalse(imgutils.diff_imgs(t1, t2, normd=False).sum().item() == 0, 
+               'nope!')
+    
+    # Explicit test
+    t1 = torch.Tensor([[[1, 1, 1], [2, 2, 2], [3, 3, 3]]])
+    t2 = torch.Tensor([[[2, 2, 2], [1, 1, 1], [4, 4, 4]]])
+    t3 = torch.Tensor([[[-1, -1, -1], [1, 1, 1], [-1, -1, -1]]])
+    t4 = torch.Tensor([[[1, 1, 1], [-1, -1, -1], [1, 1, 1]]])
+
+    # With norm false
+    dimg1 = imgutils.diff_imgs(t1, t2, normd=False)
+    dimg2 = imgutils.diff_imgs(t2, t1, normd=False)
+    self.assertTrue((dimg1 - t3.squeeze()).sum().item() == 0., 'nope!')
+    self.assertTrue((dimg2 - t4.squeeze()).sum().item() == 0., 'nope!')
+
+  def test_mean(self):
+    for _ in range(torch.randint(1, 10, ())):
+      t = torch.randint(0, 255, size=(3, 28, 28))
+      tm = t.sum() / t.numel()
+      m = imgutils.mean(t)
+      self.assertEqual(tm, m, 'mean not correct!')
+    
+  def test_std(self):
+    for _ in range(torch.randint(1, 10, ())):
+      t = torch.randn(3, 28, 28)
+      std = imgutils.std(t)
+      self.assertEqual(round(std, 2), round(torch.std(t).item(), 2), 'nope!')
+
 
 #############################################
 ### Check the functions in scratchai/utils.py
 #############################################
 
 class TestUtils(unittest.TestCase):
- 
+  
   def test_load_from_pth(self):
     #TODO add tests for testing it further
     if not callable(getattr(scratchai.utils, 'load_from_pth', None)):
