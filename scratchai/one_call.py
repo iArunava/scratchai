@@ -118,7 +118,7 @@ def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   return out
 
 
-def attack(x, atk=attacks.FGM, nstr='resnet18', save:bool=False, **kwargs):
+def attack(x, atk=attacks.FGM, nstr='resnet18', ret:bool=False, **kwargs):
   """
   One call to perform an attack on an image.
 
@@ -131,8 +131,9 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', save:bool=False, **kwargs):
   nstr : str
          The net to use. (if needed) Defaults to None.
         For black box attacks, no need of passing the net.
-  save : bool
-         If true, saves the image. Defaults to False.
+  ret : bool
+        If true, it returns the original image, adversarial image and others
+        like the true label, adversarial label and so on.
   """
   # Checks
   assert not atk == attacks.Noise, 'Noise attack not supported due to a diff '\
@@ -173,6 +174,8 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', save:bool=False, **kwargs):
            'Adversarial Image\nPred: {} \nwith {:.1f} confidence.'
               .format(plabl[0].split(',')[0], plabl[1])]
   
+  if ret: return limgs, tlabl, plabl
+
   # TODO Just go over the how the images are viz ones
   # in case something is weird.
   plt.figure(figsize=(10, 10))
