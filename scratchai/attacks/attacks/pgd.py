@@ -36,7 +36,6 @@ def pgd(x:torch.Tensor, net:nn.Module, nb_iter:int=10, eps:float=0.3,
   adv_x : torch.Tensor
       The adversarial Example.
   """
-  
   # TODO Check params
   # If a data range was specified, check that the input was in that range
   if clip_min is not None:
