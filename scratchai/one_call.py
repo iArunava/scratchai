@@ -134,10 +134,18 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', save:bool=False, **kwargs):
   save : bool
          If true, saves the image. Defaults to False.
   """
+  # Checks
   assert not atk == attacks.Noise, 'Noise attack not supported due to a diff '\
                                    'preprocessing pipeline for noise attacks.'\
                                    ' Will support in future'
   
+  if 'y' in kwargs:
+    if isinstance(kwargs['y'], int): 
+      kwargs['y'] = torch.Tensor([kwargs['y']]).long()
+    assert kwargs['y'].item() >= 0  and kwargs['y'].item() < 1000, 'The class'\
+            'label must be between [0, 1000) where the number represents the'\
+            'class label from the available classes in imagenet.'
+
   x = imgutils.load_img(x) if isinstance(x, str) else x
   tlabl = classify(x, nstr) if nstr is not None else classify(x)
   net = getattr(nets, nstr)().eval()
