@@ -6,8 +6,11 @@ first and not here. You can look for the link there by searching for `$MODEL_NAM
 
 | Pretrained Model | Description | Link |
 | :--- | :------| :--- |
+| Alexnet | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/hogfy6yap8an5x9/alexnet.pth?dl=1) |
 | resnet18 | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/ln4i4547jvn5wr8/resnet18.pth?dl=1) |
 | resnet34 | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/2mxj66dqtfqss2c/resnet34.pth?dl=1) |
 | resnet50 | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/hinaadj4kj1rsl0/resnet50.pth?dl=1) |
 | resnet101 | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/11u40th2ygsz9u0/resnet101.pth?dl=1) |
 | resnet152 | The weights of the pretrained model are the exact same as the one that comes with pytorch but the `keys` are different as the model implementation is different than in pytorch | [download](https://www.dropbox.com/s/9babg74hcgx1w9l/resnet152.pth?dl=1) |
+| snake_skin style | Image Transformation Network from the Justin Johnson paper. | [download](https://www.dropbox.com/s/98nmx8gcsce49zr/snake_skin.pth?dl=1) |
+| elephant_skin style | Image Transformation Network from the Justin Johnson paper. | [download](https://www.dropbox.com/s/xak3qtgy426nwig/elephant_skin%281%29.pth?dl=1) |
