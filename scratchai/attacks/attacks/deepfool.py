@@ -20,7 +20,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, nc:int=10, max_iter:int=50):
   net.eval()
   
   # x_idt is the initial advesarial image
-  x_idt = x.detach().clone().unsqueeze(0).requires_grad_(True)
+  x_idt = x.detach().clone().requires_grad_(True)
   # Get the logits (since x_idt is not perturbed yet, the logits are true logits)
   logits = net(x_idt).squeeze()
   # Get the top nc classes that the net is most confident about
@@ -34,11 +34,10 @@ def deepfool(x, net:nn.Module, eta:float=0.02, nc:int=10, max_iter:int=50):
   rt = np.zeros(x_shape)     # [C x H x W]
   
   i = 0
-  while plabl == tlabl or i < max_iter:
+  while plabl == tlabl and i < max_iter:
     # Initial Perturbation
     pert = np.inf
     logits[tlabl].backward(retain_graph=True)
-    print (i)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, nc):
@@ -64,7 +63,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, nc:int=10, max_iter:int=50):
     i += 1
   
   rt = (1+eta) * rt
-  return x_idt, rt
+  return x_idt#, rt
 
 ##################################################################
 
