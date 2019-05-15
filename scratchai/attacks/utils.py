@@ -212,7 +212,7 @@ def pre_benchmark_atk(**kwargs):
     loader = DataLoader(dset, shuffle=False, batch_size=kwargs['bs'])
   topk = kwargs['topk']
     
-  for key, val in def_dict.items():
+  for key, val in kwargs.items():
     print ('[INFO] Setting {} to {}.'.format(key, kwargs[key]))
 
   # Deleting keys that is used just for benchmark_atk() function is 
