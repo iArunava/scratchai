@@ -63,7 +63,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
 
     for c in range(1, tnc):
       zgrad(x_idt)
-      logits[c].backward(retain_graph=True)
+      logits[psort[c]].backward(retain_graph=True)
       cgrad = x_idt.grad.data.cpu().numpy().copy()
 
       # Get new wk and fk
@@ -93,4 +93,11 @@ class DeepFool():
     self.net = net
     self.kwargs = kwargs
   def __call__(self, x):
-    return deepfool(x, self.net, **self.kwargs)
+    # If there is a batch dimension
+    if len(x.shape) == 4:
+      adv_x = torch.zeros_like(x)
+      for ii in range(x.size(0)):
+        adv_x[ii] = deepfool(x[ii].unsqueeze(0), self.net, **self.kwargs)
+      return adv_x
+    # Otherwise
+    else: return deepfool(x, self.net, **self.kwargs)
