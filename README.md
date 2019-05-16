@@ -41,12 +41,12 @@ Table of Contents:
 
 | Attacks | Paper | Implementation |
 | :--- | :-----: | :--: |
-| Noise | https://arxiv.org/abs/1802.00420 (NS) | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/noise.py) |
+| Noise | NA | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/noise.py) |
 | Semantic | https://arxiv.org/abs/1703.06857 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/semantic.py)
 | Saliency Map Method | https://arxiv.org/pdf/1511.07528.pdf | [Ongoing](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/saliency_map_method.py) |
 | Fast Gradient Method | NS | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/fast_gradient_method.py) |
 |Projected Gradient Descent | https://arxiv.org/pdf/1607.02533.pdf <br/> https://arxiv.org/pdf/1706.06083.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/fast_gradient_method.py) |
-|DeepFool | https://arxiv.org/abs/1511.04599 [pdf](https://arxiv.org/pdf/1511.04599.pdf) | NA |
+|DeepFool | https://arxiv.org/abs/1511.04599 [pdf](https://arxiv.org/pdf/1511.04599.pdf) | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/attacks/attacks/deepfool.py) |
   
   
 ## Tutorials
