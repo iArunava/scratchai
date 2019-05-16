@@ -14,7 +14,6 @@ from torch.autograd.gradcheck import zero_gradients as zgrad
 __all__ = ['deepfool', 'DeepFool']
 
 
-# TODO Tests
 def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50, 
              mret=False):
   """
@@ -93,6 +92,8 @@ class DeepFool():
     self.net = net
     self.kwargs = kwargs
   def __call__(self, x):
+    # TODO Refactor for vectorization
+    # takes 1 hour to test on MNIST with Lenet
     # If there is a batch dimension
     if len(x.shape) == 4:
       adv_x = torch.zeros_like(x)
