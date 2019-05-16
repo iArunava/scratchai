@@ -16,6 +16,7 @@ NOISE = 'noise'
 SEMANTIC = 'semantic'
 FGM = 'fgm'
 PGD = 'pgd'
+DEEPFOOL = 'deepfool'
 
 class TestAttacks(unittest.TestCase):
   
@@ -33,11 +34,11 @@ class TestAttacks(unittest.TestCase):
       f.write(requests.get(TestAttacks.url).content)
     img = Image.open('/tmp/test.png')
 
-    # TODO replace this with a scratchai model
-    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    all_models = ['alexnet']
     for model in all_models:
       print ('[INFO] Testing Noise attack on {}'.format(model))
-      net = getattr(models, model)(pretrained=True)
+      net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
       self.check_atk(net, img, scratchai.attacks.noise, t=NOISE)
       print ('[INFO] Attack worked successfully!')
@@ -51,11 +52,12 @@ class TestAttacks(unittest.TestCase):
       f.write(requests.get(TestAttacks.url).content)
     img = Image.open('/tmp/test.png')
 
-    # TODO replace this with a scratchai model
-    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    # Maybe an option to perform the rigourous testing, if needed.
+    #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    all_models = ['alexnet']
     for model in all_models:
       print ('[INFO] Testing Semantic attack on {}'.format(model))
-      net = getattr(models, model)(pretrained=True)
+      net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
       self.check_atk(net, img, scratchai.attacks.semantic, t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
@@ -104,6 +106,22 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Attack worked successfully!')
       del net
   
+  def test_deepfool(self):
+    """
+    tests to ensure that DeepFool attack works.
+    """
+    with open('/tmp/test.png', 'wb') as f:
+      f.write(requests.get(TestAttacks.url).content)
+    img = Image.open('/tmp/test.png')
+
+    all_models = ['alexnet']
+    for model in all_models:
+      print ('[INFO] Testing DeepFool attack on {}'.format(model))
+      net = getattr(nets, model)(pretrained=True)
+      self.check_atk(net, img, scratchai.attacks.deepfool, t=DEEPFOOL)
+      print ('[INFO] Attack worked successfully!')
+      del net
+    
   def test_benchmark(self):
     net = nets.resnet18()
     if not os.path.exists('/tmp/imgnet/'):
@@ -111,7 +129,8 @@ class TestAttacks(unittest.TestCase):
       z = zipfile.ZipFile(io.BytesIO(r.content))
       z.extractall('/tmp/')
 
-    atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD]
+    atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD, 
+            attacks.DeepFool]
     for atk in atks: attacks.benchmark_atk(atk, net, root='/tmp/imgnet/')
 
   def scale(self, img):
@@ -136,6 +155,10 @@ class TestAttacks(unittest.TestCase):
     elif t == FGM or t == PGD:
       img = TestAttacks.trf(img)
       adv_x = atk(img.unsqueeze(0), net, y=y)
+      adv_pred = int(torch.argmax(net(adv_x), dim=1))
+    elif t == DEEPFOOL:
+      img = TestAttacks.trf(img)
+      adv_x = atk(img.unsqueeze(0), net)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
       
     print (true_pred, adv_pred)
