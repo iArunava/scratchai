@@ -240,7 +240,6 @@ def imshow(img, normd:bool=True, rz=224, **kwargs):
   """
   if isinstance(rz, int): rz = (rz, rz)
   if isinstance(img, list):
-    # TODO normd doesn't work in this
     nimgs = len(img)
     fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases
@@ -250,10 +249,13 @@ def imshow(img, normd:bool=True, rz=224, **kwargs):
 
     for i in range(1, row*col+1):
       fig.add_subplot(row, col, i)
+
       cimg = img[i-1]
+      if isinstance(cimg, torch.Tensor):
+        cimg = t2i(unnorm(cimg) if normd else cimg, **kwargs)
       if rz is not None: cimg = cimg.resize(rz, Image.ANTIALIAS)
-      plt.axis('off')
-      plt.imshow(cimg)
+
+      plt.axis('off'); plt.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
     img = t2i(unnorm(img) if normd else img, **kwargs)
