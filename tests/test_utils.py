@@ -182,6 +182,31 @@ class TestUtils(unittest.TestCase):
     num = utils.count_params(net)
     self.assertEqual(num, (4*5*5*3) + 4, 'nope!')
 
+  def test_sgdivisor(self):
+    ulim = 100
+    for n in np.random.randint(ulim, size=(5,)):
+      s, g = utils.sgdivisor(int(n))
+      self.assertTrue(n % s == 0, 'Nope!')
+      self.assertTrue(n % g == 0, 'Nope!')
+      # Explicit checks
+      for ii in range(s-1, 1, -1):
+        if ii == n: continue
+        self.assertFalse(n % ii == 0, 'nope!')
+      for ii in range(g+1, ulim):
+        if ii == n: continue
+        self.assertFalse(n % ii == 0, 'nope!')
+
+  def test_gpfactor(self):
+    pfs = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,
+           79,83,89,97]
+    # DO NOT CHANGE ulim AS pfs is a list of prime numbers b/w # 0 and 100.
+    ulim = 100
+    for n in np.random.randint(ulim, size=(5,)):
+      gp = utils.gpfactor(int(n))
+      self.assertTrue(n % gp == 0, 'Nope!')
+      # Explicit checks
+      for pf in pfs:
+        if n % pf == 0: self.assertFalse(pf > gp , 'nope!')
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py

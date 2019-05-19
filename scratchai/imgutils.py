@@ -6,9 +6,12 @@ import operator
 import PIL
 import os
 import requests
+
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms as T
+
+from scratchai import utils
 
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
@@ -220,21 +223,46 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img, normd:bool=True, **kwargs):
+def imshow(img, normd:bool=False, rz=224, **kwargs):
   """
   Display image.
 
   Arguments
   ---------
-  img : torch.Tensor
+  img : torch.Tensor, PIL.Image.Image, list
         The image to display
   normd : bool
           If True, and if img is torch.Tensor then it unnormalizes the image
-          Defaults to True.
+          Defaults to False.
+  rz : int, tuple
+       Row and Cols to resize to. If int, its taken as (rz, rz)
+       Defaults to 224.
   """
-  if isinstance(img, torch.Tensor):
+  if isinstance(rz, int): rz = (rz, rz)
+  if isinstance(img, list):
+    nimgs = len(img)
+    fig = plt.figure(figsize=(8, 8))
+    # TODO Update to handle when nimgs is a prime and a few other cases
+    gp = utils.gpfactor(nimgs)
+    odiv = nimgs // gp
+    col, row = gp, odiv
+
+    for i in range(1, row*col+1):
+      fig.add_subplot(row, col, i)
+
+      cimg = img[i-1]
+      if isinstance(cimg, torch.Tensor):
+        cimg = t2i(unnorm(cimg) if normd else cimg, **kwargs)
+      if rz is not None: cimg = cimg.resize(rz, Image.ANTIALIAS)
+
+      plt.axis('off'); plt.imshow(cimg)
+
+  elif isinstance(img, torch.Tensor):
     img = t2i(unnorm(img) if normd else img, **kwargs)
-  plt.imshow(img); plt.show()
+    plt.imshow(img)
+
+  else: plt.imshow(img)
+  plt.show()
 
 
 def unnorm(t:torch.Tensor, mean=None, std=None):
