@@ -242,11 +242,11 @@ def imshow(img, normd:bool=True, rz=224, **kwargs):
   if isinstance(img, list):
     # TODO normd doesn't work in this
     nimgs = len(img)
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases
     gp = utils.gpfactor(nimgs)
     odiv = nimgs // gp
-    row, col = gp, odiv
+    col, row = gp, odiv
 
     for i in range(1, row*col+1):
       fig.add_subplot(row, col, i)
