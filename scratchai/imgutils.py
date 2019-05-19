@@ -220,21 +220,34 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img, normd:bool=True, **kwargs):
+def imshow(img, normd:bool=True, rz=(224, 224), **kwargs):
   """
   Display image.
 
   Arguments
   ---------
-  img : torch.Tensor
+  img : torch.Tensor, PIL.Image.Image, list
         The image to display
   normd : bool
           If True, and if img is torch.Tensor then it unnormalizes the image
           Defaults to True.
   """
-  if isinstance(img, torch.Tensor):
+  if isinstance(img, list):
+    # TODO normd doesn't work in this
+    nimgs = len(img)
+    fig = plt.figure(figsize=(8, 8))
+    mfactor = 2#max_prime_factor(nimgs)
+    ofactor = nimgs // mfactor
+    row, col = ofactor, mfactor
+
+    for i in range(1, row*col+1):
+      fig.add_subplot(row, col, i)
+      plt.imshow(img[i-1])
+
+  elif isinstance(img, torch.Tensor):
     img = t2i(unnorm(img) if normd else img, **kwargs)
-  plt.imshow(img); plt.show()
+  else: plt.imshow(img)
+  plt.show()
 
 
 def unnorm(t:torch.Tensor, mean=None, std=None):
