@@ -223,7 +223,7 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img, normd:bool=True, rz=224, **kwargs):
+def imshow(img, normd:bool=False, rz=224, **kwargs):
   """
   Display image.
 
@@ -233,7 +233,7 @@ def imshow(img, normd:bool=True, rz=224, **kwargs):
         The image to display
   normd : bool
           If True, and if img is torch.Tensor then it unnormalizes the image
-          Defaults to True.
+          Defaults to False.
   rz : int, tuple
        Row and Cols to resize to. If int, its taken as (rz, rz)
        Defaults to 224.
@@ -259,6 +259,7 @@ def imshow(img, normd:bool=True, rz=224, **kwargs):
 
   elif isinstance(img, torch.Tensor):
     img = t2i(unnorm(img) if normd else img, **kwargs)
+    plt.imshow(img)
 
   else: plt.imshow(img)
   plt.show()
