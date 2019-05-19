@@ -6,9 +6,12 @@ import operator
 import PIL
 import os
 import requests
+
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms as T
+
+from scratchai import utils
 
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
@@ -220,7 +223,7 @@ def imsave(img, fname='random.png'):
   img.save(fname)
 
 
-def imshow(img, normd:bool=True, rz=(224, 224), **kwargs):
+def imshow(img, normd:bool=True, rz=None, **kwargs):
   """
   Display image.
 
@@ -232,20 +235,23 @@ def imshow(img, normd:bool=True, rz=(224, 224), **kwargs):
           If True, and if img is torch.Tensor then it unnormalizes the image
           Defaults to True.
   """
+  if isinstance(rz, int): rz = (rz, rz)
   if isinstance(img, list):
     # TODO normd doesn't work in this
     nimgs = len(img)
     fig = plt.figure(figsize=(8, 8))
-    mfactor = 2#max_prime_factor(nimgs)
-    ofactor = nimgs // mfactor
-    row, col = ofactor, mfactor
+    col, row = utils.sgdivisor(nimgs)
 
     for i in range(1, row*col+1):
       fig.add_subplot(row, col, i)
-      plt.imshow(img[i-1])
+      cimg = img[i-1]
+      if rz is not None: cimg = cimg.resize(rz, Image.ANTIALIAS)
+      plt.axis('off')
+      plt.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
     img = t2i(unnorm(img) if normd else img, **kwargs)
+
   else: plt.imshow(img)
   plt.show()
 

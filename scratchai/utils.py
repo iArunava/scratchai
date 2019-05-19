@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import os
 
 from torchvision import transforms
@@ -8,7 +9,8 @@ from scratchai._config import home
 
 
 __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
-           'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params']
+           'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params',
+           'max_prime_factor']
 
 
 def count_params(net):
@@ -217,6 +219,35 @@ class Topk():
     for name, mtr in self.avgmtrs.items():
       s += 'Top {} {} is {}\n'.format(name[-1], self.name, mtr.avg)
     return s
+
+
+def sgdivisor(num:int):
+  """
+  Function that returns the smallest and the largest divisor of a number.
+
+  Arguments
+  ---------
+  num : int
+        The integer whose divisors are needed.
+
+  Returns
+  -------
+  num : 2-tuple of integers
+        The smallest and the largest divisors of the number.
+  """
+  # TODO Implement this function in cpp and wrap it up with python
+  assert isinstance(num, int) == True
+  
+  sdiv = 1
+  if num % 2 == 0: sdiv = 2
+  else:
+    for ii in range(3, int(np.sqrt(num))+1):
+      if num % ii == 0:
+        sdiv = ii
+        break
+  mdiv = num // sdiv
+  return sdiv, mdiv
+
 
 def count_modules(net:nn.Module):
   """
