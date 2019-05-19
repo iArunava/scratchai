@@ -10,7 +10,7 @@ from scratchai._config import home
 
 __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
            'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params',
-           'max_prime_factor']
+           'gpfactor', 'sgdivisor']
 
 
 def count_params(net):
@@ -221,6 +221,30 @@ class Topk():
     return s
 
 
+def gpfactor(num:int):
+  """
+  Function that returns the greatest prime factor.
+
+  Arguments
+  ---------
+  num : int
+        The integer whose greatest prime factor is needed.
+
+  Returns
+  -------
+  num : int
+        The greatest prime factor.
+  """
+  # TODO Implement this function in cpp and wrap it up with python
+  assert isinstance(num, int) == True
+  mf = -1
+  while num % 2 == 0: mf = 2; num >>= 1
+  for i in range(3, int(np.sqrt(num))+1, 2):
+    if num % i == 0: mf = i; num //= i
+  if num > 2: mf = num
+  return mf
+  
+
 def sgdivisor(num:int):
   """
   Function that returns the smallest and the largest divisor of a number.
@@ -241,7 +265,7 @@ def sgdivisor(num:int):
   sdiv = 1
   if num % 2 == 0: sdiv = 2
   else:
-    for ii in range(3, int(np.sqrt(num))+1):
+    for ii in range(3, int(np.sqrt(num))+1, 2):
       if num % ii == 0:
         sdiv = ii
         break
