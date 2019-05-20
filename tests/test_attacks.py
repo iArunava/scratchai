@@ -143,7 +143,7 @@ class TestAttacks(unittest.TestCase):
     
     # Adversarial Example
     if t == NOISE:
-      adv_x = atk(torch.from_numpy(np.array(img))).transpose(2, 1).transpose(1, 0)
+      adv_x = atk(torch.from_numpy(np.array(img)).float()).transpose(2, 1).transpose(1, 0)
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
     elif t == SEMANTIC:
       img = TestAttacks.trf(img)
