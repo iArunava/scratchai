@@ -54,22 +54,22 @@ def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None,
   if clip_max:
     assert torch.all(x < torch.tensor(clip_max, device=x.device, dtype=x.dtype))
 
+  # Inplace operations not working for some bug #15070
+  # TODO Update when fixed
+  if len(x.shape) == 3: x = x.unsqueeze(0)
+
   # x needs to have requires_grad set to True 
   # for its grad to be computed and stored properly in a backward call
-  x = x.clone().detach().requires_grad_(True)
-  if y is None:
-    # Inplace operations not working for some bug #15070
-    # TODO Update when fixed
-    if len(x.shape) == 3: x = x.unsqueeze(0)
-    _, y = torch.max(net(x), dim=1)
+  x = x.detach().clone(); x.requires_grad_(True)
+
+  if y is None: _, y = torch.max(net(x), dim=1)
 
   # Compute loss
   crit = nn.CrossEntropyLoss()
   loss = crit(net(x), y)
   # If attack is targeted, minimize loss of target label rather than maximize
   # loss of correct label.
-  if targeted:
-    loss = -loss
+  if targeted: loss = -loss
 
   # Define gradient of loss wrt input
   loss.backward()
