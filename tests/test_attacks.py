@@ -139,6 +139,7 @@ class TestAttacks(unittest.TestCase):
   def check_atk(self, net, img, atk, t, y=None):
     # Get true pred
     net.eval()
+    utils.freeze(net)
     true_pred = int(torch.argmax(net(TestAttacks.trf(img).unsqueeze(0)), dim=1))
     
     # Adversarial Example
