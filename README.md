@@ -11,7 +11,7 @@ Table of Contents:
 1. Classification
 
 | Model | Paper | Implementation | Configurations |
-| :--- | :-----: | :--: |
+| :--- | :-----: | :--: | :--: |
 | Lenet | http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/lenet.py) | |
 | Alexnet | https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/alexnet.py) | |
 | VGG | https://arxiv.org/pdf/1409.1556.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/vgg.py) | VGG11, VGG11_BN, VGG13, VGG13_BN, VGG16_BN, VGG19, VGG19_BN |
