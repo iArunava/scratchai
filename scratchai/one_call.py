@@ -149,7 +149,7 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', ret:bool=False, **kwargs):
 
   x = imgutils.load_img(x) if isinstance(x, str) else x
   tlabl = classify(x, nstr) if nstr is not None else classify(x)
-  net = getattr(nets, nstr)().eval()
+  net = getattr(nets, nstr)().eval(); utils.freeze(net)
   atk = atk(net=net, **kwargs)
 
   # Preprocess image for attack
