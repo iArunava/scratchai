@@ -203,6 +203,17 @@ class TestAlexnet(unittest.TestCase):
     self.assertEqual(list(out.shape), [2, 10], "out shape not looking good")
     
 
+class TestVGG(unittest.TestCase):
+  
+  def test_vgg(self):
+    n1 = torch.randn(2, 3, 224, 224)
+    ns = ['vgg{}', 'vgg{}_bn']
+    for c in ['11', '13', '16', '19']:
+      for n in ns:
+        net = getattr(nets, n.format(c))()
+        out = net(n1)
+        self.assertEqual(list(out.shape), [2, 1000], 'Nope!')
+      
 class TestCommon(nn.Module):
   
   def test_flatten(self):

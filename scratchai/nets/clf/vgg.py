@@ -49,10 +49,11 @@ class VGG(nn.Module):
     ic = 3; oc = 64
     layers = []
     for l in lconf:
-      for _ in range(l): layers += conv(ic, oc, norm=norm)
+      layers += conv(ic, oc, norm=norm)
+      ic = oc
+      for _ in range(l-1): layers += conv(ic, oc, norm=norm)
+      oc *= 2 if oc*2 <= 512 else 1
       layers += [nn.MaxPool2d(2, 2)]
-      ic = oc; oc *= 2
-      if oc > 512: oc = 512
     
     layers += [nn.AdaptiveAvgPool2d((7, 7)), Flatten(), 
                *linear(512 * 7 * 7, 4096), *linear(4096, 4096), 
@@ -60,15 +61,15 @@ class VGG(nn.Module):
 
     self.net = nn.Sequential(*layers)
 
-  def forward(self, x): return net(x)
+  def forward(self, x): return self.net(x)
 
 
 ### VGG A ###
 def vgg11():
-  return VGG11(lconf=[1, 1, 2, 2, 2], norm=False)
+  return VGG(lconf=[1, 1, 2, 2, 2], norm=False)
 
 def vgg11_bn():
-  return VGG11(lconf=[1, 1, 2, 2, 2])
+  return VGG(lconf=[1, 1, 2, 2, 2])
 
 ### VGG B ###
 def vgg13():
