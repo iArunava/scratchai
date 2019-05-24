@@ -53,10 +53,12 @@ def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None,
     assert torch.all(x > torch.tensor(clip_min, device=x.device, dtype=x.dtype))
   if clip_max:
     assert torch.all(x < torch.tensor(clip_max, device=x.device, dtype=x.dtype))
-
+  
+  # Flag to indicate if the image has been unsqueezed
+  usq = False
   # Inplace operations not working for some bug #15070
   # TODO Update when fixed
-  if len(x.shape) == 3: x = x.unsqueeze(0)
+  if len(x.shape) == 3: x = x.unsqueeze(0); usq = True
 
   # x needs to have requires_grad set to True 
   # for its grad to be computed and stored properly in a backward call
@@ -84,7 +86,7 @@ def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None,
     assert clip_min is not None and clip_max is not None
     adv_x = torch.clamp(adv_x, clip_min, clip_max)
   
-  return adv_x
+  return adv_x if not usq else adv_x.squeeze()
 
 ###################################################################
 # A class to initialize the attack
