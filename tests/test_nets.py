@@ -116,7 +116,7 @@ class TestENet(unittest.TestCase):
 
     net = scratchai.nets.ENet(4).to(device)
 
-    o1 = net(n1).to(device)
+    o1 = net(n1)
     self.assertEqual(list(o1.shape), [2, 4, 256, 256], "out shape reduction not as it should"
                               " be.");
     del n1, o1
