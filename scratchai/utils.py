@@ -134,7 +134,7 @@ def freeze(net:nn.Module):
   ---------
   net : nn.Module
         The net to freeze
-        
+
   """
   for p in net.parameters():
     if p.requires_grad:
