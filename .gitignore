@@ -1,7 +1,9 @@
+MNIST/
 *.ipynb
 vault/
 *.tgz
 *.tar.gz
+*.zip
 out
 *.swp
 datasets/files/

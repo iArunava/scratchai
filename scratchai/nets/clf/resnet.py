@@ -6,13 +6,13 @@ import torch
 import torch.nn as nn
 import scratchai.pretrained.urls as urls
 
-from scratchai.utils import load_from_pth
+from scratchai.utils import load_from_pth, load_pretrained
 from scratchai.nets.blocks.resblock import Resnext
 
 
-__all__ = ['resnet18', 'resnet34', 'resnet50', 'resnet50', 'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 'resnext101', 'resnext152']
-
-prtr= 'pretrained'
+__all__ = ['resnet18_mnist', 'resnet18', 'resnet34', 'resnet50', 'resnet50', 
+           'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 
+           'resnext101', 'resnext152']
 
 
 def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
@@ -121,18 +121,20 @@ class Resnet(nn.Module):
   Arguments:
   nc : int
        # of classes
+  ic : int
+       # of input channels to the network
   oc1 : int
-                # of channels for the output of the first stage
+        # of channels for the output of the first stage
   layers : TOFILL
   lconv : int
           # of conv layers in each Residual Block
   """
 
   def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=1, 
-       block:nn.Module=resblock, oc1:int=64, **kwargs):
+       block:nn.Module=resblock, ic:int=3, oc1:int=64, **kwargs):
     super().__init__()
 
-    layers = [*conv(3, oc1, 7, 2, 3),
+    layers = [*conv(ic, oc1, 7, 2, 3),
               nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
               *res_stage(block, oc1, oc1*ex, layers[0], dflag=False, **kwargs),
               *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
@@ -151,46 +153,70 @@ class Resnet(nn.Module):
     return x
 
 
-def resnet18(pretrained=True, **kwargs):
+def resnet18_mnist(pretrained=False, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
+  kwargs['ic'] = 1
   net = Resnet(**kwargs)
+  '''
   if pretrained:
     # TODO check inspect module and change the fname
     net.load_state_dict(load_from_pth(urls.resnet18_url, 'resnet18'))
+  '''
+  return net
+  
+def resnet18(pretrained=True, **kwargs):
+  kwargs['layers'] = [2, 2, 2, 2]
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
+  net = Resnet(**kwargs)
+  if pretrained:
+    # TODO check inspect module and change the fname
+    return load_pretrained(net, urls.resnet18_url, 'resnet18', nc=cust_nc)
   return net
 
 def resnet34(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet34_url, 'resnet34'))
+    return load_pretrained(net, urls.resnet34_url, 'resnet34', nc=cust_nc)
   return net
 
 def resnet50(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   kwargs['btype'] = 'bottleneck'
   kwargs['ex'] = 4; kwargs['fdown'] = True
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet50_url, 'resnet50'))
+    return load_pretrained(net, urls.resnet50_url, 'resnet50', nc=cust_nc, 
+                           inn=512*kwargs['ex'])
   return net
 
 def resnet101(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 23, 3]
   kwargs['btype'] = 'bottleneck'
   kwargs['ex'] = 4; kwargs['fdown'] = True
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet101_url, 'resnet101'))
+    return load_pretrained(net, urls.resnet101_url, 'resnet101', nc=cust_nc,
+                           inn=512*kwargs['ex'])
   return net
 
 def resnet152(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 8, 36, 3]
   kwargs['btype'] = 'bottleneck'
   kwargs['ex'] = 4; kwargs['fdown'] = True
+  cust_nc = None
+  if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
   if pretrained:
-    net.load_state_dict(load_from_pth(urls.resnet152_url, 'resnet152'))
+    return load_pretrained(net, urls.resnet152_url, 'resnet152', nc=cust_nc,
+                           inn=512*kwargs['ex'])
   return net
 
 # FIXME The resnet blocks work okay but resnext needs a check

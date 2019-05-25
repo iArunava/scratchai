@@ -77,94 +77,10 @@ class Learner():
   def calc_metrics(self):
     pass
 
-  # FIXME Update this function in respect to the other module.
-  # TODO Code Revision
-  # TODO Move this to a new clflearner class
-  def _trainclf(self, moc, dltr, dltt=None):
-    """
-    Method to help in training.
-
-    Arguments
-    ---------
-    moc : A list with the self.net to train,
-                  optimizer, criterion
-          Expected: [self.net, criterion, optimizer]
-    dltr - A DataLoader based on the Training set
-    dltt - A DataLoader based on the test/eval set
-    """
-    
-    assert isinstance(moc, list)
-    trl = float('Inf')
-    vrl = float('Inf')
-
-    for e in range(self.epochs):
-      
-      trl = 0
-      moc[0].train()
-
-      for ii, data in enumerate(tqdm(dltr)):
-        images, labels = data
-        images, labels = images.to(self.d), labels.to(self.d)
-
-        moc[2].zero_grad()
-
-        out = moc[0](images)
-        loss = moc[1](out, labels)
-        loss.backward()
-        
-        moc[2].step()
-        trl += loss.item()
-
-        self.trloss.append(trl)
-
-      else:
-        if dltt is None:
-          continue
-
-        with torch.no_grad():
-          moc[0].eval()
-
-          acc = 0
-          vrl = 0
-
-          for ii, data in enumerate(tqdm(dltt)):
-            images, labels = data
-            images, labels = images.to(self.d), labels.to(self.d)
-
-            out = moc[0](images)
-            loss = moc[1](out, labels)
-            _, preds = torch.max(out.data, 1)
-
-            #top_k, top_class = ps.topk(1, dim=1)
-
-            corr = (preds == labels).sum().item()
-
-            vrl += loss.item()
-            self.ttloss.append(vrl)
-        
-        if dltt is not None:
-          cacc = (corr / len(dltt)) * 100
-        else:
-          cacc = (corr / len(dltr)) * 100
-          warnings.warn("Calculating Accuracy on the train set!")
-
-        self.acclist.append(cacc)
-
-        if e+1 % self.se == 0:
-          ckpt = {
-            'epoch' : e+1,
-            'model_state_dict' : moc[0].state_dict(),
-            'opt_state_dict' : moc[2].state_dict()
-          }
-          torch.save(ckpt, '{}-{:.2f}'.format(self.fn, cacc))
-
-        print ('Epochs {}/{} || Train Loss: {:.2f} || ' \
-           'Test Loss: {} || Accuracy {:.2f}' \
-           .format(e+1, self.epochs, trl, vrl, cacc))
-  
   ################################################################################
   ######################## Ongoing Print Functions ###############################
   ################################################################################
+  # TODO Use the torch-summary module and build on that.
 
   def conv_out_size(self, net):
     kh, kw = net.kernel_size if type(net.kernel_size) == tuple else (net.kernel_size, net.kernel_size)

@@ -2,6 +2,8 @@
 Semantic adversarial Examples
 """
 
+__all__ = ['semantic', 'Semantic']
+
 def semantic(x, center:bool=True, max_val:float=1.):
   """
   Semantic adversarial examples.
@@ -20,10 +22,18 @@ def semantic(x, center:bool=True, max_val:float=1.):
            If false, assumes data is in interval [0, max_val]
   max_val : float
             Maximum value allowed in the input data.
-  kwargs : dict, optional
-           Any additional arguments
   """
 
   if center:
     return x*-1
   return max_val - x
+
+################################################################
+###### Class to initialize this attack
+###### mainly for the use with torchvision.transforms
+
+class Semantic():
+  def __init__(self, net=None, **kwargs):
+    self.kwargs = kwargs
+  def __call__(self, x):
+    return semantic(x, **self.kwargs)

@@ -8,7 +8,10 @@ import torch.nn as nn
 
 from scratchai.attacks.utils import optimize_linear
 
-def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None, 
+
+__all__ = ['fgm', 'FGM']
+
+def fgm(x, net:nn.Module, eps:float=0.3, ordr=np.inf, y=None, 
         clip_min=None, clip_max=None, targeted=False, sanity_checks=True):
   """
   Implementation of the Fast Gradient Method.
@@ -43,7 +46,6 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
   adv_x : torch.Tensor
           The adversarial example.
   """
-
   if ordr not in [np.inf, 1, 2]:
     raise ValueError('Norm order must be either np.inf, 1, or 2.')
 
@@ -51,20 +53,25 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
     assert torch.all(x > torch.tensor(clip_min, device=x.device, dtype=x.dtype))
   if clip_max:
     assert torch.all(x < torch.tensor(clip_max, device=x.device, dtype=x.dtype))
+  
+  # Flag to indicate if the image has been unsqueezed
+  usq = False
+  # Inplace operations not working for some bug #15070
+  # TODO Update when fixed
+  if len(x.shape) == 3: x = x.unsqueeze(0); usq = True
 
-  # x needs to be a leaf variable, of floating point type and have requires_grad
-  # being True for its grad to be computed and stored properly in a backward call
-  x = x.clone().detach().float().requires_grad_(True)
-  if y is None:
-    _, y = torch.max(net(x), dim=1)
+  # x needs to have requires_grad set to True 
+  # for its grad to be computed and stored properly in a backward call
+  x = x.detach().clone(); x.requires_grad_(True)
+
+  if y is None: _, y = torch.max(net(x), dim=1)
 
   # Compute loss
   crit = nn.CrossEntropyLoss()
   loss = crit(net(x), y)
   # If attack is targeted, minimize loss of target label rather than maximize
   # loss of correct label.
-  if targeted:
-    loss = -loss
+  if targeted: loss = -loss
 
   # Define gradient of loss wrt input
   loss.backward()
@@ -79,4 +86,16 @@ def fgm(net:nn.Module, x, eps:float=0.3, ordr=np.inf, y=None,
     assert clip_min is not None and clip_max is not None
     adv_x = torch.clamp(adv_x, clip_min, clip_max)
   
-  return adv_x
+  return adv_x if not usq else adv_x.squeeze()
+
+###################################################################
+# A class to initialize the attack
+# This class is implemented mainly so this attack can be directly
+# used along with torchvision.transforms
+
+class FGM():
+  def __init__(self, net, **kwargs):
+    self.net = net
+    self.kwargs = kwargs
+  def __call__(self, x):
+    return fgm(x, self.net, **self.kwargs)

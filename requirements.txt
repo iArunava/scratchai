@@ -20,7 +20,7 @@ simplegeneric==0.8.1
 six==1.11.0
 tables==3.4.2
 tabulate==0.8.3
-torch==1.0.1.post2
+torch==1.1.0
 torchvision==0.2.2.post3
 tqdm==4.31.1
 traceback2==1.4.0
