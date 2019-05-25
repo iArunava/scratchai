@@ -124,7 +124,6 @@ def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
       p.requires_grad_(False)
     setatrib(net, attr, nn.Linear(inn, nc))
   return net
->>>>>>> origin/master
 
 
 def freeze(net:nn.Module):
@@ -135,6 +134,7 @@ def freeze(net:nn.Module):
   ---------
   net : nn.Module
         The net to freeze
+        
   """
   for p in net.parameters():
     if p.requires_grad:
