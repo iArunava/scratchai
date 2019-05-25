@@ -15,20 +15,20 @@ def smm(net, x, theta=1., y=None, gamma=1., clip_min=0., clip_max=1.):
   Arguments
   ---------
   model : nn.Module
-      The model on which the attack needs to be performed.
+          The model on which the attack needs to be performed.
   x : torch.Tensor
       The input ot the model.
   y : torch.tensor, optional
-       Target tensor if the attack is targetted
+      Target tensor if the attack is targetted
   theta : float, optional
-      Perturbation introduced to modified components
-      (can be positive or negative). Defaults to 1.
+          Perturbation introduced to modified components
+          (can be positive or negative). Defaults to 1.
   gamma : float, optional
-      Maximum percentage of perturbed features. Defaults to 1.
+          Maximum percentage of perturbed features. Defaults to 1.
   clip_min : float, optional
-       Minimum component value for clipping
+             Minimum component value for clipping
   clip_max : float, optional
-       Maximum component value for clipping
+             Maximum component value for clipping
 
   Returns
   -------
