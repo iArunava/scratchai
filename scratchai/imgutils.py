@@ -19,7 +19,6 @@ __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i',
            'diff_imgs', 'mean', 'std']
 
 
-
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
   """
   This function is used to threshold the image to a certain color.
@@ -454,4 +453,3 @@ def get_trf(trfs:str):
       raise NotImplementedError
 
   return T.Compose(trf_list)
-
