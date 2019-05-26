@@ -92,8 +92,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
     rt += ri
     
     x_idt = x + ((1+eta) * torch.from_numpy(rt)).float().to(dev)
-    x_idt.requires_grad_(True)
-    logits = net(x_idt)
+    x_idt.requires_grad_(True); logits = net(x_idt)
     plabl = torch.argmax(logits, dim=1).detach().cpu().data.numpy()
 
     i += 1
