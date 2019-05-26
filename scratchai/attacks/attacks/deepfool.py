@@ -38,47 +38,62 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   # Set net to eval
   net.eval()
   dev = x.device
+
+  # If x doesn't have a batch dimension add 1
+  # The loop runs twice to ensure that 2D images gets the batch dim
+  # For 2D images, 1st iter adds -> The channel dim
+  # 2nd iter adds -> batch dim
+  for _ in range(2): 
+    if len(x.shape) < 3: x = x.unsqueeze(0)
+  bs = x.shape[0]
+  lbs = list(range(bs))
   
   # x_idt is the initial advesarial image
   x_idt = x.detach().clone().requires_grad_(True)
-  # Get the logits (since x_idt is not perturbed yet, the logits are true logits)
-  logits = net(x_idt).squeeze()
+  # Get the logits (x_idt is not perturbed yet, the logits are true logits)
+  logits = net(x_idt)
   # Get the top tnc classes that the net is most confident about
-  psort = logits.data.cpu().numpy().flatten().argsort()[::-1][:tnc]
+  psort = torch.argsort(logits.data.cpu(), dim=1, descending=True)
+  psort = psort[:, :tnc].data.numpy()
   
-  tlabl = psort[0] # True Label
-  plabl = tlabl    # Pert label
+  tlabl = psort[:, 0] # True Label
+  plabl = tlabl       # Pert label
 
-  x_shape = x_idt.squeeze().shape # [C x H x W]
-  w = np.zeros(x_shape)           # [C x H x W]
-  rt = np.zeros(x_shape)          # [C x H x W]
+  x_shape = x_idt.shape  # [N x C x H x W]
+  w = np.zeros(x_shape)  # [N x C x H x W]
+  rt = np.zeros(x_shape) # [N x C x H x W]
   
   i = 0
-  while plabl == tlabl and i < miter:
+  while (plabl == tlabl).any() and i < miter:
     # Initial Perturbation
-    pert = np.inf
-    logits[tlabl].backward(retain_graph=True)
+    pert = 5e10
+    for ii in range(bs): logits[ii, tlabl[ii]].backward(retain_graph=True)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, tnc):
       zgrad(x_idt)
-      logits[psort[c]].backward(retain_graph=True)
+      for ii in range(bs): logits[ii, psort[ii, c]].backward(retain_graph=True)
       cgrad = x_idt.grad.data.cpu().numpy().copy()
 
       # Get new wk and fk
       wk = cgrad - ograd
-      fk = (logits[c] - logits[tlabl]).item()
+      fk = (logits[lbs, psort[:, c]] - logits[lbs, tlabl]) \
+             .detach().cpu().data.numpy()
 
-      cpert = abs(fk) / np.linalg.norm(wk.flatten())
-      if cpert < pert: pert = cpert; w = wk
+      cpert = abs(fk) / np.linalg.norm(wk.reshape(bs, -1), axis=1)
+      # Code updated for batch images till here and checked
+      blist = (cpert < pert).astype(np.float32)
+      if blist.any(): 
+        pert = pert*(1-blist) + (cpert*blist)
+        w = (w.T*(1-blist) + (wk.T * blist)).T
     
     # Added 1e-4 for numerical stability
-    ri =  (pert+1e-4) * w / np.linalg.norm(w.flatten())
-    rt += ri.squeeze()
+    ri =  (((pert+1e-4) * w.T) / np.linalg.norm(w.reshape(bs, -1), axis=1)).T
+    rt += ri
     
-    x_idt = x + ((1+eta) * torch.from_numpy(rt).unsqueeze(0)).float().to(dev)
-    logits = net(x_idt.requires_grad_(True)).squeeze()
-    plabl = torch.argmax(logits, dim=0).item()
+    x_idt = x + ((1+eta) * torch.from_numpy(rt)).float().to(dev)
+    x_idt.requires_grad_(True); logits = net(x_idt)
+    plabl = torch.argmax(logits, dim=1).detach().cpu().data.numpy()
 
     i += 1
   
@@ -92,13 +107,4 @@ class DeepFool():
     self.net = net
     self.kwargs = kwargs
   def __call__(self, x):
-    # TODO Refactor for vectorization
-    # takes 1 hour to test on MNIST with Lenet
-    # If there is a batch dimension
-    if len(x.shape) == 4:
-      adv_x = torch.zeros_like(x)
-      for ii in range(x.size(0)):
-        adv_x[ii] = deepfool(x[ii].unsqueeze(0), self.net, **self.kwargs)
-      return adv_x
-    # Otherwise
-    else: return deepfool(x, self.net, **self.kwargs)
+    return deepfool(x, self.net, **self.kwargs)
