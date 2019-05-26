@@ -67,12 +67,12 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   while (plabl == tlabl).any() and i < miter:
     # Initial Perturbation
     pert = 5e10
-    for ii in range(bs): logits[ii, tlabl[ii]].backward(retain_graph=True)
+    logits[lbs, tlabl].sum().backward(retain_graph=True)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, tnc):
       zgrad(x_idt)
-      for ii in range(bs): logits[ii, psort[ii, c]].backward(retain_graph=True)
+      logits[lbs, psort[:, c]].sum().backward(retain_graph=True)
       cgrad = x_idt.grad.data.cpu().numpy().copy()
 
       # Get new wk and fk
@@ -81,7 +81,6 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
              .detach().cpu().data.numpy()
 
       cpert = abs(fk) / np.linalg.norm(wk.reshape(bs, -1), axis=1)
-      # Code updated for batch images till here and checked
       blist = (cpert < pert).astype(np.float32)
       if blist.any(): 
         pert = pert*(1-blist) + (cpert*blist)
