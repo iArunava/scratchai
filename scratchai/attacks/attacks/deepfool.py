@@ -46,6 +46,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   for _ in range(2): 
     if len(x.shape) < 3: x = x.unsqueeze(0)
   bs = x.shape[0]
+  lbs = list(range(bs))
   
   # x_idt is the initial advesarial image
   x_idt = x.detach().clone().requires_grad_(True)
@@ -57,6 +58,7 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   
   tlabl = psort[:, 0] # True Label
   plabl = tlabl       # Pert label
+  #print ('g', plabl.shape)
 
   x_shape = x_idt.shape  # [N x C x H x W]
   w = np.zeros(x_shape)  # [N x C x H x W]
@@ -65,35 +67,42 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   i = 0
   while (plabl == tlabl).any() and i < miter:
     # Initial Perturbation
-    pert = np.inf
-    # Code updated for batch images till here and checked
+    pert = 5e10
+    #print (x_idt.requires_grad)
+    #print (x_idt.shape)
     for ii in range(bs): logits[ii, tlabl[ii]].backward(retain_graph=True)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, tnc):
       zgrad(x_idt)
-      #logits[psort[c]].backward(retain_graph=True)
       for ii in range(bs): logits[ii, psort[ii, c]].backward(retain_graph=True)
       cgrad = x_idt.grad.data.cpu().numpy().copy()
 
       # Get new wk and fk
       wk = cgrad - ograd
-      #print (logits[list(range(bs)), tlabl], tlabl)
-      fk = (logits[list(range(bs)), psort[:, c]] - logits[list(range(bs)), tlabl]).data.numpy()
+      fk = (logits[lbs, psort[:, c]] - logits[lbs, tlabl]) \
+             .detach().cpu().data.numpy()
 
-      #cpert = abs(fk) / np.linalg.norm(wk.flatten())
-      #print (fk.shape, (np.linalg.norm(wk.reshape(bs, -1), axis=1).shape))
       cpert = abs(fk) / np.linalg.norm(wk.reshape(bs, -1), axis=1)
-      #print (cpert)
-      if cpert < pert: pert = cpert; w = wk
+      # Code updated for batch images till here and checked
+      blist = (cpert < pert).astype(np.float32)
+      #print (blist, 1-blist, pert, pert*blist)
+      #print ('g', pert); print (cpert)
+      if blist.any(): 
+        pert = pert*(1-blist) + (cpert*blist)
+        w = (w.T*(1-blist) + (wk.T * blist)).T
+      #print (pert)
+      break # TODO Remove
     
     # Added 1e-4 for numerical stability
-    ri =  (pert+1e-4) * w / np.linalg.norm(w.flatten())
-    rt += ri.squeeze()
+    ri =  (((pert+1e-4) * w.T) / np.linalg.norm(w.reshape(bs, -1), axis=1)).T
+    rt += ri
     
-    x_idt = x + ((1+eta) * torch.from_numpy(rt).unsqueeze(0)).float().to(dev)
-    logits = net(x_idt.requires_grad_(True)).squeeze()
-    plabl = torch.argmax(logits, dim=0).item()
+    x_idt = x + ((1+eta) * torch.from_numpy(rt)).float().to(dev)
+    x_idt.requires_grad_(True)
+    logits = net(x_idt)
+    plabl = torch.argmax(logits, dim=1).detach().cpu().data.numpy()
+    #print (plabl.shape)
 
     i += 1
   
