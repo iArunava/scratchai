@@ -66,20 +66,25 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   while (plabl == tlabl).any() and i < miter:
     # Initial Perturbation
     pert = np.inf
-  # Code updated for batch images till here and checked
-    for ii in range(bs): logits[tlabl[bs, 0]].backward(retain_graph=True)
+    # Code updated for batch images till here and checked
+    for ii in range(bs): logits[ii, tlabl[ii]].backward(retain_graph=True)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
     for c in range(1, tnc):
       zgrad(x_idt)
-      logits[psort[c]].backward(retain_graph=True)
+      #logits[psort[c]].backward(retain_graph=True)
+      for ii in range(bs): logits[ii, psort[ii, c]].backward(retain_graph=True)
       cgrad = x_idt.grad.data.cpu().numpy().copy()
 
       # Get new wk and fk
       wk = cgrad - ograd
-      fk = (logits[c] - logits[tlabl]).item()
+      #print (logits[list(range(bs)), tlabl], tlabl)
+      fk = (logits[list(range(bs)), psort[:, c]] - logits[list(range(bs)), tlabl]).data.numpy()
 
-      cpert = abs(fk) / np.linalg.norm(wk.flatten())
+      #cpert = abs(fk) / np.linalg.norm(wk.flatten())
+      #print (fk.shape, (np.linalg.norm(wk.reshape(bs, -1), axis=1).shape))
+      cpert = abs(fk) / np.linalg.norm(wk.reshape(bs, -1), axis=1)
+      #print (cpert)
       if cpert < pert: pert = cpert; w = wk
     
     # Added 1e-4 for numerical stability
