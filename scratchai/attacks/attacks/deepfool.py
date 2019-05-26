@@ -58,7 +58,6 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   
   tlabl = psort[:, 0] # True Label
   plabl = tlabl       # Pert label
-  #print ('g', plabl.shape)
 
   x_shape = x_idt.shape  # [N x C x H x W]
   w = np.zeros(x_shape)  # [N x C x H x W]
@@ -68,8 +67,6 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
   while (plabl == tlabl).any() and i < miter:
     # Initial Perturbation
     pert = 5e10
-    #print (x_idt.requires_grad)
-    #print (x_idt.shape)
     for ii in range(bs): logits[ii, tlabl[ii]].backward(retain_graph=True)
     ograd = x_idt.grad.data.cpu().numpy().copy()
 
@@ -86,13 +83,9 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
       cpert = abs(fk) / np.linalg.norm(wk.reshape(bs, -1), axis=1)
       # Code updated for batch images till here and checked
       blist = (cpert < pert).astype(np.float32)
-      #print (blist, 1-blist, pert, pert*blist)
-      #print ('g', pert); print (cpert)
       if blist.any(): 
         pert = pert*(1-blist) + (cpert*blist)
         w = (w.T*(1-blist) + (wk.T * blist)).T
-      #print (pert)
-      break # TODO Remove
     
     # Added 1e-4 for numerical stability
     ri =  (((pert+1e-4) * w.T) / np.linalg.norm(w.reshape(bs, -1), axis=1)).T
@@ -102,7 +95,6 @@ def deepfool(x, net:nn.Module, eta:float=0.02, tnc:int=10, miter:int=50,
     x_idt.requires_grad_(True)
     logits = net(x_idt)
     plabl = torch.argmax(logits, dim=1).detach().cpu().data.numpy()
-    #print (plabl.shape)
 
     i += 1
   
