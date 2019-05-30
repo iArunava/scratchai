@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import os
 
+import cv2
 from torchvision import transforms
 from subprocess import call
 from scratchai._config import home
@@ -15,6 +16,16 @@ __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
 
 def count_params(net):
   return sum(p.numel() for p in net.parameters() if p.requires_grad)
+
+
+# No Tests written for this function.
+def cam():
+  c = cv2.VideoCapture(0)
+  while True:
+    r, img = c.read()
+    cv2.imshow('cam', img)
+    if cv2.waitKey(1) == 113: break
+  cv2.destroyAllWindows()
 
 
 def load_from_pth(url, fname='random', key='state_dict'):
