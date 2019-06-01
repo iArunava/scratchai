@@ -17,7 +17,7 @@ from scratchai import *
 __all__ = ['classify', 'stransfer', 'attack']
 
 
-def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
+def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   """
   One call to classify an image.
 
@@ -32,7 +32,7 @@ def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
         The transforms to be used in the image. 
         The str is passed to utils.get_trf(). 
         Defaults to 'rz256_cc224_tt_normimgnet'
-  dim2 : bool
+  gray : bool
        Set this to True if the model expects 2d images. Defaults to False.
   Returns
   -------
@@ -46,10 +46,10 @@ def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
   a resnet output the predicted value.
   """
   assert type(trf) == str or type(trf) == type(None)
-  if type(nstr) is str and nstr.endswith('_mnist'): dim2 = True
+  if type(nstr) is str and nstr.endswith('_mnist'): gray = True
   
   if not trf:
-    if not dim2: trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
+    if not gray: trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
     else: trf = imgutils.get_trf('rz32_cc28_tt_normmnist')
   else: trf = imgutils.get_trf(trf)
   
@@ -61,7 +61,7 @@ def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
   # Getting the image from `path`
   if type(path) == str:
     # Special Case: if net == 'lenet_mnist' then image needs to have one channel
-    if dim2: img = trf(imgutils.gray(path)).unsqueeze(0)
+    if gray: img = trf(imgutils.gray(path)).unsqueeze(0)
     # Normal Cases
     else: img = trf(imgutils.load_img(path)).unsqueeze(0)
   else:
@@ -76,7 +76,7 @@ def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
   val = val.item(); pred = pred.item()
   
   # In case the net is trained on mnist
-  if dim2: label = mnist_labels[pred]
+  if gray: label = mnist_labels[pred]
   # In case the net is trained on Imagenet
   else: label = imagenet_labels[pred]
   
