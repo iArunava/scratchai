@@ -41,7 +41,7 @@ class TestAttacks(unittest.TestCase):
       net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
       self.check_atk(net, img, attacks.noise, t=NOISE)
-      self.check_atk(net, img, attacks.Noise(), t=NOISE, init=1)
+      self.check_atk(net, img, attacks.Noise(), t=NOISE)
       print ('[INFO] Attack worked successfully!')
       del net
 
@@ -61,7 +61,7 @@ class TestAttacks(unittest.TestCase):
       net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
       self.check_atk(net, img, attacks.semantic, t=SEMANTIC)
-      self.check_atk(net, img, attacks.Semantic(), t=SEMANTIC, init=1)
+      self.check_atk(net, img, attacks.Semantic(), t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
       del net
   
@@ -85,7 +85,7 @@ class TestAttacks(unittest.TestCase):
       net = getattr(models, model)(pretrained=True)
       self.check_atk(net, img, attacks.pgd, t=PGD, y=torch.tensor([to_pred]))
       self.check_atk(net, img, attacks.PGD(net,  y=torch.tensor([to_pred])),
-                      t=PGD, init=1)
+                      t=PGD)
       print ('[INFO] Attack worked successfully!')
       del net
 
@@ -107,7 +107,7 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing FGM attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
       self.check_atk(net, img, scratchai.attacks.fgm, t=FGM)
-      self.check_atk(net, img, scratchai.attacks.FGM(net), t=FGM, init=1)
+      self.check_atk(net, img, scratchai.attacks.FGM(net), t=FGM)
       print ('[INFO] Attack worked successfully!')
       del net
   
@@ -124,7 +124,7 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing DeepFool attack on {}'.format(model))
       net = getattr(nets, model)(pretrained=True)
       self.check_atk(net, img, attacks.deepfool, t=DEEPFOOL)
-      self.check_atk(net, img, attacks.DeepFool(net), t=DEEPFOOL, init=1)
+      self.check_atk(net, img, attacks.DeepFool(net), t=DEEPFOOL)
       print ('[INFO] Attack worked successfully!')
       del net
     
@@ -143,7 +143,7 @@ class TestAttacks(unittest.TestCase):
   def scale(self, img):
     return img * (255. / img.max())
 
-  def check_atk(self, net, img, atk, t, y=None, init=False):
+  def check_atk(self, net, img, atk, t, y=None):
     """
     Arguments
     ---------
@@ -155,6 +155,7 @@ class TestAttacks(unittest.TestCase):
            atk = attacks.noise
            Defaults to False.
     """
+    init = not isfunction(atk)
 
     # Get true pred
     net.eval()
