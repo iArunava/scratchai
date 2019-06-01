@@ -53,9 +53,9 @@ class TestOneCalls(unittest.TestCase):
             TestOneCalls.url_1, trf=imgutils.get_trf('tt_normmnist')))
     
     # Checks for one_classify and MNIST that it can take nn.Module as input
-    # Given that gray is set to True for 2D images.
+    # Given that dim2 is set to True for 2D images.
     net = nets.lenet_mnist()
-    pred, val = one_call.classify(TestOneCalls.url_2, nstr=net, gray=1)
+    pred, val = one_call.classify(TestOneCalls.url_2, nstr=net, dim2=1)
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
     self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
