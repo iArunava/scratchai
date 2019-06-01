@@ -4,7 +4,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="scratchai",
+    name="scratchai-nightly",
     version="0.0.1",
     author="@iArunava",
     author_email="iarunavaofficial@gmail.com",
