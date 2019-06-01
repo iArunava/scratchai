@@ -51,6 +51,7 @@ def classify(path:str, nstr='resnet18', trf:str=None, dim2:bool=False):
   if not trf:
     if not dim2: trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
     else: trf = imgutils.get_trf('rz32_cc28_tt_normmnist')
+  else: trf = imgutils.get_trf(trf)
   
   # Getting the net
   if type(nstr) is str: net = getattr(nets, nstr)()
