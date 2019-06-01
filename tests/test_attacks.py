@@ -8,6 +8,7 @@ import io
 import numpy as np
 from torchvision import models, transforms
 from PIL import Image
+from inspect import isfunction
 import matplotlib.pyplot as plt
 
 from scratchai import *
