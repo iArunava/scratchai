@@ -98,7 +98,7 @@ class TestImgUtils(unittest.TestCase):
     for _ in range(torch.randint(1, 10, ())):
       t = torch.randn(3, 28, 28)
       std = imgutils.std(t)
-      self.assertEqual(round(std, 2), round(torch.std(t).item(), 2), 'nope!')
+      self.assertEqual(round(std - torch.std(t).item(), 2), 0.0, 'nope!')
 
 
 #############################################
@@ -138,8 +138,8 @@ class TestUtils(unittest.TestCase):
         obj.update(curr_val/cnt, cnt)
         val += curr_val
         k = np.random.choice(topk)
-        self.assertEqual(obj.avgmtrs[name+str(k)].avg,
-                         val[topk.index(k)]/(cnt*i), 'nope!')
+        self.assertEqual(round(obj.avgmtrs[name+str(k)].avg - 
+                         val[topk.index(k)]/(cnt*i), 2), 0.0, 'nope!')
         
       self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
       self.assertEqual(obj.ks, len(topk), 'not working!')
@@ -184,7 +184,7 @@ class TestUtils(unittest.TestCase):
 
   def test_sgdivisor(self):
     ulim = 100
-    for n in np.random.randint(ulim, size=(5,)):
+    for n in np.random.randint(1, ulim, size=(5,)):
       s, g = utils.sgdivisor(int(n))
       self.assertTrue(n % s == 0, 'Nope!')
       self.assertTrue(n % g == 0, 'Nope!')
@@ -201,12 +201,13 @@ class TestUtils(unittest.TestCase):
            79,83,89,97]
     # DO NOT CHANGE ulim AS pfs is a list of prime numbers b/w # 0 and 100.
     ulim = 100
-    for n in np.random.randint(ulim, size=(5,)):
+    for n in np.random.randint(1, ulim, size=(5,)):
       gp = utils.gpfactor(int(n))
       self.assertTrue(n % gp == 0, 'Nope!')
       # Explicit checks
       for pf in pfs:
         if n % pf == 0: self.assertFalse(pf > gp , 'nope!')
+    self.assertRaises(AssertionError, lambda: utils.gpfactor(0))
 
 #############################################
 ### Check the functions in scratchai/attacks/utils.py
