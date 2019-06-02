@@ -138,7 +138,7 @@ class TestUtils(unittest.TestCase):
         obj.update(curr_val/cnt, cnt)
         val += curr_val
         k = np.random.choice(topk)
-        self.assertEqual(obj.avgmtrs[name+str(k)].avg, 
+        self.assertEqual(obj.avgmtrs[name+str(k)].avg,
                          val[topk.index(k)]/(cnt*i), 'nope!')
         
       self.assertEqual(len(obj.avgmtrs), len(topk), 'not working!')
