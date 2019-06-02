@@ -17,7 +17,7 @@ from scratchai import *
 __all__ = ['classify', 'stransfer', 'attack']
 
 
-def classify(path:str, nstr:str='resnet18', trf:str=None):
+def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   """
   One call to classify an image.
 
@@ -25,12 +25,15 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   ---------
   img : str
         The path to the image file / url to the image file.
-  nstr : str
+  nstr : str, nn.Module
          The name of the net to be used in string format.
+         or the net itself
   trf : str
         The transforms to be used in the image. 
         The str is passed to utils.get_trf(). 
         Defaults to 'rz256_cc224_tt_normimgnet'
+  gray : bool
+       Set this to True if the model expects 2d images. Defaults to False.
   Returns
   -------
   pred : str
@@ -43,12 +46,22 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   a resnet output the predicted value.
   """
   assert type(trf) == str or type(trf) == type(None)
-  trf = imgutils.get_trf('rz256_cc224_tt_normimgnet' if not trf else trf)
+  if type(nstr) is str and nstr.endswith('_mnist'): gray = True
   
+  if not trf:
+    if not gray: trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
+    else: trf = imgutils.get_trf('rz32_cc28_tt_normmnist')
+  else: trf = imgutils.get_trf(trf)
+  
+  # Getting the net
+  if type(nstr) is str: net = getattr(nets, nstr)()
+  else: net = nstr
+  net.eval()
+
   # Getting the image from `path`
   if type(path) == str:
     # Special Case: if net == 'lenet_mnist' then image needs to have one channel
-    if nstr.endswith('_mnist'): img = trf(imgutils.gray(path)).unsqueeze(0)
+    if gray: img = trf(imgutils.gray(path)).unsqueeze(0)
     # Normal Cases
     else: img = trf(imgutils.load_img(path)).unsqueeze(0)
   else:
@@ -59,12 +72,11 @@ def classify(path:str, nstr:str='resnet18', trf:str=None):
   if len(img.shape) == 3: img = img.unsqueeze(0)
   
   # Getting the image from net
-  net = getattr(nets, nstr)().eval()
   val, pred = torch.max(net(img), dim=1)
   val = val.item(); pred = pred.item()
   
   # In case the net is trained on mnist
-  if nstr.endswith('_mnist'): label = mnist_labels[pred]
+  if gray: label = mnist_labels[pred]
   # In case the net is trained on Imagenet
   else: label = imagenet_labels[pred]
   

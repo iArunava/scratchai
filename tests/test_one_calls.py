@@ -32,17 +32,32 @@ class TestOneCalls(unittest.TestCase):
     self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
     self.assertTrue(pred == TestOneCalls.lab_1, 'Doesn\'t Work!')
     # TODO Check that path in local works
+    
+    # Checks for one_classify can take nn.Module as argument
+    net = nets.resnet18()
+    pred, val = one_call.classify(TestOneCalls.url_1, nstr=net)
+    self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
+    self.assertTrue(pred == TestOneCalls.lab_1, 'Doesn\'t Work!')
 
     # Check that mnist works
     mnist_ns = ['lenet_mnist', 'alexnet_mnist']
     for n in mnist_ns:
       pred, val = one_call.classify(TestOneCalls.url_2, nstr=n, 
                                     trf='rz32_cc28_tt')
+      pred, val = one_call.classify(TestOneCalls.url_2, nstr=n)
+
       self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
       self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
     self.assertRaises(AssertionError, lambda: one_call.classify(
             TestOneCalls.url_1, trf=imgutils.get_trf('tt_normmnist')))
+    
+    # Checks for one_classify and MNIST that it can take nn.Module as input
+    # Given that gray is set to True for 2D images.
+    net = nets.lenet_mnist()
+    pred, val = one_call.classify(TestOneCalls.url_2, nstr=net, gray=1)
+    self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
+    self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
   def test_stransfer(self):
     """

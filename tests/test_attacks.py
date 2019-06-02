@@ -8,6 +8,7 @@ import io
 import numpy as np
 from torchvision import models, transforms
 from PIL import Image
+from inspect import isfunction
 import matplotlib.pyplot as plt
 
 from scratchai import *
@@ -40,7 +41,8 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing Noise attack on {}'.format(model))
       net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
-      self.check_atk(net, img, scratchai.attacks.noise, t=NOISE)
+      self.check_atk(net, img, attacks.noise, t=NOISE)
+      self.check_atk(net, img, attacks.Noise(), t=NOISE)
       print ('[INFO] Attack worked successfully!')
       del net
 
@@ -59,7 +61,8 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing Semantic attack on {}'.format(model))
       net = getattr(nets, model)(pretrained=True)
       # TODO No need to call Noise again and again in each iteration
-      self.check_atk(net, img, scratchai.attacks.semantic, t=SEMANTIC)
+      self.check_atk(net, img, attacks.semantic, t=SEMANTIC)
+      self.check_atk(net, img, attacks.Semantic(), t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
       del net
   
@@ -81,7 +84,9 @@ class TestAttacks(unittest.TestCase):
       to_pred = int(torch.randint(1000, ()))
       print ('[INFO] Testing PGD attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
-      self.check_atk(net, img, scratchai.attacks.pgd, t=PGD, y=torch.tensor([to_pred]))
+      self.check_atk(net, img, attacks.pgd, t=PGD, y=torch.tensor([to_pred]))
+      self.check_atk(net, img, attacks.PGD(net,  y=torch.tensor([to_pred])),
+                      t=PGD)
       print ('[INFO] Attack worked successfully!')
       del net
 
@@ -103,6 +108,7 @@ class TestAttacks(unittest.TestCase):
       print ('[INFO] Testing FGM attack on {}'.format(model))
       net = getattr(models, model)(pretrained=True)
       self.check_atk(net, img, scratchai.attacks.fgm, t=FGM)
+      self.check_atk(net, img, scratchai.attacks.FGM(net), t=FGM)
       print ('[INFO] Attack worked successfully!')
       del net
   
@@ -118,7 +124,8 @@ class TestAttacks(unittest.TestCase):
     for model in all_models:
       print ('[INFO] Testing DeepFool attack on {}'.format(model))
       net = getattr(nets, model)(pretrained=True)
-      self.check_atk(net, img, scratchai.attacks.deepfool, t=DEEPFOOL)
+      self.check_atk(net, img, attacks.deepfool, t=DEEPFOOL)
+      self.check_atk(net, img, attacks.DeepFool(net), t=DEEPFOOL)
       print ('[INFO] Attack worked successfully!')
       del net
     
@@ -129,14 +136,28 @@ class TestAttacks(unittest.TestCase):
       z = zipfile.ZipFile(io.BytesIO(r.content))
       z.extractall('/tmp/')
 
-    atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD, 
-            attacks.DeepFool]
+    #atks = [attacks.Noise, attacks.Semantic, attacks.FGM, attacks.PGD, 
+            #attacks.DeepFool]
+    atks = [attacks.Noise]
     for atk in atks: attacks.benchmark_atk(atk, net, root='/tmp/imgnet/')
 
   def scale(self, img):
     return img * (255. / img.max())
 
   def check_atk(self, net, img, atk, t, y=None):
+    """
+    Arguments
+    ---------
+    init : bool
+           If set to True, the funtion assumes that the attack passed is 
+           initialized from the attack class i.e.
+           atk = attacks.PGD(net)
+           else if False it assumes
+           atk = attacks.noise
+           Defaults to False.
+    """
+    init = not isfunction(atk)
+
     # Get true pred
     net.eval()
     utils.freeze(net)
@@ -155,11 +176,13 @@ class TestAttacks(unittest.TestCase):
       adv_pred = int(torch.argmax(net(adv_x.unsqueeze(0)), dim=1))
     elif t == FGM or t == PGD:
       img = TestAttacks.trf(img)
-      adv_x = atk(img.unsqueeze(0), net, y=y)
+      if init: adv_x = atk(img.unsqueeze(0))
+      else: adv_x = atk(img.unsqueeze(0), net, y=y)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
     elif t == DEEPFOOL:
       img = TestAttacks.trf(img)
-      adv_x = atk(img.unsqueeze(0), net)
+      if init: adv_x = atk(img.unsqueeze(0))
+      else: adv_x = atk(img.unsqueeze(0), net)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
       
     print (true_pred, adv_pred)
