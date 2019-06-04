@@ -16,7 +16,7 @@ from scratchai import utils
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
            'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
-           'diff_imgs', 'mean', 'std']
+           'diff_imgs', 'mean', 'std', 'seg2labl']
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -386,6 +386,39 @@ def surface_plot(matrix:np.ndarray):
   surf = ax.plot_surface(x, y, matrix, cmap=plt.cm.coolwarm)
   #fig.colorbar(surf)
   plt.show()
+
+
+def seg2labl(simg:torch.Tensor, colors):
+  """
+  Function to convert a segmentation map to a 2D image with class labels.
+
+  Arguments
+  ---------
+  simg : torch.Tensor
+         The Segmentation Map.
+          
+  colors : list, str
+          Defaults to None. This is a list in which the colors are
+          present in the corresponding class indexes.
+          If an str is passed, that corresponding label will be taken from
+          datasets.labels
+
+  Returns
+  -------
+  labl_img : torch.Tensor
+             The image whose each pixel contains the class labels for
+             that particular image.
+  """
+  if isinstance(colors, str): colors = getattr(datasets.labels, colors)
+  
+  simg_np = simg.numpy()
+  limg = np.zeros((simg.shape[-2], simg.shape[-1]))
+
+  for ii, col in enumerate(colors):
+    cimg = np.full_like(limg, col)
+    limg[np.all(simg_np == cimg, axis=2)] = ii
+
+  return torch.from_numpy(limg)
 
 
 def get_trf(trfs:str):
