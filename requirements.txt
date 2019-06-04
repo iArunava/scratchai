@@ -1,4 +1,4 @@
-h5py==2.7.1
+h5py==2.9.0
 httplib2==0.9.2
 idna==2.6
 incremental==17.5.0
