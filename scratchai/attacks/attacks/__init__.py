@@ -3,3 +3,4 @@ from scratchai.attacks.attacks.semantic import *
 from scratchai.attacks.attacks.fast_gradient_method import *
 from scratchai.attacks.attacks.pgd import *
 from scratchai.attacks.attacks.deepfool import *
+from scratchai.attacks.attacks.boundary_atk import *
