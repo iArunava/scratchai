@@ -100,6 +100,28 @@ class TestImgUtils(unittest.TestCase):
       std = imgutils.std(t)
       self.assertEqual(round(std - torch.std(t).item(), 2), 0.0, 'nope!')
 
+  def test_seg2labl(self):
+    # TODO Test on batches of images
+    t = torch.Tensor([[[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]]])
+
+    gt = torch.Tensor([[0., 1., 2.],
+                       [0., 1., 2.],
+                       [0., 1., 2.]]).double()
+
+    label = imgutils.seg2labl(t, colors=np.array([(1., 2., 3.), (4., 5., 6.),
+                                                  (7., 8., 9.)]))
+    
+    self.assertEqual(list(label.shape), [3, 3], 'Not working!')
+    self.assertTrue(torch.all(label == gt), 'Not working!')
+
 
 #############################################
 ### Check the functions in scratchai/utils.py
