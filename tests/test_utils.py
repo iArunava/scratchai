@@ -146,6 +146,8 @@ class TestImgUtils(unittest.TestCase):
     self.assertRaises(AssertionError, 
         lambda : imgutils.label2seg(gt.long(), colors=list(cols)))
 
+
+
 #############################################
 ### Check the functions in scratchai/utils.py
 #############################################
