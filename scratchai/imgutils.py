@@ -16,7 +16,7 @@ from scratchai import utils
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
            'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
-           'diff_imgs', 'mean', 'std', 'seg2labl']
+           'diff_imgs', 'mean', 'std', 'seg2labl', 'label2seg']
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -419,6 +419,43 @@ def seg2labl(simg:torch.Tensor, colors):
     limg[np.all(simg_np == cimg, axis=2)] = ii
 
   return torch.from_numpy(limg)
+
+
+def label2seg(label, colors):
+  """
+  Function to convert a 2D matrix which contains the class labels into 
+  a segmentation map.
+
+  Arguments
+  ---------
+  label   : torch.Tensor
+            The 2D matrix whose each pixel (x, y) represents the class
+            label to which that pixel belongs to.
+
+  colors  : list
+            Whose each index contains colors. Where the index
+            represents the class for which that color belongs to.
+
+  Returns
+  -------
+  rgb : torch.ndarray
+        The Segmengtation map which is a 3D matrix where each pixel position
+        is replaced with the color of the class to which that pixel that
+        belongs to.
+  """
+  assert type(label) is torch.Tensor
+  assert (type(colors) in [torch.Tensor, np.ndarray]) is True
+  
+  if isinstance(colors, np.ndarray): colors = torch.from_numpy(colors)
+  colors = colors.long()
+
+  rgb = torch.zeros(*label.shape, 3).long()
+  
+  for l in range(0, len(colors)):
+    idx = label == l
+    rgb[idx] = colors[l]
+    
+  return rgb
 
 
 def get_trf(trfs:str):
