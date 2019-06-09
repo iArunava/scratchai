@@ -9,7 +9,7 @@ import torch.nn as nn
 from scratchai import nets
 
 
-__all__ = ['fcn_alexnet', 'FCNHead']
+__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
 
 
 class FCNHead(nn.Module):
@@ -44,3 +44,13 @@ def fcn_alexnet():
   net = nets.alexnet()
   backbone = net.net[:13]
   return FCN(head_ic=256, backbone=backbone)
+
+def fcn_resnet50():
+  net = nets.resnet50()
+  backbone = net.net[:20]
+  return FCN(head_ic=2048, backbone=backbone)
+
+def fcn_resnet101():
+  net = nets.resnet101()
+  backbone = net.net[:37]
+  return FCN(head_ic=2048, backbone=backbone)
