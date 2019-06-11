@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from scratchai import nets
+from scratchai.nets.common import IntermediateLayer
 
 
 __all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
@@ -41,8 +42,7 @@ class FCN(nn.Module):
 
 
 def fcn_alexnet():
-  net = nets.alexnet()
-  backbone = net.net[:13]
+  backbone = IntermediateLayer('alexnet', ['net.13'])
   return FCN(head_ic=256, backbone=backbone)
 
 def fcn_resnet50():
