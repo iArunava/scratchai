@@ -45,16 +45,26 @@ class Alexnet(nn.Module):
     super().__init__()
     # Special Case: MNIST.
     ic2 = 64 if ic == 3 else 1
-    layers = [*conv(ic, 64, 11, 4, 2), *conv(ic2, 192, 5, p=2), 
-              *conv(192, 384, pool=False), *conv(384, 256, pool=False), 
-              *conv(256, 256), nn.AdaptiveAvgPool2d((6, 6)), 
-              Flatten(), *linear(256*6*6, 4096), *linear(4096, 4096), 
-              nn.Linear(4096, nc)]
+    self.features = nn.Sequential(*conv(ic, 64, 11, 4, 2), 
+                                  *conv(ic2, 192, 5, p=2), 
+                                  *conv(192, 384, pool=False), 
+                                  *conv(384, 256, pool=False), 
+                                  *conv(256, 256))
+
+    self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+
+    self.classifier = nn.Sequential(Flatten(), *linear(256*6*6, 4096),
+                                    *linear(4096, 4096), nn.Linear(4096, nc))
+
     # Special Case: MNIST. Removing the first conv->relu->pool layer
     if ic == 1: layers.pop(0); layers.pop(0); layers.pop(0)
     self.net = nn.Sequential(*layers)
     
-  def forward(self, x): return self.net(x)
+  def forward(self, x):
+    x = self.features(x)
+    x = self.avgpool(x)
+    x = self.classifier(x)
+    return x
 
 
 def alexnet_mnist(pretrained=True, **kwargs):
