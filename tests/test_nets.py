@@ -181,22 +181,6 @@ class TestAlexnet(unittest.TestCase):
     out = nets.alexnet(pretrained=False)(n1)
     self.assertEqual(list(out.shape), [2, 1000], "out shape not looking good")
 
-    conv_dict = {0 : [(11, 11), (4, 4), (2, 2)],
-                 3 : [(5, 5), (1, 1), (2, 2)],
-                 (6, 8, 10) : [(3, 3), (1, 1), (1, 1)]}
-    for key, val in conv_dict.items():
-      if isinstance(key, tuple):
-        for k in key:
-          self.assertEqual(net.net[k].kernel_size, val[0], 'not good!')
-          self.assertEqual(net.net[k].stride, val[1], 'not good!')
-          self.assertEqual(net.net[k].padding, val[2], 'not good!')
-      else:
-        self.assertEqual(net.net[key].kernel_size, val[0], 'not good!')
-        self.assertEqual(net.net[key].stride, val[1], 'not good!')
-        self.assertEqual(net.net[key].padding, val[2], 'not good!')
-    for i in [1, 4, 7, 9, 11, 17, 20]:
-      self.assertIsInstance(net.net[i], nn.ReLU, 'not good!')
-
   def test_alexnet_mnist(self):
     n1 = torch.randn(2, 1, 28, 28)
     out = nets.alexnet_mnist(pretrained=False)(n1)
