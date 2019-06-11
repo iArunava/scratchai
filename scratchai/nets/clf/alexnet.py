@@ -45,7 +45,7 @@ class Alexnet(nn.Module):
     super().__init__()
     # Special Case: MNIST.
     ic2 = 64 if ic == 3 else 1
-    self.features = nn.Sequential(*conv(ic, 64, 11, 4, 2), 
+    self.features = nn.Sequential(*conv(ic, 64, 11, 4, 2) if ic == 3 else nn.Identity(),
                                   *conv(ic2, 192, 5, p=2), 
                                   *conv(192, 384, pool=False), 
                                   *conv(384, 256, pool=False), 
@@ -58,7 +58,6 @@ class Alexnet(nn.Module):
 
     # Special Case: MNIST. Removing the first conv->relu->pool layer
     if ic == 1: layers.pop(0); layers.pop(0); layers.pop(0)
-    self.net = nn.Sequential(*layers)
     
   def forward(self, x):
     x = self.features(x)
