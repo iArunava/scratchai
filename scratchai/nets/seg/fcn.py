@@ -5,6 +5,7 @@ Paper: https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from scratchai import nets
 from scratchai.nets.common import IntermediateLayer
@@ -35,14 +36,20 @@ class FCN(nn.Module):
   """
   def __init__(self, head_ic:int, nc=21, backbone=None):
     super().__init__()
-    self.net = nn.Sequential(backbone, FCNHead(ic=head_ic))
+    self.backbone = backbone
+    self.fcn_head = FCNHead(ic=head_ic)
 
   def forward(self, x):
+    x_shape = x.shape[-2:]
+    print (x_shape)
+    x = self.backbone(x)
+    x = F.interpolate(x, size=x_shape, mode='bilinear', align_corners=False)
+    x = self.fcn_head(x)
     return x
 
 
 def fcn_alexnet():
-  backbone = IntermediateLayer('alexnet', ['net.13'])
+  backbone = nets.alexnet().features
   return FCN(head_ic=256, backbone=backbone)
 
 def fcn_resnet50():
