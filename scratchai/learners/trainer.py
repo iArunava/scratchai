@@ -197,13 +197,25 @@ class Trainer():
 
 
 class AuxTrainer(Trainer):
-  
-  def __init__(self, loss_wdict, **kwargs):
+  """
+  Trainer Object to train a Auxiliary Model.
+
+  Arguments
+  ---------
+  loss_wdict : dict
+               A dict holding name, value pairs where name should
+               be the same as the names in the dict that is retured
+               from the model and the values indicates how much weight
+               the loss for that should be assigned to.
+  """
+  def __init__(self, loss_wdict:dict=None, **kwargs):
     super().__init__(**kwargs)
+
+    if loss_wdict is None: loss_wdict = {'out': 1.0, 'aux': 0.5}
     self.loss_wdict = loss_wdict
 
   def get_loss(self, out, target):
     self.loss = 0
     for name, x in out.items():
-      weight = self.loss_wdict[name] if name in self.loss_wdict else 1.0
+      weight = self.loss_wdict[name] if name in self.loss_wdict else 0.5
       self.loss += weight * self.crit(x, target)
