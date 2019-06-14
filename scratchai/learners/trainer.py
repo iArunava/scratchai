@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from torch.utils.data import DataLoader
@@ -43,6 +44,7 @@ class Trainer():
 
     self.lr           = lr
     self.net          = net
+    self.topk         = topk
     self.crit         = criterion
     self.seed         = seed
     self.optim        = optimizer
@@ -54,15 +56,21 @@ class Trainer():
     self.train_loader = train_loader
     
     self.best_loss  = float('inf')
+    self.epochs_complete = 0
     self.train_list = []
     self.val_list   = []
     self.to_adjust_lr = lr_step is not None and \
                         (type(lr_step) == int and e%lr_step == 0) or \
                         (type(lr_step) == list and e in lr_step)
+    
+    # Temporary Variables
+    self.loss  = 0.0
+    self.tloss = 0.0
+    self.vloss = 0.0
 
     if verbose: print (self.__str__())
 
-  def fit():
+  def fit(self):
     """
     This function is used to train the classification networks.
     """
@@ -70,73 +78,83 @@ class Trainer():
     np.random.seed(self.seed)
     # TODO Make a function which prints out all the info.
     # And call that before calling fit, maybe in the constructor
-    print ('[INFO] Setting torch seed to {}'.format(seed))
-
+    print ('[INFO] Setting torch seed to {}'.format(self.seed))
+    
     for e in range(1, self.epochs+1):
-      if to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
+      if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
 
       self.train()
-      vacc, vloss = self.test()
+      self.test()
       
-      self.val_list.append((vacc, vloss))
-
-      if vloss < self.best_loss:
-        self.best_loss = vloss
-        torch.save({'net'   : net.state_dict(), 
+      if self.vloss < self.best_loss:
+        self.best_loss = self.vloss
+        torch.save({'net'   : self.net.state_dict(), 
                     'optim' : self.optim.state_dict()},
-                    'best_net-{:.2f}.pth'.format(vacc[0]))
+                    'best_net-{:.2f}.pth'.format(self.val_list[-1][0][0]))
       
       # TODO The tloss and vloss needs a recheck.
       print ('Epoch: {}/{} - Train Loss: {:.3f} - Train Acc@1: {:.3f}' 
              '- Train Acc@5: {:.3f} - Val Loss: {:.3f} - Val Acc@1: {:.3f}'
-             '- Val Acc@5: {:.3f}'.format(e, epochs, tloss, tacc[0], tacc[1], 
-             vloss, vacc[0], vacc[1]))
+             '- Val Acc@5: {:.3f}'.format(e, self.epochs, self.tloss, 
+                      self.train_list[-1][0][0], self.train_list[-1][0][1], 
+                      self.vloss, self.val_list[-1][0][0], 
+                      self.val_list[-1][0][1]))
 
-      torch.save({'net' : net.cpu().state_dict(), 'opti' : opti.state_dict()},
-                 'net-{}-{:.2f}.pth'.format(e, vacc[0]))
+      torch.save({'net' : self.net.cpu().state_dict(), 
+                  'opti' : self.optim.state_dict()},
+                  'net-{}-{:.2f}.pth'.format(e, self.val_list[-1][0][0]))
+      
+      # Increase completed epochs by 1
+      self.epochs_complete += 1
 
   def train(self):
 
-    net.to(self.device)
-    net.train()
+    self.net.to(self.device)
+    self.net.train()
     a1mtr = AvgMeter('train_acc1'); a5mtr = AvgMeter('train_acc5')
-    tloss = 0
-    try: crit = crit()
-    except: pass
+    self.tloss = 0
+
     for ii, (data, labl) in enumerate(tqdm(self.train_loader)):
       data, labl = data.to(self.device), labl.to(self.device)
-      out = net(data)
-      loss = self.crit(out, labl)
-      self.optim.zero_grad()
-      loss.backward()
-      self.optim.step()
+      out = self.net(data)
+      
+      self.get_loss(out, labl)
+      self.update()
+
       with torch.no_grad():
-        tloss += loss.item()
+        self.tloss += self.loss.item()
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
         a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
 
-    tloss /= len(self.train_loader)
-    self.train_list.append((a1mtr.avg, a5mtr.avg), tloss)
+    self.tloss /= len(self.train_loader)
+    self.train_list.append(((a1mtr.avg, a5mtr.avg), self.tloss))
+  
+  def get_loss(self, out, labl):
+    self.loss = self.crit(out, labl)
+    
+  def update(self):
+    self.optim.zero_grad()
+    self.loss.backward()
+    self.optim.step()
 
-  def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
+  def test(self):
     a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
-    vloss = 0
-    net.to(self.device)
-    net.eval()
-    try: crit = crit()
-    except: pass
+    self.vloss = 0
+    self.net.to(self.device)
+    self.net.eval()
+
     with torch.no_grad():
       for ii, (data, labl) in enumerate(tqdm(self.val_loader)):
         data, labl = data.to(self.device), labl.to(self.device)
-        out = net(data)
-        vloss += crit(out, labl).item()
-        acc1, acc5 = accuracy(out, labl, topk=topk)
+        out = self.net(data)
+        self.vloss += self.crit(out, labl).item()
+        acc1, acc5 = accuracy(out, labl, topk=self.topk)
         a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
       
-      vloss /= len(vloader)
+      self.vloss /= len(self.val_loader)
 
-    self.val_list.append((a1mtr.avg, a5mtr.avg), vloss)
-
+    self.val_list.append(((a1mtr.avg, a5mtr.avg), self.vloss))
+  
   def adjust_lr(self):
     """
     Sets learning rate to the initial LR decayed by 10 every `step` epochs.
@@ -145,6 +163,26 @@ class Trainer():
     self.lr /= (1. / self.lr_decay)
     for pgroup in self.optim.param_groups: pgroup['lr'] = self.lr
     print ('[INFO] Learning rate decreased to {}'.format(lr))
+
+  def plot_train_vs_val(self):
+    tacc = list(map(lambda x : x[0][0], self.train_list))
+    tloss = list(map(lambda x : x[1], self.train_list))
+    vacc = list(map(lambda x : x[0][0], self.val_list))
+    vloss = list(map(lambda x : x[1], self.val_list))
+    # TODO Don't use self.epochs!
+    # If the fit function is called n times, then the number 
+    # of epochs is n*self.epochs, which is captured by the below code
+    # but not with self.epochs
+    assert self.epochs_complete == len(self.train_list)
+    epochs = np.arange(1, self.epochs_complete+1)
+    
+    plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
+    plt.plot(epochs, vacc, 'b-', label='Val Accuracy')
+    plt.plot(epochs, tloss, 'o--', label='Train Loss')
+    plt.plot(epochs, vloss, 'o-', label='Val Loss')
+    plt.xlabel('Epochs')
+    plt.legend()
+    plt.show()
 
   def __str__(self):
     """

@@ -6,7 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scratchai.imgutils import get_trf
-from scratchai.learners.clflearner import *
+from scratchai.learners.trainer import *
+from scratchai.learners.clflearner import * # REMOVE
 from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST
@@ -59,17 +60,22 @@ def mnist(net, **kwargs):
           for validation
   """
   
-  opti, crit, kwargs = preprocess_opts(net, dset=MNIST, **kwargs)
+  root, bs, opti, crit, kwargs = preprocess_opts(net, dset=MNIST, **kwargs)
 
   trf = get_trf('rr20_tt_normmnist')
 
-  t = datasets.MNIST(kwargs['root'], train=True, download=True, transform=trf)
-  v = datasets.MNIST(kwargs['root'], train=False, download=True, transform=trf)
-  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
-  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
+  t = datasets.MNIST(root, train=True, download=True, transform=trf)
+  v = datasets.MNIST(root, train=False, download=True, transform=trf)
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+  vloader = DataLoader(v, shuffle=True, batch_size=bs)
+
   
-  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
-  plt_tr_vs_tt(tlist, vlist)
+  mnist_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
+                         train_loader=tloader, val_loader=vloader, 
+                         verbose=False, **kwargs)
+  mnist_trainer.fit()
+  mnist_trainer.plot_train_vs_val()
+  return mnist_trainer
 
 
 def cifar10(net, **kwargs):
@@ -116,18 +122,21 @@ def cifar10(net, **kwargs):
           b -> is the loss for the corresponding index
           for validation
   """
-  opti, crit, kwargs = preprocess_opts(net, dset=CIFAR10, **kwargs)
+  opti, bs, crit, opti, kwargs = preprocess_opts(net, dset=CIFAR10, **kwargs)
 
   trf = get_trf('pad4_rc32_tt_normimgnet')
 
-  t = datasets.CIFAR10(kwargs['root'], train=True, download=True, transform=trf)
-  v = datasets.CIFAR10(kwargs['root'], train=False, download=True, transform=trf)
-  tloader = DataLoader(t, shuffle=True, batch_size=kwargs['bs'])
-  vloader = DataLoader(v, shuffle=True, batch_size=kwargs['bs'])
+  t = datasets.CIFAR10(root, train=True, download=True, transform=trf)
+  v = datasets.CIFAR10(root, train=False, download=True, transform=trf)
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+  vloader = DataLoader(v, shuffle=True, batch_size=bs)
   
-  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
-  plt_tr_vs_tt(tlist, vlist)
-
+  cifar10_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
+                            train_loader=tloader, val_loader=vloader, 
+                            verbose=False, **kwargs)
+  cifar10_trainer.fit()
+  cifar10_trainer.plot_train_vs_val()
+  return cifar10_trainer
 
 def custom(net, tloader, vloader, **kwargs):
   """
@@ -173,14 +182,17 @@ def custom(net, tloader, vloader, **kwargs):
           b -> is the loss for the corresponding index
           for validation
   """
-  opti, crit, kwargs = preprocess_opts(net, **kwargs)
+  opti, bs, crit, opti, kwargs = preprocess_opts(net, **kwargs)
 
   #trf = get_trf('rz256_cc224_tt_normimgnet')
   trf = get_trf('rz32_tt_normimgnet')
 
-  tlist, vlist = clf_fit(net, crit, opti, tloader, vloader, **kwargs)
-  plt_tr_vs_tt(tlist, vlist)
-
+  trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
+                    train_loader=tloader, val_loader=vloader, 
+                    verbose=False, **kwargs)
+  trainer.fit()
+  trainer.plot_train_vs_val()
+  return trainer
 
 def preprocess_opts(net, dset:str=None, **kwargs):
   """
@@ -221,9 +233,12 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   for key, val in kwargs.items():
     print ('[INFO] Setting {} to {}.'.format(key, val))
   
-  lr = kwargs['lr']
-  wd = kwargs['wd']
-  mom = kwargs['mom']
+  lr = kwargs['lr']; kwargs.pop('lr', None)
+  wd = kwargs['wd']; kwargs.pop('wd', None)
+  mom = kwargs['mom']; kwargs.pop('mom', None)
+  nestv = kwargs['nestv']; kwargs.pop('nestv', None)
+  bs = kwargs['bs']; kwargs.pop('bs', None)
+  root = kwargs['root']; kwargs.pop('root', None)
 
   crit = kwargs['crit']()
   opti_name = utils.name_from_object(kwargs['optim'])
@@ -231,7 +246,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if  opti_name == 'adam':
     opti = kwargs['optim'](train_params, lr=lr, weight_decay=wd)
   elif opti_name == 'sgd':
-    opti = kwargs['optim'](train_params, lr=lr, nesterov=kwargs['nestv'],
+    opti = kwargs['optim'](train_params, lr=lr, nesterov=nestv,
                            weight_decay=wd, momentum=mom)
   else:
     raise NotImplementedError
@@ -255,21 +270,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
 
   # Pop keys from kwargs to avoid 
   # TypeError: got multiple values for 1 argument
-  kwargs.pop('crit', None); kwargs.pop('opti', None); 
+  kwargs.pop('crit', None); kwargs.pop('optim', None); kwargs.pop('ckpt', None)
 
-  return opti, crit, kwargs
+  return root, bs, opti, crit, kwargs
 
-
-def plt_tr_vs_tt(tlist, vlist):
-  tacc = list(map(lambda x : x[0][0], tlist))
-  tloss = list(map(lambda x : x[1], tlist))
-  vacc = list(map(lambda x : x[0][0], vlist))
-  vloss = list(map(lambda x : x[1], vlist))
-  epochs = np.arange(1, len(tlist)+1)
-  plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
-  plt.plot(epochs, vacc, 'b-', label='Val Accuracy')
-  plt.plot(epochs, tloss, 'o--', label='Train Loss')
-  plt.plot(epochs, vloss, 'o-', label='Val Loss')
-  plt.xlabel('Epochs')
-  plt.legend()
-  plt.show()
