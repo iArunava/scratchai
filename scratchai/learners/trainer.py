@@ -129,8 +129,8 @@ class Trainer():
     self.tloss /= len(self.train_loader)
     self.train_list.append(((a1mtr.avg, a5mtr.avg), self.tloss))
   
-  def get_loss(self, out, labl):
-    self.loss = self.crit(out, labl)
+  def get_loss(self, out, target):
+    self.loss = self.crit(out, target)
     
   def update(self):
     self.optim.zero_grad()
@@ -147,7 +147,7 @@ class Trainer():
       for ii, (data, labl) in enumerate(tqdm(self.val_loader)):
         data, labl = data.to(self.device), labl.to(self.device)
         out = self.net(data)
-        self.vloss += self.crit(out, labl).item()
+        self.vloss += self.get_loss(out, labl).item()
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
         a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
       
@@ -194,3 +194,16 @@ class Trainer():
       s += ('{} set to {}\n'.format(var, getattr(self, var)))
     return s
 
+
+
+class AuxTrainer(Trainer):
+  
+  def __init__(self, loss_wdict, **kwargs):
+    super().__init__(**kwargs)
+    self.loss_wdict = loss_wdict
+
+  def get_loss(self, out, target):
+    self.loss = 0
+    for name, x in out.items():
+      weight = self.loss_wdict[name] if name in self.loss_wdict else 1.0
+      self.loss += weight * self.crit(x, target)
