@@ -57,10 +57,10 @@ class Trainer():
     self.train_list = []
     self.val_list   = []
     self.to_adjust_lr = lr_step is not None and \
-                        (type(lr_step) == int and e%lr_step == 0) or \ 
+                        (type(lr_step) == int and e%lr_step == 0) or \
                         (type(lr_step) == list and e in lr_step)
 
-    if verbose: show_state()
+    if verbose: print (self.__str__())
 
   def fit():
     """
@@ -118,6 +118,25 @@ class Trainer():
     tloss /= len(self.train_loader)
     self.train_list.append((a1mtr.avg, a5mtr.avg), tloss)
 
+  def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
+    a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
+    vloss = 0
+    net.to(self.device)
+    net.eval()
+    try: crit = crit()
+    except: pass
+    with torch.no_grad():
+      for ii, (data, labl) in enumerate(tqdm(self.val_loader)):
+        data, labl = data.to(self.device), labl.to(self.device)
+        out = net(data)
+        vloss += crit(out, labl).item()
+        acc1, acc5 = accuracy(out, labl, topk=topk)
+        a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
+      
+      vloss /= len(vloader)
+
+    self.val_list.append((a1mtr.avg, a5mtr.avg), vloss)
+
   def adjust_lr(self):
     """
     Sets learning rate to the initial LR decayed by 10 every `step` epochs.
@@ -132,42 +151,8 @@ class Trainer():
     Shows the state of this trainer object
     """
     s = ""
-    for key, value in vars(self):
-      print ('{} set to {}'.format(key, value))
-
-def clf_test(net, vloader, crit:nn.Module=nn.CrossEntropyLoss, topk=(1,5)):
-  """
-  This function helps in quickly testing the network.
-
-  Arguments
-  ---------
-  net : nn.Module
-        The net which to train.
-  vloader : torch.nn.utils.DataLoader
-            or a generator which returns the images and the labels
-  
-  """
-  # TODO Fix this
-  if topk != (1, 5):
-    raise Exception('topk other than (1, 5) not supported for now.')
-
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
-  vloss = 0
-  net.to(device)
-  net.eval()
-  try: crit = crit()
-  except: pass
-  with torch.no_grad():
-    for ii, (data, labl) in enumerate(tqdm(vloader)):
-      data, labl = data.to(device), labl.to(device)
-      out = net(data)
-      vloss += crit(out, labl).item()
-      acc1, acc5 = accuracy(out, labl, topk=topk)
-      a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
-    
-    vloss /= len(vloader)
-
-  self.val_list.append((a1mtr.avg, a5mtr.avg), vloss)
-
+    for var in vars(self):
+      if var in ['net', 'train_loader', 'val_loader']: continue
+      s += ('{} set to {}\n'.format(var, getattr(self, var)))
+    return s
 
