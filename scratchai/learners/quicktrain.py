@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from scratchai.imgutils import get_trf
 from scratchai.learners.trainer import *
-from scratchai.learners.clflearner import * # REMOVE
 from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST
