@@ -54,6 +54,7 @@ class Trainer():
     self.lr_decay     = lr_decay
     self.val_loader   = val_loader
     self.train_loader = train_loader
+    self.batch_size   = self.train_loader.batch_size
     
     self.best_loss  = float('inf')
     self.epochs_complete = 0
@@ -62,8 +63,16 @@ class Trainer():
     self.to_adjust_lr = lr_step is not None and \
                         (type(lr_step) == int and e%lr_step == 0) or \
                         (type(lr_step) == list and e in lr_step)
+
+    # Meters to keep track of Metrics
+    self.t1t_accmtr = AvgMeter('Top 1 Train Accuracy')
+    self.t5t_accmtr = AvgMeter('Top 5 Train Accuracy')
+
+    self.t1v_accmtr = AvgMeter('Top 1 Val Accuracy')
+    self.t5v_accmtr = AvgMeter('Top 5 Val Accuracy')
     
-    # Temporary Variables
+    # Temporary Variables (Variables that needs to be reinitialized after
+    # each epoch
     self.loss  = 0.0
     self.tloss = 0.0
     self.vloss = 0.0
@@ -84,6 +93,7 @@ class Trainer():
       if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
 
       self.train()
+      print (self.tloss)
       self.test()
       
       if self.vloss < self.best_loss:
@@ -111,7 +121,6 @@ class Trainer():
 
     self.net.to(self.device)
     self.net.train()
-    a1mtr = AvgMeter('train_acc1'); a5mtr = AvgMeter('train_acc5')
     self.tloss = 0
 
     for ii, (data, labl) in enumerate(tqdm(self.train_loader)):
@@ -120,15 +129,33 @@ class Trainer():
       
       self.get_loss(out, labl)
       self.update()
+      self.update_metrics(out, labl, part='train')
 
-      with torch.no_grad():
+    self.train_list.append(((self.t1t_accmtr.avg, self.t5t_accmtr.avg), 
+                             self.tloss))
+  
+
+  def update_metrics(self, out, labl, part):
+    with torch.no_grad():
+
+      if part == 'train':
         self.tloss += self.loss.item()
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
-        a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
+        self.t1t_accmtr(acc1, self.batch_size)
+        self.t5t_accmtr(acc5, self.batch_size)
+        self.tloss /= len(self.train_loader)
 
-    self.tloss /= len(self.train_loader)
-    self.train_list.append(((a1mtr.avg, a5mtr.avg), self.tloss))
-  
+      elif part == 'val':
+        self.vloss += self.loss.item()
+        acc1, acc5 = accuracy(out, labl, topk=self.topk)
+        self.t1v_accmtr(acc1, self.batch_size)
+        self.t5v_accmtr(acc5, self.batch_size)
+        self.vloss /= len(self.val_loader)
+
+      else:
+        raise ('Invalid Part! Not Supported!')
+      
+    
   def get_loss(self, out, target):
     self.loss = self.crit(out, target)
     
@@ -138,7 +165,6 @@ class Trainer():
     self.optim.step()
 
   def test(self):
-    a1mtr = AvgMeter('test_acc1'); a5mtr = AvgMeter('test_acc5') #
     self.vloss = 0
     self.net.to(self.device)
     self.net.eval()
@@ -147,13 +173,12 @@ class Trainer():
       for ii, (data, labl) in enumerate(tqdm(self.val_loader)):
         data, labl = data.to(self.device), labl.to(self.device)
         out = self.net(data)
-        self.vloss += self.get_loss(out, labl).item()
-        acc1, acc5 = accuracy(out, labl, topk=self.topk)
-        a1mtr(acc1, data.size(0)); a5mtr(acc5, data.size(0))
-      
-      self.vloss /= len(self.val_loader)
 
-    self.val_list.append(((a1mtr.avg, a5mtr.avg), self.vloss))
+        self.get_loss(out, labl)
+        self.update_metrics(out, labl, part='val')
+      
+    self.val_list.append(((self.t1v_accmtr.avg, self.t5v_accmtr.avg),
+                           self.vloss))
   
   def adjust_lr(self):
     """
@@ -219,3 +244,6 @@ class AuxTrainer(Trainer):
     for name, x in out.items():
       weight = self.loss_wdict[name] if name in self.loss_wdict else 0.5
       self.loss += weight * self.crit(x, target)
+
+  def update_metrics(self, out, labl, part):
+    super().update_metrics(out['out'], labl, part)
