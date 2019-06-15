@@ -93,7 +93,6 @@ class Trainer():
       if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
 
       self.train()
-      print (self.tloss)
       self.test()
       
       if self.vloss < self.best_loss:
@@ -131,6 +130,7 @@ class Trainer():
       self.update()
       self.update_metrics(out, labl, part='train')
 
+    self.tloss /= len(self.train_loader)
     self.train_list.append(((self.t1t_accmtr.avg, self.t5t_accmtr.avg), 
                              self.tloss))
   
@@ -143,14 +143,12 @@ class Trainer():
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
         self.t1t_accmtr(acc1, self.batch_size)
         self.t5t_accmtr(acc5, self.batch_size)
-        self.tloss /= len(self.train_loader)
 
       elif part == 'val':
         self.vloss += self.loss.item()
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
         self.t1v_accmtr(acc1, self.batch_size)
         self.t5v_accmtr(acc5, self.batch_size)
-        self.vloss /= len(self.val_loader)
 
       else:
         raise ('Invalid Part! Not Supported!')
@@ -177,6 +175,7 @@ class Trainer():
         self.get_loss(out, labl)
         self.update_metrics(out, labl, part='val')
       
+    self.vloss /= len(self.val_loader)
     self.val_list.append(((self.t1v_accmtr.avg, self.t5v_accmtr.avg),
                            self.vloss))
   
@@ -246,4 +245,11 @@ class AuxTrainer(Trainer):
       self.loss += weight * self.crit(x, target)
 
   def update_metrics(self, out, labl, part):
-    super().update_metrics(out['out'], labl, part)
+    with torch.no_grad():
+      out = out['out']
+      if part == 'train':
+        self.tloss += self.loss.item()
+      elif part == 'val':
+        self.vloss += self.loss.item()
+      else:
+        raise ('Invalid Part! Not Supported!')
