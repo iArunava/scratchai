@@ -415,9 +415,23 @@ def get_trf(trfs:str):
   # TODO Add more options
   trf_list = []
   for trf in trfs.split('_'):
+
     if trf.startswith('rz'):
-      val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(T.Resize(val))
+      kwargs = {}
+
+      if '.' in trf:
+        size, *args = trf[2:].split('.')
+        for arg in args:
+          if arg[0] == 'i': kwargs['interpolation'] = int(arg[1:])
+      else: size = trf[2:]
+      
+      size = size.split(',') if ',' in size else size
+      # TODO Add tests
+      size = list(map(lambda x : int(x), 
+             size if len(size) == 2 else (size, size)))
+      
+      trf_list.append(T.Resize(size, **kwargs))
+
     elif trf.startswith('cc'):
       val = (int(trf[2:]), int(trf[2:]))
       trf_list.append(T.CenterCrop(val))
@@ -448,7 +462,7 @@ def get_trf(trfs:str):
     elif trf == 'normmnist':
       trf_list.append(T.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
-      trf_list.append(T.Lambda(lambda x : x.mul(255)))
+      trf_list.append(T.Lambda(lambda x : x.mul(255).long().squeeze()))
     else:
       raise NotImplementedError
 

@@ -9,7 +9,7 @@ from scratchai.imgutils import get_trf
 from scratchai.learners.trainer import *
 from scratchai._config import home
 from scratchai import utils
-from scratchai._config import CIFAR10, MNIST
+from scratchai._config import CIFAR10, MNIST, SKY_SEG
 
 
 def mnist(net, **kwargs):
@@ -192,6 +192,63 @@ def custom(net, tloader, vloader, **kwargs):
   trainer.fit()
   trainer.plot_train_vs_val()
   return trainer
+
+
+def sky_segmentation(net, **kwargs):
+  """
+  Train on Sky Segmentation Dataset.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+  optim : nn.optim
+          The optimizer to use.
+  crit : nn.Module
+         The criterion to use.
+  lr : float
+       The learning rate.
+  wd : float
+       The weight decay.
+  bs : int
+       The batch size.
+  seed : int
+         The particular seed to use.
+  epochs : int
+           The epcochs to train for.
+  ckpt : str, None
+         Path to the ckpt file. If not None, training is started
+         using this ckpt file. Defaults to None
+  root : str
+         The root where the datasets is or
+         needs to be downloaded.
+  
+  Returns
+  -------
+  trainer : scratchai.learners.trainer.Trainer
+            The Trainer Object which holds the training details.
+  """
+  root, bs, opti, crit, kwargs = preprocess_opts(net, dset=SKY_SEG, **kwargs)
+
+  #trf = get_trf('pad4_rhf_cj.25_rc32_rr10_tt_normimgnet')
+  trf_tr = get_trf('rz360_tt_normimgnet')
+  trf_tt = get_trf('rz360.i2_tt_fm255')
+  
+  t = datasets.VOCSegmentation(root, image_set='train', download=True, 
+                              transform=transform, target_transform=ttransform)
+  v = datasets.VOCSegmentation(root, image_set='val', download=True, 
+                              transform=transform, target_transform=ttransform)
+
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+  vloader = DataLoader(v, shuffle=True, batch_size=bs)
+
+  trainer = AuxTrainer(net=net, criterion=crit, optimizer=opti, 
+                    train_loader=tloader, val_loader=vloader, 
+                    verbose=False, **kwargs)
+  trainer.fit()
+  trainer.plot_train_vs_val()
+  return trainer
+
 
 def preprocess_opts(net, dset:str=None, **kwargs):
   """
