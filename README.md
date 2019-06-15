@@ -20,10 +20,11 @@ Table of Contents:
 
 2. Segmentation
 
-| Model | Paper | Implementation |
-| :--- | :-----: | :--: |
-| UNet | https://arxiv.org/abs/1505.04597 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py#L38) [Not checked] |
-| ENet | https://arxiv.org/abs/1606.02147 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py#L155) [Not checked] |
+| Model | Paper | Implementation | Configurations |
+| :--- | :-----: | :--: | :---: |
+| FCN - Fully Convolutional Network | https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/fcn.py) | |
+| UNet | https://arxiv.org/abs/1505.04597 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/unet.py#L38) [Not checked] | |
+| ENet | https://arxiv.org/abs/1606.02147 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/seg/enet.py#L155) [Not checked] | |
 
 3. Generative Adversarial Networks
 

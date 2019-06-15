@@ -220,8 +220,10 @@ class TestUtils(unittest.TestCase):
     # TODO Needs more tests
     net = nets.alexnet()
     val = nn.Identity()
-    t = net.net[0]; utils.setatrib(net, 'net[0]', val)
-    self.assertEqual(net.net[0], val, 'not working!')
+    # TODO The setatrib function can handle inputs like
+    # 'net[0]' but there are no tests as such need to add
+    t = net.classifier; utils.setatrib(net, 'classifier', val)
+    self.assertEqual(net.classifier, val, 'not working!')
     self.assertFalse(t == val, 'not working!')
   
   def test_count_params(self):
