@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from collections import OrderedDict
+
 from scratchai import nets
 from scratchai.nets.common import IntermediateLayer
 
@@ -33,19 +35,28 @@ class FCNHead(nn.Module):
 class FCN(nn.Module):
   """
   Implementation of the FCN model.
+
+  Arguemnts
+  ---------
+
   """
-  def __init__(self, head_ic:int, nc=21, backbone=None):
+  def __init__(self, head_ic:int, nc=21, backbone=None, aux:bool=True):
     super().__init__()
+    self.aux = aux
     self.backbone = backbone
     self.fcn_head = FCNHead(ic=head_ic)
 
   def forward(self, x):
+    out = OrderedDict()
     x_shape = x.shape[-2:]
-    print (x_shape)
     x = self.backbone(x)
-    x = F.interpolate(x, size=x_shape, mode='bilinear', align_corners=False)
+    if self.aux:
+      out['aux'] = F.interpolate(x, size=x_shape, mode='bilinear', 
+                                            align_corners=False)
     x = self.fcn_head(x)
-    return x
+    out['out'] = F.interpolate(x, size=x_shape, mode='bilinear', 
+                               align_corners=False)
+    return out
 
 
 def fcn_alexnet():
