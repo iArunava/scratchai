@@ -10,6 +10,7 @@ import requests
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms as T
+from urllib.request import urlretrieve
 
 from scratchai import utils
 

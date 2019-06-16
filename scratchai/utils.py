@@ -2,10 +2,14 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
-
 import cv2
+
 from torchvision import transforms
 from subprocess import call
+from tqdm import tqdm
+from zipfile import ZipFile
+from urllib.request import urlretrieve
+
 from scratchai._config import home
 
 
@@ -300,3 +304,46 @@ def count_modules(net:nn.Module):
       mdict[name] = 1
 
   return mdict
+
+def progress_bar():
+  pbar = tqdm(total=None)
+
+  def bar_update(count, block_size, total_size):
+    if pbar.total is None and total_size: 
+      pbar.total = total_size
+    progress_bytes = count * block_size
+    pbar.update(progress_bytes - pbar.n)
+  
+  return bar_update
+
+  
+def download(url, root, fname=None):
+  if fname is None: fname = os.path.basename(url)
+  fpath = os.path.join(root, fname)
+  
+  # TODO Check md5 hash to confirm the same file exists
+  if os.path.exists(fpath):
+    print ('[INFO] Skipping Downloading, as file is already present!')
+    return fpath
+
+  try:
+    urlretrieve(url, fpath, reporthook=progress_bar())
+  except:
+    raise Exception("Can't fetch URL!!")
+  
+  return fpath
+
+def download_and_extract(url, root, fname=None):
+  fpath = download(url, root, fname)
+  ext = os.path.basename(fpath).split('.')[-1]
+  
+  if ext == 'zip':
+    zip_file = ZipFile(fpath, 'r')
+    zip_root = zip_file.filelist[0].filename
+    if os.path.exists(os.path.join(os.path.dirname(fpath), zip_root)):
+      print ('[INFO] Skipping Unzipping files as the root is present')
+      return
+    zip_file.extractall(root)
+    zip_file.close()
+  else:
+    raise Exception('{} extension not supported!'.format(ext))
