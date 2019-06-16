@@ -11,6 +11,7 @@ from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG
 
+from scratchai.datasets import *
 
 def mnist(net, **kwargs):
   """
@@ -234,20 +235,20 @@ def sky_segmentation(net, **kwargs):
   trf_tr = get_trf('rz360_tt_normimgnet')
   trf_tt = get_trf('rz360.i2_tt_fm255')
   
-  t = datasets.VOCSegmentation(root, image_set='train', download=True, 
-                              transform=transform, target_transform=ttransform)
-  v = datasets.VOCSegmentation(root, image_set='val', download=True, 
-                              transform=transform, target_transform=ttransform)
+  t = SkySegmentation(root, image_set='train', download=True, 
+                              transform=trf_tr, target_transform=trf_tt)
+  v = SkySegmentation(root, image_set='val', download=True, 
+                              transform=trf_tr, target_transform=trf_tt)
 
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   vloader = DataLoader(v, shuffle=True, batch_size=bs)
 
-  trainer = AuxTrainer(net=net, criterion=crit, optimizer=opti, 
+  sky_trainer = SegTrainer(net=net, criterion=crit, optimizer=opti, 
                     train_loader=tloader, val_loader=vloader, 
                     verbose=False, **kwargs)
-  trainer.fit()
-  trainer.plot_train_vs_val()
-  return trainer
+  sky_trainer.fit()
+  sky_trainer.plot_train_vs_val()
+  return sky_trainer
 
 
 def preprocess_opts(net, dset:str=None, **kwargs):

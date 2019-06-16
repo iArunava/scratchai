@@ -8,7 +8,7 @@ from glob import glob
 from scratchai.utils import download_and_extract
 
 
-class SkyDataset(VisionDataset):
+class SkySegmentation(VisionDataset):
   """
   Loader for the Sky Segmentation Dataset.
 
@@ -19,12 +19,13 @@ class SkyDataset(VisionDataset):
   url = 'https://www.ime.usp.br/~eduardob/datasets/sky/sky.zip'
 
   def __init__(self, root='./', image_set='train', download=True, 
-               transforms=None, target_transform=None):
+               transform=None, target_transform=None):
     
-    super().__init__(root, transforms)
-
+    super().__init__(root, transform)
+    
+    # TODO Files returned irrespective of imaget_set. Fix that.
     self.root = os.path.abspath(root)
-    self.transforms = transforms
+    self.transforms = transform
     self.target_transform = target_transform
 
     if download: download_and_extract(self.url, self.root)
@@ -46,7 +47,7 @@ class SkyDataset(VisionDataset):
     if self.transforms is not None:
       img = self.transforms(img)
     if self.target_transform is not None:
-      target = (self.target_transform(target).squeeze() * 255).long()
+      target = self.target_transform(target)
     
     return img, target
 

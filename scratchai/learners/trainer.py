@@ -220,7 +220,22 @@ class Trainer():
 
 
 
-class AuxTrainer(Trainer):
+class SegTrainer(Trainer):
+  """
+  Trainer Object to train a Segmentation Model.
+  """
+  def update_metrics(self, out, labl, part):
+    with torch.no_grad():
+      if part == 'train':
+        self.tloss += self.loss.item()
+      elif part == 'val':
+        self.vloss += self.loss.item()
+      else:
+        raise ('Invalid Part! Not Supported!')
+
+
+
+class SegAuxTrainer(SegTrainer):
   """
   Trainer Object to train a Auxiliary Model.
 
