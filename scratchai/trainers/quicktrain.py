@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scratchai.imgutils import get_trf
-from scratchai.learners.trainer import *
+from scratchai.trainers.trainer import *
 from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG

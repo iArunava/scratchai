@@ -12,7 +12,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from scratchai.learners.metrics import accuracy
+from scratchai.trainers.metrics import accuracy
 from scratchai.utils import AvgMeter
 
 
