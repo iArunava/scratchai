@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from scratchai import nets
-from scratchai.nets.common import IntermediateLayer
+from scratchai.nets.common import InterLayer
 
 
 __all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
@@ -40,33 +40,40 @@ class FCN(nn.Module):
   ---------
 
   """
-  def __init__(self, head_ic:int, nc=21, backbone=None, aux:bool=True):
+  def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None):
     super().__init__()
-    self.aux = aux
     self.backbone = backbone
-    self.fcn_head = FCNHead(ic=head_ic)
+    self.fcn_head = FCNHead(ic=head_ic, oc=nc)
+    self.aux_classifier = aux_classifier
 
   def forward(self, x):
     out = OrderedDict()
     x_shape = x.shape[-2:]
-    x = self.backbone(x)
-    if self.aux:
-      out['aux'] = F.interpolate(x, size=x_shape, mode='bilinear', 
-                                            align_corners=False)
-    x = self.fcn_head(x)
+    features_out = self.backbone(x)
+
+    if self.aux_classifier is not None:
+      aux_out = self.aux_classifier(features_out['aux'])
+      out['aux'] = F.interpolate(aux_out, size=x_shape, mode='bilinear', 
+                                 align_corners=False)
+
+    x = self.fcn_head(features_out['out'])
     out['out'] = F.interpolate(x, size=x_shape, mode='bilinear', 
                                align_corners=False)
     return out
 
 
-def fcn_alexnet():
-  backbone = nets.alexnet().features
-  return FCN(head_ic=256, backbone=backbone)
+def fcn_alexnet(nc=21, aux:bool=True):
+  backbone = InterLayer(nets.alexnet().features, {'9': 'aux', '12': 'out'})
+  aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
+  return FCN(head_ic=256, backbone=backbone, nc=21, 
+             aux_classifier=aux_classifier)
+
 
 def fcn_resnet50():
   net = nets.resnet50()
   backbone = net.net[:20]
   return FCN(head_ic=2048, backbone=backbone)
+
 
 def fcn_resnet101():
   net = nets.resnet101()
