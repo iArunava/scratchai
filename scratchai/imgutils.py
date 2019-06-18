@@ -6,6 +6,8 @@ import operator
 import PIL
 import os
 import requests
+import scratchai
+import torchvision
 
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
@@ -477,13 +479,14 @@ def get_trf(trfs:str):
   -----
   >>> get_trf('rz256_cc224_tt_normimgnet')
   >>> T.Compose([T.Resize(256),
-                          T.CenterCrop(224),
-                          T.ToTensor(),
-                          T.Normalize([0.485, 0.456, 0.406], 
-                                      [0.229, 0.224, 0.225])])
+                 T.CenterCrop(224),
+                 T.ToTensor(),
+                 T.Normalize([0.485, 0.456, 0.406], 
+                             [0.229, 0.224, 0.225])])
   """
   # TODO Write tests
   # TODO Add more options
+
   trf_list = []
   for trf in trfs.split('_'):
 
@@ -537,4 +540,64 @@ def get_trf(trfs:str):
     else:
       raise NotImplementedError
 
+  return T.Compose(trf_list)
+
+
+def get_2trf(trfs:str):
+  """
+  A function to quickly get required transforms through
+  which both inputs and targets can be passed.
+
+  Arguments
+  ---------
+  trfs : str
+         An str that represents what T are needed. See Notes
+
+  Returns
+  -------
+  trf : scratchai.trainers.transforms
+        The transforms as a transforms object from torchvision.
+
+  Notes
+  -----
+  >>> get_2trf('rrz256_tt_normimgnet')
+  >>> T.Compose([T.Resize(256),
+                 T.CenterCrop(224),
+                 T.ToTensor(),
+                 T.Normalize([0.485, 0.456, 0.406], 
+                             [0.229, 0.224, 0.225])])
+  """
+  T = scratchai.trainers.transforms
+
+  trf_list = []
+  for trf in trfs.split('_'):
+    
+    if trf.startswith('rrz'):
+      kwargs = {}
+
+      if '.' in trf:
+        size, *args = trf[3:].split('.')
+        for arg in args:
+          if arg[0] == 'i': kwargs['interpolation'] = int(arg[1:])
+      else: size = trf[3:]
+      
+      size = size.split(',') if ',' in size else size
+      # TODO Add tests
+      min_size, max_size = list(map(lambda x : int(x), 
+                    size if len(size) == 2 else (size, size)))
+      
+      trf_list.append(T.RandomResize(min_size, max_size, **kwargs))
+
+    elif trf.startswith('rhf'):
+      val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
+      trf_list.append(T.RandomHorizontalFlip(val))
+    elif trf.startswith('rc'):
+      trf_list.append(T.RandomCrop(int(trf[2:])))
+    elif trf.startswith('tt'):
+      trf_list.append(T.ToTensor())
+    elif trf == 'normimgnet':
+      trf_list.append(T.Normalize([0.485, 0.456, 0.406],
+                                  [0.229, 0.224, 0.225]))
+    else:
+      raise NotImplementedError
   return T.Compose(trf_list)

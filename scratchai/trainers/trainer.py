@@ -16,6 +16,9 @@ from scratchai.trainers.metrics import accuracy
 from scratchai.utils import AvgMeter
 
 
+__all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer']
+
+
 class Trainer():
   """
   Arguments
