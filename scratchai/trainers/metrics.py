@@ -7,13 +7,41 @@ import numpy as np
 from tabulate import tabulate
 
 
+# TODO Needs tests
+def confusion_matrix(true, pred, nc):
+  """
+  Creates a Confusion Matrix.
+
+  Arguments
+  ---------
+  true : np.ndarray
+         The True Predictions.
+
+  pred : np.ndarray
+         The Predcited values.
+
+  cls  : int
+         The number of classes.
+
+  Returns
+  -------
+  cmatrix : np.ndarray
+            The Confusion Matrix
+  """
+  assert np.all(true >= 0) == True and np.all(true < nc) == True
+  assert np.all(pred >= 0) == True and np.all(pred < nc) == True
+  cmatrix = np.bincount(nc * true.flatten() + pred.flatten(), minlength=nc**2)
+                .reshape(nc, nc)
+  return cmatrix
+
+
 def miou(pred, gt, nc, c2n=None):
   """
   Mean Intersection over Union (mIOU).
 
   Arguments
   --------
-  pred : torch.tensor, [N x 3 x H x W]
+  pred : torch.tensor, [N x H x W]
         The original input images to the model.
   gt : torch.tensor, [N x H x W]
         The corresponding labels of the images.
@@ -41,6 +69,7 @@ def miou(pred, gt, nc, c2n=None):
   assert len(list(pred.shape)) in [3, 2]
   # Assert batch_size, height and width matches
   assert pred.shape == gt.shape
+  assert torch.all(pred < nc) == True and torch.all(gt < nc) == True
   
   with torch.no_grad():
     # Convert torch.tensor to np.ndarray

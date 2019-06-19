@@ -1,3 +1,4 @@
+*.prototxt
 MNIST/
 *.ipynb
 vault/
