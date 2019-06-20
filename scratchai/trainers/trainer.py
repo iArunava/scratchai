@@ -82,7 +82,7 @@ class Trainer():
     self.loss  = 0.0
 
     if verbose: print (self.__str__())
-
+  
   def fit(self):
     """
     This function is used to train the classification networks.
@@ -93,28 +93,38 @@ class Trainer():
     # And call that before calling fit, maybe in the constructor
     print ('[INFO] Setting torch seed to {}'.format(self.seed))
     
-    for e in range(1, self.epochs+1):
+    for e in range(self.epochs):
       if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
-
+      
+      self.before_epoch_start()
       self.train()
       self.test()
-      
-      if self.get_curr_val_loss() < self.best_loss:
-        self.best_loss = self.get_curr_val_loss()
-        torch.save({'net'   : self.net.state_dict(), 
-                    'optim' : self.optim.state_dict()},
-                    'best_net-{:.2f}.pth'.format(self.get_curr_val_acc()))
-      
+      self.save_if_best(self.get_curr_val_loss)
       self.show_epoch_details(e)
       self.save_epoch_model(e)
 
       # Increase completed epochs by 1
       self.epochs_complete += 1
   
+  def before_epoch_start(self):
+    self.t_lossmtr.create_and_shift_to_new_slot()
+    self.v_lossmtr.create_and_shift_to_new_slot()
+    self.t1t_accmtr.create_and_shift_to_new_slot()
+    self.t5t_accmtr.create_and_shift_to_new_slot()
+    self.t1v_accmtr.create_and_shift_to_new_slot()
+    self.t5v_accmtr.create_and_shift_to_new_slot()
+
+  def save_if_best(self, metric):
+    if metric() < self.best_loss:
+      self.best_loss = metric()
+      torch.save({'net'   : self.net.state_dict(), 
+                  'optim' : self.optim.state_dict()},
+                  'best_net-{:.2f}.pth'.format(metric()))
+
   def save_epoch_model(self, e):
     torch.save({'net' : self.net.cpu().state_dict(), 
                 'opti' : self.optim.state_dict()},
-                'net-{}-{:.2f}.pth'.format(e, self.get_curr_val_acc()))
+                'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
   def get_curr_val_acc(self):
     return self.val_list[-1][0][0]
@@ -126,7 +136,7 @@ class Trainer():
     # TODO The tloss and vloss needs a recheck.
     print ('Epoch: {}/{} - Train Loss: {:.3f} - Train Acc@1: {:.3f}' 
            '- Train Acc@5: {:.3f} - Val Loss: {:.3f} - Val Acc@1: {:.3f}'
-           '- Val Acc@5: {:.3f}'.format(e, self.epochs, self.train_list[-1][1], 
+           '- Val Acc@5: {:.3f}'.format(e+1, self.epochs, self.train_list[-1][1],
                     self.train_list[-1][0][0], self.train_list[-1][0][1], 
                     self.get_curr_val_loss(), self.val_list[-1][0][0], 
                     self.val_list[-1][0][1]))
@@ -150,11 +160,13 @@ class Trainer():
   
   def store_details(self, part):
     if part == 'train':
-      self.train_list.append(((self.t1t_accmtr.avg, self.t5t_accmtr.avg), 
-                               self.t_lossmtr.avg))
+      self.train_list.append(((self.t1t_accmtr.get_curr_slot_avg(), 
+                               self.t5t_accmtr.get_curr_slot_avg()), 
+                               self.t_lossmtr.get_curr_slot_avg()))
     elif part == 'val':
-      self.val_list.append(((self.t1v_accmtr.avg, self.t5v_accmtr.avg),
-                             self.v_lossmtr.avg))
+      self.val_list.append(((self.t1v_accmtr.get_curr_slot_avg(), 
+                             self.t5v_accmtr.get_curr_slot_avg()),
+                             self.v_lossmtr.get_curr_slot_avg()))
       
     
   def update_metrics(self, out, labl, part):
@@ -163,14 +175,14 @@ class Trainer():
       if part == 'train':
         self.t_lossmtr(self.loss.item(), self.batch_size)
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
-        self.t1t_accmtr(acc1, self.batch_size)
-        self.t5t_accmtr(acc5, self.batch_size)
+        self.t1t_accmtr(acc1)
+        self.t5t_accmtr(acc5)
 
       elif part == 'val':
         self.v_lossmtr(self.loss.item(), self.batch_size)
         acc1, acc5 = accuracy(out, labl, topk=self.topk)
-        self.t1v_accmtr(acc1, self.batch_size)
-        self.t5v_accmtr(acc5, self.batch_size)
+        self.t1v_accmtr(acc1)
+        self.t5v_accmtr(acc5)
 
       else:
         raise ('Invalid Part! Not Supported!')
@@ -252,6 +264,14 @@ class SegTrainer(Trainer):
     self.t_miumtr = AvgMeter('Train Mean IoU')
     self.v_miumtr = AvgMeter('Val Mean IoU')
   
+  def before_epoch_start(self):
+    self.t_lossmtr.create_and_shift_to_new_slot()
+    self.v_lossmtr.create_and_shift_to_new_slot()
+    self.t_accmtr.create_and_shift_to_new_slot()
+    self.v_accmtr.create_and_shift_to_new_slot()
+    self.t_miumtr.create_and_shift_to_new_slot()
+    self.v_miumtr.create_and_shift_to_new_slot()
+    
   def get_curr_val_acc(self):
     return self.val_list[-1][0]
   
@@ -260,17 +280,19 @@ class SegTrainer(Trainer):
 
   def store_details(self, part):
     if part == 'train':
-      self.train_list.append((self.t_accmtr.avg, self.t_miumtr.avg, 
-                               self.t_lossmtr.avg))
+      self.train_list.append((self.t_accmtr.get_curr_slot_avg(), 
+                              self.t_miumtr.get_curr_slot_avg(),
+                              self.t_lossmtr.get_curr_slot_avg()))
     elif part == 'val':
-      self.val_list.append((self.v_accmtr.avg, self.v_miumtr.avg,
-                             self.v_lossmtr.avg))
+      self.val_list.append((self.v_accmtr.get_curr_slot_avg(),
+                            self.v_miumtr.get_curr_slot_avg(),
+                            self.v_lossmtr.get_curr_slot_avg()))
     
   def show_epoch_details(self, e):
     # TODO The tloss and vloss needs a recheck.
     print ('Epoch: {}/{} - Train Loss: {:.3f} - Train Pixel Acc: {:.3f}' 
            '- Train Mean IoU: {:.3f} - Val Loss: {:.3f} - Val Pixel Acc: {:.3f}'
-           '- Val Mean IoU: {:.3f}'.format(e, self.epochs, 
+           '- Val Mean IoU: {:.3f}'.format(e+1, self.epochs, 
                                 self.train_list[-1][2], self.train_list[-1][0], 
                                 self.train_list[-1][1], self.val_list[-1][2], 
                                 self.val_list[-1][0],   self.val_list[-1][1]))
@@ -283,17 +305,17 @@ class SegTrainer(Trainer):
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
       if part == 'train':
         self.t_lossmtr(self.loss.item(), self.batch_size)
-        acc, per_class_acc = pixel_accuracy(labl, out, nc)
-        self.t_accmtr(acc, self.batch_size)
-        miu = mean_iu(labl, out, nc)
-        self.t_miumtr(miu, self.batch_size)
+        acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
+        self.t_accmtr(acc)
+        miu = mean_iu(nc, true=labl, pred=out)
+        self.t_miumtr(miu)
 
       elif part == 'val':
         self.v_lossmtr(self.loss.item(), self.batch_size)
-        acc, per_class_acc = pixel_accuracy(labl, out, nc)
-        self.v_accmtr(acc, self.batch_size)
-        miu = mean_iu(labl, out, nc)
-        self.v_miumtr(miu, self.batch_size)
+        acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
+        self.v_accmtr(acc)
+        miu = mean_iu(nc, true=labl, pred=out)
+        self.v_miumtr(miu)
 
       else:
         raise ('Invalid Part! Not Supported!')

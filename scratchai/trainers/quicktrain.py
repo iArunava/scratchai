@@ -247,7 +247,7 @@ def sky_segmentation(net, **kwargs):
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   vloader = DataLoader(v, shuffle=True, batch_size=bs)
 
-  sky_trainer = SegAuxTrainer(net=net, criterion=crit, optimizer=opti, 
+  sky_trainer = SegTrainer(net=net, criterion=crit, optimizer=opti, 
                     train_loader=tloader, val_loader=vloader, 
                     verbose=False, **kwargs)
   sky_trainer.fit()

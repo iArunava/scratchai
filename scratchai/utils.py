@@ -166,26 +166,46 @@ class AvgMeter():
          The name of the meter
   fmt : str
         The format in which to show the results
-
-  Notes
-  -----
-  When you call an instance of this class, make sure to call it
-  with (val/cnt, cnt) where the val is already divided by cnt.
   """
   def __init__(self, name, fmt=':.2f'):
     self.name = name
     self.fmt = fmt
     self.reset()
   
-  def __call__(self, val, cnt):
-    self.val = val
-    self.sum += val * cnt
+  def __call__(self, val, cnt=1, slot_idx='present'):
+    assert slot_idx in ['present', 'next'] or isinstance(slot_idx, int)
+    if isinstance(slot_idx, int):
+      if slot_idx == (self.slot_idx + 1): slot_idx = 'next'
+      elif slot_idx == self.slot_idx: slot_idx = 'present'
+      else: raise Exception('The Unknown has happened!')
+    if slot_idx == 'next': self.create_and_shift_to_new_slot()
+    elif slot_idx == 'present': slot_idx = self.slot_idx
+    
+    self.slots[slot_idx].append((val, cnt))
+    self.sum += val
     self.cnt += cnt
-    self.avg = self.sum / self.cnt
+    self.avg = float(self.sum) / self.cnt
+  
+  def get_curr_slot_avg(self):
+    return self.get_slot_avg(self.slot_idx)
+
+  def get_slot_avg(self, slot_idx):
+    val, cnt = np.array(self.slots[slot_idx]).sum(0)
+    return val / cnt
+  
+  def create_and_shift_to_new_slot(self):
+    self.slot_idx += 1
+    self.slots.append([])
+    
+  def get_total_avg(self):
+    return self.avg
 
   def reset(self):
-    self.val = 0.; self.sum = 0.
-    self.cnt = 0.; self.avg = 0.
+    self.sum = 0.
+    self.cnt = 0.
+    self.avg = 0.
+    self.slots = []
+    self.slot_idx = -1
   
   def __str__(self):
     return '{name} - {avg}'.format(**self.__dict__)
