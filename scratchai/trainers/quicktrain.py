@@ -4,13 +4,17 @@ Wrappers to quickly train on common datasets.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import torch.nn as nn
+import torch.optim as optim
+
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 from scratchai.imgutils import get_trf
 from scratchai.trainers.trainer import *
 from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG
-
 from scratchai.datasets import *
 
 def mnist(net, **kwargs):
@@ -243,7 +247,7 @@ def sky_segmentation(net, **kwargs):
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   vloader = DataLoader(v, shuffle=True, batch_size=bs)
 
-  sky_trainer = SegTrainer(net=net, criterion=crit, optimizer=opti, 
+  sky_trainer = SegAuxTrainer(net=net, criterion=crit, optimizer=opti, 
                     train_loader=tloader, val_loader=vloader, 
                     verbose=False, **kwargs)
   sky_trainer.fit()

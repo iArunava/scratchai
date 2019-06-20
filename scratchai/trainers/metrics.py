@@ -28,68 +28,41 @@ def confusion_matrix(true, pred, nc):
   cmatrix : np.ndarray
             The Confusion Matrix
   """
+  # NOTE 1st argument True Values and 2nd argument Pred values
+  # NOTE All the calculations that are done based on the cmatrix returned from
+  # this function is coded in a way such that it depends on the order of the
+  # arguments passed in. 1st argument are the Ground Truths and the Second 
+  # argument are the Predictions from the model. I am writing this big comment
+  # just because this function won't throw an error if the order of the true
+  # and preds are reversed but will fail and give erroneous results silently.
+  assert isinstance(true, np.ndarray) == True
+  assert isinstance(pred, np.ndarray) == True
   assert np.all(true >= 0) == True and np.all(true < nc) == True
   assert np.all(pred >= 0) == True and np.all(pred < nc) == True
-  cmatrix = np.bincount(nc * true.flatten() + pred.flatten(), minlength=nc**2)
+  assert nc > 1
+  cmatrix = np.bincount(nc * true.flatten() + pred.flatten(), minlength=nc**2)\
                 .reshape(nc, nc)
   return cmatrix
 
 
-def miou(pred, gt, nc, c2n=None):
+def mean_iu(true, pred, nc):
   """
-  Mean Intersection over Union (mIOU).
-
-  Arguments
-  --------
-  pred : torch.tensor, [N x H x W]
-        The original input images to the model.
-  gt : torch.tensor, [N x H x W]
-        The corresponding labels of the images.
-  nc : int
-       The number of classes
-  c2n : dict
-        The mapping from class idx to class names.
-
-  Returns
-  -------
-  miou : float
-         The mean intersection over union value.
-  
-  Notes
-  -----
-  Do note: if batches of data are passed it is necessary that
-  inp - [N x H x W]
-  lab - [N x H x W]
-
-  where each matrix in lab is have each pixel value in the range of [0, C)
-  where C is the number of classes.
+  Calculate the mean Intersection over Union.
   """
-  # TODO This function needs testing
+  cmatrix = confusion_matrix(true, pred, nc)
+  iu = np.diag(cmatrix) / (cmatrix.sum(1) + cmatrix.sum(0) - np.diag(cmatrix))
+  miu = np.nanmean(iu)
+  return miu
 
-  assert len(list(pred.shape)) in [3, 2]
-  # Assert batch_size, height and width matches
-  assert pred.shape == gt.shape
-  assert torch.all(pred < nc) == True and torch.all(gt < nc) == True
-  
-  with torch.no_grad():
-    # Convert torch.tensor to np.ndarray
-    if isinstance(pred, torch.Tensor):
-      pred = pred.clone().detach().cpu().numpy()
-    if isinstance(gt, torch.Tensor):
-      gt = gt.clone().detach().cpu().numpy()
 
-    iou = {}
-    miou = 0
-    for cls in range(nc):
-      inter = np.logical_and(pred == cls,  gt == cls).sum()
-      union = np.logical_or(pred == cls, gt == cls).sum()
-      iou[cls] = inter / union if inter != 0 and union != 0 else 1.
-      miou += iou[cls]
-  
-  # TODO print the iou in table format
-  #print (tabulate([list(iou.keys()), list(iou.values())]))
-
-  return miou/nc
+def pixel_accuracy(true, pred, nc):
+  """
+  Calculates the Pixel Accuracy.
+  """
+  cmatrix = confusion_matrix(true, pred, nc)
+  acc = np.diag(cmatrix).sum() / cmatrix.sum()
+  per_class_acc = np.diag(cmatrix) / cmatrix.sum(1)
+  return acc, per_class_acc
 
 
 def accuracy(out:torch.Tensor, target:torch.Tensor, topk:tuple=(1,)) -> list:

@@ -2,14 +2,41 @@ import unittest
 import torch
 import torch.nn as nn
 import numpy as np
+import random
 
-from scratchai import *
+from scratchai.trainers import metrics as M
 
 class TestMetrics(unittest.TestCase):
   
   def test_miou(self):
     # TODO Add some more tests
-    utils.implemented(learners, 'miou')
+    utils.implemented(M, 'miou')
+
+
+  def test_confusion_matrix(self):
+    
+    # Testing Valid Inputs
+    for _ in range(random.randint(1, 10)):
+      nc = random.randint(2, 100)
+      true = np.random.randint(0, nc, (3, 10, 10))
+      pred = np.random.randint(0, nc, (3, 10, 10))
+      cf = M.confusion_matrix(true, pred, nc)
+      
+      self.assertTrue(isinstance(cf, np.ndarray), 'Output Type wrong!')
+      self.assertEqual(cf.shape, (nc, nc), 'Out Shape wrong!')
+      self.assertEqual(np.diag(cf).sum(), (true == pred).sum(), 'Nope!')
+      
+      for _ in range(10):
+        c1, c2 = np.random.randint(0, nc), np.random.randint(0, nc)
+        idx = np.logical_and((true == c1),  (pred == c2))
+        self.assertEqual(cf[c1, c2], idx.sum(), 'Nope!')
+    
+    # Testing Invalid Inputs
+    true = torch.randint(0, nc, (3, 10, 10))
+    self.assertRaises(AssertionError,
+                      lambda : M.confusion_matrix(true, true, nc))
+    self.assertRaises(AssertionError,
+                      lambda : M.confusion_matrix(pred, pred, nc-(nc-2)))
 
   def test_accuracy(self):
     # Stress Testing
@@ -18,7 +45,7 @@ class TestMetrics(unittest.TestCase):
       pred = torch.rand(bs, cls)
       gt = torch.randint(0, cls, size=(bs,))
       top1 = (torch.argmax(pred, dim=1) == gt).float().sum()
-      out = learners.accuracy(pred, gt, topk=(1, 3, 5, 10))
+      out = M.accuracy(pred, gt, topk=(1, 3, 5, 10))
       self.assertEqual(out[-1], 1, 'result bad!')
       self.assertEqual(out[0], top1 / bs, 'result bad!')
     
@@ -36,8 +63,8 @@ class TestMetrics(unittest.TestCase):
                       
     # topk index        #1 #1 #1 #3 #3 #3 #5 #5 #3 #5
     gt = torch.Tensor([[4, 3, 4, 2, 2, 3, 3, 0, 3, 4]]).view(-1, 1).long()
-    out = learners.accuracy(pred, gt, topk=(1, 3, 5))
+    out = M.accuracy(pred, gt, topk=(1, 3, 5))
     self.assertTrue(out == [3/10, 7/10, 10/10], 'result bad!')
 
-    self.assertRaises(Exception, lambda: learners.accuracy(pred, gt, topk=(1)))
-    self.assertRaises(Exception, lambda: learners.accuracy(pred, gt, topk=1.))
+    self.assertRaises(Exception, lambda: M.accuracy(pred, gt, topk=(1)))
+    self.assertRaises(Exception, lambda: M.accuracy(pred, gt, topk=1.))
