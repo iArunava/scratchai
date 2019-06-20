@@ -15,12 +15,12 @@ class TestMetrics(unittest.TestCase):
 
   def test_confusion_matrix(self):
     
-    # Testing Valid Inputs
     for _ in range(random.randint(1, 10)):
+      # Testing Valid Inputs
       nc = random.randint(2, 100)
       true = np.random.randint(0, nc, (3, 10, 10))
       pred = np.random.randint(0, nc, (3, 10, 10))
-      cf = M.confusion_matrix(true, pred, nc)
+      cf = M.confusion_matrix(nc, true=true, pred=pred)
       
       self.assertTrue(isinstance(cf, np.ndarray), 'Output Type wrong!')
       self.assertEqual(cf.shape, (nc, nc), 'Out Shape wrong!')
@@ -31,12 +31,12 @@ class TestMetrics(unittest.TestCase):
         idx = np.logical_and((true == c1),  (pred == c2))
         self.assertEqual(cf[c1, c2], idx.sum(), 'Nope!')
     
-    # Testing Invalid Inputs
-    true = torch.randint(0, nc, (3, 10, 10))
-    self.assertRaises(AssertionError,
-                      lambda : M.confusion_matrix(true, true, nc))
-    self.assertRaises(AssertionError,
-                      lambda : M.confusion_matrix(pred, pred, nc-(nc-2)))
+      # Testing Invalid Inputs
+      true = torch.randint(0, nc, (3, 10, 10))
+      self.assertRaises(AssertionError,
+                        lambda : M.confusion_matrix(nc, true=true, pred=true))
+      self.assertRaises(AssertionError, lambda : \
+                        M.confusion_matrix(nc-(nc-2), true=pred, pred=pred))
 
   def test_accuracy(self):
     # Stress Testing

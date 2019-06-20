@@ -7,34 +7,33 @@ import numpy as np
 from tabulate import tabulate
 
 
-# TODO Needs tests
-def confusion_matrix(true, pred, nc):
+def confusion_matrix(nc, **kwargs):
   """
   Creates a Confusion Matrix.
 
   Arguments
   ---------
+  cls  : int
+         The number of classes.
+
   true : np.ndarray
          The True Predictions.
 
   pred : np.ndarray
          The Predcited values.
 
-  cls  : int
-         The number of classes.
-
   Returns
   -------
   cmatrix : np.ndarray
             The Confusion Matrix
   """
-  # NOTE 1st argument True Values and 2nd argument Pred values
-  # NOTE All the calculations that are done based on the cmatrix returned from
-  # this function is coded in a way such that it depends on the order of the
-  # arguments passed in. 1st argument are the Ground Truths and the Second 
-  # argument are the Predictions from the model. I am writing this big comment
-  # just because this function won't throw an error if the order of the true
-  # and preds are reversed but will fail and give erroneous results silently.
+  # NOTE Using kwargs to ensure the user passes the `true` and `pred` arguments
+  # correctly, as if allowed positional arguments then it wouldn't have been
+  # posssible to assert whether the user is passing the ground truths for `true`
+  # and predictions as `pred`. This will need the user to explicitly adopt
+  # keyword arguments and thus enforcing the user to not make a mistake.
+  true = kwargs['true']
+  pred = kwargs['pred']
   assert isinstance(true, np.ndarray) == True
   assert isinstance(pred, np.ndarray) == True
   assert np.all(true >= 0) == True and np.all(true < nc) == True
@@ -45,21 +44,21 @@ def confusion_matrix(true, pred, nc):
   return cmatrix
 
 
-def mean_iu(true, pred, nc):
+def mean_iu(nc, **kwargs):
   """
   Calculate the mean Intersection over Union.
   """
-  cmatrix = confusion_matrix(true, pred, nc)
+  cmatrix = confusion_matrix(nc, **kwargs)
   iu = np.diag(cmatrix) / (cmatrix.sum(1) + cmatrix.sum(0) - np.diag(cmatrix))
   miu = np.nanmean(iu)
   return miu
 
 
-def pixel_accuracy(true, pred, nc):
+def pixel_accuracy(nc, **kwargs):
   """
   Calculates the Pixel Accuracy.
   """
-  cmatrix = confusion_matrix(true, pred, nc)
+  cmatrix = confusion_matrix(nc, **kwargs)
   acc = np.diag(cmatrix).sum() / cmatrix.sum()
   per_class_acc = np.diag(cmatrix) / cmatrix.sum(1)
   return acc, per_class_acc
