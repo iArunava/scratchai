@@ -14,7 +14,7 @@ from scratchai.pretrained import urls
 from scratchai import *
 
 
-__all__ = ['classify', 'stransfer', 'attack']
+__all__ = ['classify', 'segment', 'stransfer', 'attack']
 
 
 def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
@@ -82,6 +82,33 @@ def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   
   return label, val
 
+
+def segment(path:str, nstr='fcn_alexnet', aux:bool=True, 
+            trf:str=None, **kwargs):
+
+  if not trf:
+    trf = imgutils.get_trf('rz256_tt_normimgnet')
+  else: trf = imgutils.get_trf(trf)
+  
+  # Getting the net
+  if type(nstr) is str: net = getattr(nets, nstr)()
+  else: net = nstr
+  net.eval()
+
+  # Getting the image from `path`
+  if type(path) == str: pil_image = imgutils.load_img(path)
+  else: pil_image = path
+  img = trf(pil_image).unsqueeze(0)
+  
+  # Get the output
+  out = net(img)
+  if aux: out = out['out']
+  out = torch.argmax(out.squeeze(), dim=0)
+  
+  # Get the segmented mask
+  out = imgutils.label2seg(out, colors=datasets.labels.voc_colors)
+  out = out.transpose(2, 1).transpose(1, 0)
+  imgutils.imshow([pil_image, T.ToPILImage()(out.float())])
 
 def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   """

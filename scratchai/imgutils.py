@@ -447,9 +447,9 @@ def label2seg(label, colors):
         belongs to.
   """
   assert type(label) is torch.Tensor
-  assert (type(colors) in [torch.Tensor, np.ndarray]) is True
+  assert (type(colors) in [torch.Tensor, np.ndarray, list]) is True
   
-  if isinstance(colors, np.ndarray): colors = torch.from_numpy(colors)
+  if type(colors) in [np.ndarray, list]: colors = torch.as_tensor(colors)
   colors = colors.long()
 
   rgb = torch.zeros(*label.shape, 3).long()

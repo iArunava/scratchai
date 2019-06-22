@@ -22,6 +22,8 @@ class ConfusionMatrix():
     assert isinstance(pred, np.ndarray) == True
     assert np.all(true >= 0) == True and np.all(true < self._nc) == True
     assert np.all(pred >= 0) == True and np.all(pred < self._nc) == True
+
+    #k = np.logical_and(true >= 0, true < nc)
     cmatrix = np.bincount(self._nc * true + pred, minlength=self._nc**2) \
                   .reshape(self._nc, self._nc)
     self.cmatrix += cmatrix

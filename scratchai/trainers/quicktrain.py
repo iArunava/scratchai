@@ -25,46 +25,15 @@ def mnist(net, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str
-         Path to the ckpt file.
-  resume : bool
-           If true, resume training from ckpt.
-           else not.
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
 
   Returns
   -------
-  tlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for training
-  vlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for validation
+  trainer : scratchai.trainers.trainer
+            The Trainer Object which holds the training details.
   """
   
-  root, bs, opti, crit, kwargs = preprocess_opts(net, dset=MNIST, **kwargs)
+  root, bs, opti, crit, evaluate, kwargs = \
+          preprocess_opts(net, dset=MNIST, **kwargs)
 
   trf = get_trf('rr20_tt_normmnist')
 
@@ -76,7 +45,7 @@ def mnist(net, **kwargs):
   
   mnist_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
                          train_loader=tloader, val_loader=vloader, 
-                         verbose=False, **kwargs)
+                         verbose=False, nc=10, **kwargs)
   mnist_trainer.fit()
   mnist_trainer.plot_train_vs_val()
   return mnist_trainer
@@ -90,43 +59,14 @@ def cifar10(net, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str, None
-         Path to the ckpt file. If not None, training is started
-         using this ckpt file. Defaults to None
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
   
   Returns
   -------
-  tlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for training
-  vlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for validation
+  trainer : scratchai.trainers.trainer
+            The Trainer Object which holds the training details.
   """
-  opti, bs, crit, opti, kwargs = preprocess_opts(net, dset=CIFAR10, **kwargs)
+  opti, bs, crit, opti, evaluate, kwargs = \
+        preprocess_opts(net, dset=CIFAR10, **kwargs)
 
   trf = get_trf('pad4_rc32_tt_normimgnet')
 
@@ -137,7 +77,7 @@ def cifar10(net, **kwargs):
   
   cifar10_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
                             train_loader=tloader, val_loader=vloader, 
-                            verbose=False, **kwargs)
+                            verbose=False, nc=10, **kwargs)
   cifar10_trainer.fit()
   cifar10_trainer.plot_train_vs_val()
   return cifar10_trainer
@@ -150,43 +90,13 @@ def custom(net, tloader, vloader, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str, None
-         Path to the ckpt file. If not None, training is started
-         using this ckpt file. Defaults to None
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
   
   Returns
   -------
-  tlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for training
-  vlist : list
-          Contains list of n 2-tuples. where n == epochs
-          and a tuple (a, b) where,
-          a -> is the acc for the corresponding index
-          b -> is the loss for the corresponding index
-          for validation
+  trainer : scratchai.trainers.trainer
+            The Trainer Object which holds the training details.
   """
-  opti, bs, crit, opti, kwargs = preprocess_opts(net, **kwargs)
+  opti, bs, crit, opti, evaluate, kwargs = preprocess_opts(net, **kwargs)
 
   #trf = get_trf('rz256_cc224_tt_normimgnet')
   trf = get_trf('rz32_tt_normimgnet')
@@ -207,27 +117,7 @@ def sky_segmentation(net, **kwargs):
   ---------
   net : nn.Module
         The net which to train.
-  optim : nn.optim
-          The optimizer to use.
-  crit : nn.Module
-         The criterion to use.
-  lr : float
-       The learning rate.
-  wd : float
-       The weight decay.
-  bs : int
-       The batch size.
-  seed : int
-         The particular seed to use.
-  epochs : int
-           The epcochs to train for.
-  ckpt : str, None
-         Path to the ckpt file. If not None, training is started
-         using this ckpt file. Defaults to None
-  root : str
-         The root where the datasets is or
-         needs to be downloaded.
-  
+
   Returns
   -------
   trainer : scratchai.learners.trainer.Trainer
@@ -251,13 +141,13 @@ def sky_segmentation(net, **kwargs):
   if not evaluate:
     sky = SegTrainer(net=net, criterion=crit, optimizer=opti, 
                       train_loader=tloader, val_loader=vloader, 
-                      verbose=False, **kwargs)
+                      verbose=False, nc=2, **kwargs)
     sky.fit()
     sky.plot_train_vs_val()
   else:
     sky = SegEvaluater(net=net, criterion=crit, optimizer=opti, 
                       train_loader=tloader, val_loader=vloader, 
-                      verbose=False, **kwargs)
+                      verbose=False, nc=2, **kwargs)
     sky.evaluate()
 
   return sky

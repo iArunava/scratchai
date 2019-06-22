@@ -32,7 +32,7 @@ class Trainer():
   val_loader   : nn.utils.DataLoader
                  The Validation Loader.
   """
-  def __init__(self, net, train_loader, val_loader, lr=1e-3, epochs=5, 
+  def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
                topk:tuple=(1, 5), verbose:bool=True):
@@ -46,6 +46,7 @@ class Trainer():
       print ('[INFO] Changing device to CPU as no GPU is available!')
 
     self.lr           = lr
+    self.nc           = nc
     self.net          = net
     self.topk         = topk
     self.crit         = criterion
@@ -271,7 +272,10 @@ class SegTrainer(Trainer):
     self.v_accmtr.create_and_shift_to_new_slot()
     self.t_miumtr.create_and_shift_to_new_slot()
     self.v_miumtr.create_and_shift_to_new_slot()
-    
+
+    # Epoch Variables (are the ones which needs to be reset at every epoch)
+    self.cmatrix = ConfusionMatrix(self.nc)
+
   def get_curr_val_acc(self):
     return self.val_list[-1][0]
   
@@ -279,11 +283,18 @@ class SegTrainer(Trainer):
     return self.val_list[-1][2]
 
   def store_details(self, part):
+
     if part == 'train':
+      self.t_miumtr(self.cmatrix.mean_iu())
+      self.t_accmtr(self.cmatrix.pixel_accuracy()[0])
+
       self.train_list.append((self.t_accmtr.get_curr_slot_avg(), 
                               self.t_miumtr.get_curr_slot_avg(),
                               self.t_lossmtr.get_curr_slot_avg()))
     elif part == 'val':
+      self.v_miumtr(self.cmatrix.mean_iu())
+      self.v_accmtr(self.cmatrix.pixel_accuracy()[0])
+
       self.val_list.append((self.v_accmtr.get_curr_slot_avg(),
                             self.v_miumtr.get_curr_slot_avg(),
                             self.v_lossmtr.get_curr_slot_avg()))
@@ -305,18 +316,19 @@ class SegTrainer(Trainer):
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
       if part == 'train':
         self.t_lossmtr(self.loss.item(), self.batch_size)
-        acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        self.t_accmtr(acc)
-        miu = mean_iu(nc, true=labl, pred=out)
-        self.t_miumtr(miu)
+        self.cmatrix(true=labl, pred=out)
+        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
+        #self.t_accmtr(acc)
+        #miu = mean_iu(nc, true=labl, pred=out)
+        #self.t_miumtr(miu)
 
       elif part == 'val':
         self.v_lossmtr(self.loss.item(), self.batch_size)
-        acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        self.v_accmtr(acc)
-        miu = mean_iu(nc, true=labl, pred=out)
-        print (miu)
-        self.v_miumtr(miu)
+        self.cmatrix(true=labl, pred=out)
+        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
+        #self.v_accmtr(acc)
+        #miu = mean_iu(nc, true=labl, pred=out)
+        #self.v_miumtr(miu)
 
       else:
         raise ('Invalid Part! Not Supported!')
