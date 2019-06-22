@@ -16,7 +16,7 @@ from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
 
 
-__all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer']
+__all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
 
 
 class Trainer():
@@ -315,6 +315,7 @@ class SegTrainer(Trainer):
         acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
         self.v_accmtr(acc)
         miu = mean_iu(nc, true=labl, pred=out)
+        print (miu)
         self.v_miumtr(miu)
 
       else:
@@ -385,3 +386,24 @@ class SegAuxTrainer(SegTrainer):
 
   def update_metrics(self, out, labl, part):
     super().update_metrics(out['out'], labl, part)
+
+
+# =====================================================================
+# Evaluaters
+# =====================================================================
+
+class SegEvaluater(SegTrainer):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+  
+  def show_epoch_details(self, e):
+    # TODO The tloss and vloss needs a recheck.
+    print ('Epoch: {}/{} - Val Loss: {:.3f} - Val Pixel Acc: {:.3f}'
+           '- Val Mean IoU: {:.3f}'.format(e+1, self.epochs, 
+                                self.val_list[-1][2], self.val_list[-1][0],
+                                self.val_list[-1][1]))
+  def evaluate(self):
+    self.before_epoch_start()
+    self.test()
+    self.show_epoch_details(0)
+

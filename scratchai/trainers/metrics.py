@@ -7,6 +7,45 @@ import numpy as np
 from tabulate import tabulate
 
 
+class ConfusionMatrix():
+
+  def __init__(self, nc):
+    assert nc > 1
+    self._nc = nc
+    self.reset()
+
+
+  def __call__(self, **kwargs):
+    true = kwargs['true'].flatten()
+    pred = kwargs['pred'].flatten()
+    assert isinstance(true, np.ndarray) == True
+    assert isinstance(pred, np.ndarray) == True
+    assert np.all(true >= 0) == True and np.all(true < self._nc) == True
+    assert np.all(pred >= 0) == True and np.all(pred < self._nc) == True
+    cmatrix = np.bincount(self._nc * true + pred, minlength=self._nc**2) \
+                  .reshape(self._nc, self._nc)
+    self.cmatrix += cmatrix
+
+  def mean_iu(self):
+    cf = self.cmatrix
+    iu = np.diag(cf) / (cf.sum(1) + cf.sum(0) - np.diag(cf))
+    miu = np.nanmean(iu)
+    return miu
+
+  def pixel_accuracy(self):
+    acc = np.diag(self.cmatrix).sum() / self.cmatrix.sum()
+    per_class_acc = np.diag(self.cmatrix) / self.cmatrix.sum(1)
+    return acc, per_class_acc
+
+  def set_nc(self, nc):
+    self._nc = nc
+    self.reset()
+
+  def reset(self):
+    self.cmatrix = np.zeros((self._nc, self._nc))
+    
+    
+    
 def confusion_matrix(nc, **kwargs):
   """
   Creates a Confusion Matrix.

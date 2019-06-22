@@ -233,7 +233,8 @@ def sky_segmentation(net, **kwargs):
   trainer : scratchai.learners.trainer.Trainer
             The Trainer Object which holds the training details.
   """
-  root, bs, opti, crit, kwargs = preprocess_opts(net, dset=SKY_SEG, **kwargs)
+  root, bs, opti, crit, evaluate, kwargs = \
+        preprocess_opts(net, dset=SKY_SEG, **kwargs)
 
   #trf = get_trf('pad4_rhf_cj.25_rc32_rr10_tt_normimgnet')
   trf_tr = get_trf('rz360_tt_normimgnet')
@@ -246,13 +247,20 @@ def sky_segmentation(net, **kwargs):
 
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   vloader = DataLoader(v, shuffle=True, batch_size=bs)
+  
+  if not evaluate:
+    sky = SegTrainer(net=net, criterion=crit, optimizer=opti, 
+                      train_loader=tloader, val_loader=vloader, 
+                      verbose=False, **kwargs)
+    sky.fit()
+    sky.plot_train_vs_val()
+  else:
+    sky = SegEvaluater(net=net, criterion=crit, optimizer=opti, 
+                      train_loader=tloader, val_loader=vloader, 
+                      verbose=False, **kwargs)
+    sky.evaluate()
 
-  sky_trainer = SegTrainer(net=net, criterion=crit, optimizer=opti, 
-                    train_loader=tloader, val_loader=vloader, 
-                    verbose=False, **kwargs)
-  sky_trainer.fit()
-  sky_trainer.plot_train_vs_val()
-  return sky_trainer
+  return sky
 
 
 def preprocess_opts(net, dset:str=None, **kwargs):
@@ -288,6 +296,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'lr_decay' not in kwargs: kwargs['lr_decay'] = 0.2
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
   if 'root' not in kwargs: kwargs['root'] = home
+  if 'evaluate' not in kwargs: kwargs['evaluate'] = False
   
   # Set Dataset specific values if dset is not None here
 
@@ -300,6 +309,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   nestv = kwargs['nestv']; kwargs.pop('nestv', None)
   bs = kwargs['bs']; kwargs.pop('bs', None)
   root = kwargs['root']; kwargs.pop('root', None)
+  evaluate = kwargs['evaluate']; kwargs.pop('evaluate', None)
 
   crit = kwargs['crit']()
   opti_name = utils.name_from_object(kwargs['optim'])
@@ -333,5 +343,5 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   # TypeError: got multiple values for 1 argument
   kwargs.pop('crit', None); kwargs.pop('optim', None); kwargs.pop('ckpt', None)
 
-  return root, bs, opti, crit, kwargs
+  return root, bs, opti, crit, evaluate, kwargs
 
