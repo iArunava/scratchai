@@ -56,7 +56,7 @@ def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   # Getting the net
   if type(nstr) is str: net = getattr(nets, nstr)()
   else: net = nstr
-  net.eval()
+  net.cpu().eval()
 
   # Getting the image from `path`
   if type(path) == str:
@@ -83,8 +83,8 @@ def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   return label, val
 
 
-def segment(path:str, nstr='fcn_alexnet', aux:bool=True, 
-            trf:str=None, **kwargs):
+def segment(path:str, nstr='fcn_alexnet', aux:bool=True, trf:str=None, 
+            colors=datasets.labels.voc_colors, **kwargs):
 
   if not trf:
     trf = imgutils.get_trf('rz256_tt_normimgnet')
@@ -93,7 +93,7 @@ def segment(path:str, nstr='fcn_alexnet', aux:bool=True,
   # Getting the net
   if type(nstr) is str: net = getattr(nets, nstr)()
   else: net = nstr
-  net.eval()
+  net.cpu().eval()
 
   # Getting the image from `path`
   if type(path) == str: pil_image = imgutils.load_img(path)
@@ -106,9 +106,10 @@ def segment(path:str, nstr='fcn_alexnet', aux:bool=True,
   out = torch.argmax(out.squeeze(), dim=0)
   
   # Get the segmented mask
-  out = imgutils.label2seg(out, colors=datasets.labels.voc_colors)
+  out = imgutils.label2seg(out, colors=colors)
   out = out.transpose(2, 1).transpose(1, 0)
   imgutils.imshow([pil_image, T.ToPILImage()(out.float())])
+
 
 def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   """

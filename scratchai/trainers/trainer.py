@@ -142,11 +142,14 @@ class Trainer():
                     self.get_curr_val_loss(), self.val_list[-1][0][0], 
                     self.val_list[-1][0][1]))
 
-
-  def train(self):
-
+  
+  def before_train(self):
     self.net.to(self.device)
     self.net.train()
+    
+  def train(self):
+    
+    self.before_train()
 
     for ii, (data, labl) in enumerate(tqdm(self.train_loader)):
       data, labl = data.to(self.device), labl.to(self.device)
@@ -196,10 +199,13 @@ class Trainer():
     self.optim.zero_grad()
     self.loss.backward()
     self.optim.step()
-
-  def test(self):
+  
+  def before_test(self):
     self.net.to(self.device)
     self.net.eval()
+    
+  def test(self):
+    self.before_test()
 
     with torch.no_grad():
       for ii, (data, labl) in enumerate(tqdm(self.val_loader)):
@@ -273,9 +279,16 @@ class SegTrainer(Trainer):
     self.t_miumtr.create_and_shift_to_new_slot()
     self.v_miumtr.create_and_shift_to_new_slot()
 
-    # Epoch Variables (are the ones which needs to be reset at every epoch)
+  def before_train(self):
+    self.net.to(self.device)
+    self.net.train()
     self.cmatrix = ConfusionMatrix(self.nc)
 
+  def before_test(self):
+    self.net.to(self.device)
+    self.net.eval()
+    self.cmatrix = ConfusionMatrix(self.nc)
+    
   def get_curr_val_acc(self):
     return self.val_list[-1][0]
   
