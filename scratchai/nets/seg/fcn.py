@@ -10,13 +10,21 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from scratchai import nets
-from scratchai.nets.common import InterLayer
+from scratchai.nets.common import InterLayer, Debug
 
 
 __all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
 
 
-class FCNHead(nn.Module):
+def conv(ic:int, oc:int, ks:int):
+  layers = []
+  layers.append(nn.Conv2d(ic, oc, ks, 1, 0))
+  layers.append(nn.ReLU(inplace=True))
+  layers.append(nn.Dropout2d(p=0.5))
+  return layers
+
+
+class FCNHead_Mod1(nn.Module):
   def __init__(self, ic:int, oc:int=21, compress:int=4):
     super().__init__()
     inter_channels = ic // compress
@@ -29,7 +37,30 @@ class FCNHead(nn.Module):
       nn.Conv2d(inter_channels, oc, 1, 1, 0)
     )
 
-  def forward(self, x): return self.net(x)
+  def forward(self, x, shape):
+    x = self.net(x)
+    out = F.interpolate(x, size=shape, mode='bilinear', align_corners=False)
+    return out
+
+
+class FCNHead(nn.Module):
+  """
+  Original FCN Head as implemented by the FCN authors.
+  """
+  def __init__(self, ic:int, oc:int=21, compress:int=4):
+    super().__init__()
+    inter_channels = ic // compress
+
+    self.net = nn.Sequential(
+                  *conv(ic, 4096, 6), *conv(4096, 4096, 1),
+                   nn.Conv2d(4096, oc, 1, 1, 0),
+                   nn.ConvTranspose2d(oc, oc, 63, stride=32, bias=False),
+              )
+  
+  def forward(self, x, shape): 
+    x = self.net(x)
+    out = F.interpolate(x, size=shape, mode='bilinear', align_corners=False)
+    return out
 
 
 class FCN(nn.Module):
@@ -52,13 +83,9 @@ class FCN(nn.Module):
     features_out = self.backbone(x)
 
     if self.aux_classifier is not None:
-      aux_out = self.aux_classifier(features_out['aux'])
-      out['aux'] = F.interpolate(aux_out, size=x_shape, mode='bilinear', 
-                                 align_corners=False)
+      out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
 
-    x = self.fcn_head(features_out['out'])
-    out['out'] = F.interpolate(x, size=x_shape, mode='bilinear', 
-                               align_corners=False)
+    out['out'] = self.fcn_head(features_out['out'], x_shape)
     return out
 
 
