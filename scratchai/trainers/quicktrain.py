@@ -12,6 +12,7 @@ from torchvision import datasets, transforms
 
 from scratchai.imgutils import get_trf
 from scratchai.trainers.trainer import *
+from scratchai.trainers.optimizer import Optimizer
 from scratchai._config import home
 from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG
@@ -187,6 +188,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'ckpt' not in kwargs: kwargs['ckpt'] = None
   if 'root' not in kwargs: kwargs['root'] = home
   if 'evaluate' not in kwargs: kwargs['evaluate'] = False
+  if 'bias_2lr' not in kwargs: kwargs['bias_2lr'] = False
   
   # Set Dataset specific values if dset is not None here
 
@@ -200,8 +202,12 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   bs = kwargs['bs']; kwargs.pop('bs', None)
   root = kwargs['root']; kwargs.pop('root', None)
   evaluate = kwargs['evaluate']; kwargs.pop('evaluate', None)
+  bias_2lr = kwargs['bias_2lr']; kwargs.pop('bias_2lr', None)
 
   crit = kwargs['crit']()
+  opti = Optimizer(kwargs['optim'], net, lr=lr, weight_decay=wd, momentum=mom,
+                   nesterov=nestv, bias_2lr=bias_2lr)
+  """
   opti_name = utils.name_from_object(kwargs['optim'])
   train_params = [p for p in net.parameters() if p.requires_grad]
   if  opti_name == 'adam':
@@ -211,6 +217,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
                            weight_decay=wd, momentum=mom)
   else:
     raise NotImplementedError
+  """
 
   # Resume from ckpt (if ckpt is not None)
   if kwargs['ckpt'] is not None:
