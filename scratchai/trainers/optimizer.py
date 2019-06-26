@@ -91,7 +91,7 @@ class Optimizer():
 
     for m in net.modules():
       if isinstance(m, supported_modules):
-        if bias and m.bias.requires_grad:
+        if bias and m.bias is not None and m.bias.requires_grad:
           yield m.bias
         elif m.weight.requires_grad:
           yield m.weight

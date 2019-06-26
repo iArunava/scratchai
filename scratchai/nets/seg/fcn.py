@@ -10,7 +10,9 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from scratchai import nets
-from scratchai.nets.common import InterLayer, Debug
+from scratchai.nets.common import InterLayer
+from scratchai.utils import bilinear_kernel
+from scratchai.init import zero_init
 
 
 __all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
@@ -46,21 +48,48 @@ class FCNHead_Mod1(nn.Module):
 class FCNHead(nn.Module):
   """
   Original FCN Head as implemented by the FCN authors.
+  
+  Arguments
+  ---------
+  ic : int
+       The number of in channels
+
+  oc : int
+       The number of out channels
+
+  Note
+  ----
+  This head expects a padded input. So, say the input image should be padded 
+  with 100.  So, that when the fixed bilinear Kernel (the ConvTranspose with 
+  fixed bilinear weights) upsamples, it will be more than the size of the input
+  and then the upsampled image is center cropped to get the required image size.
+
+  Also, do note, that the required image size must be passed in while calling 
+  the forward fuction.
   """
-  def __init__(self, ic:int, oc:int=21, compress:int=4):
+  def __init__(self, ic:int, oc:int=21):
     super().__init__()
-    inter_channels = ic // compress
 
     self.net = nn.Sequential(
                   *conv(ic, 4096, 6), *conv(4096, 4096, 1),
                    nn.Conv2d(4096, oc, 1, 1, 0),
                    nn.ConvTranspose2d(oc, oc, 63, stride=32, bias=False),
               )
-  
+    
+    self.net.apply(zero_init)
+    self.net[-1].weight.data.copy_(bilinear_kernel(oc, oc, 63))
+    self.net[-1].weight.requires_grad_(False)
+
   def forward(self, x, shape): 
     x = self.net(x)
-    out = F.interpolate(x, size=shape, mode='bilinear', align_corners=False)
-    return out
+
+    # Crop the Upsampled image to the required size
+    # TODO Move this to imgutils and test it
+    _, _, oh, ow = x.shape
+    h, w = shape[-2], shape[-1]
+    i, j = abs(h - oh) // 2, abs(w - ow) // 2
+    x = x[:, :, i:(i+h), j:(j+w)]
+    return x
 
 
 class FCN(nn.Module):
@@ -71,15 +100,20 @@ class FCN(nn.Module):
   ---------
 
   """
-  def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None):
+  def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
+               pad_input:bool=False):
     super().__init__()
+    self.pad_input = pad_input
     self.backbone = backbone
     self.fcn_head = FCNHead(ic=head_ic, oc=nc)
     self.aux_classifier = aux_classifier
 
   def forward(self, x):
-    out = OrderedDict()
     x_shape = x.shape[-2:]
+    if self.pad_input:
+      x = F.pad(x, (100, 100, 100, 100), mode='constant', value=0)
+    
+    out = OrderedDict()
     features_out = self.backbone(x)
 
     if self.aux_classifier is not None:
@@ -89,11 +123,12 @@ class FCN(nn.Module):
     return out
 
 
+# FCN32
 def fcn_alexnet(nc=21, aux:bool=True):
   backbone = InterLayer(nets.alexnet().features, {'9': 'aux', '12': 'out'})
   aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
   return FCN(head_ic=256, backbone=backbone, nc=21, 
-             aux_classifier=aux_classifier)
+             aux_classifier=aux_classifier, pad_input=True)
 
 
 def fcn_resnet50():

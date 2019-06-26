@@ -367,3 +367,34 @@ def download_and_extract(url, root, fname=None):
     zip_file.close()
   else:
     raise Exception('{} extension not supported!'.format(ext))
+
+
+def bilinear_kernel(ic:int, oc:int, ks:int):
+  """
+  Returns a Bilinear Upsampling Kernel.
+
+  Arguments
+  ---------
+  ic : int
+       The number of input channels.
+
+  oc : int
+       The number of output channels.
+
+  ks : int
+       The kernel_size.
+  """
+
+  factor = (ks + 1) // 2
+
+  center = factor - 1
+  if ks % 2 == 0: center = factor - 0.5
+
+  og = np.ogrid[:ks, :ks]
+  b_filter = (1 - abs(og[0] - center) / factor) * \
+             (1 - abs(og[1] - center) / factor)
+
+  weight = np.zeros((ic, oc, ks, ks))
+  weight[range(ic), range(oc), :, :] = b_filter
+  weight = torch.from_numpy(weight).float()
+  return weight

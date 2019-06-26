@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+from scratchai.utils import bilinear_kernel
+
 def xavier_normal(m:nn.Module):
   """
   Xavier Normal Initialization to all the conv layers
@@ -119,3 +121,27 @@ def msr_init(m:nn.Module):
   elif isinstance(m, nn.BatchNorm2d):
     nn.init.constant_(m.weight, 1)
     nn.init.constant_(m.bias, 0)
+
+def zero_init(m:nn.Module):
+  """
+  Zero Initialization to all the conv layers
+
+  Arguments
+  ---------
+  m : nn.Module
+        The net which to init.
+  """
+
+  if isinstance(m, nn.Conv2d):
+    m.weight.data.zero_()
+    if m.bias is not None:
+      nn.init.zeros_(m.bias)
+  elif isinstance(m, nn.Linear):
+    m.weight.data.zero_()
+    if m.bias: nn.init.zeros_(m.bias)
+  """
+  # Add other norms (like nn.GroupNorm2d)
+  elif isinstance(m, nn.BatchNorm2d):
+    nn.init.constant_(m.weight, 1)
+    nn.init.constant_(m.bias, 0)
+  """
