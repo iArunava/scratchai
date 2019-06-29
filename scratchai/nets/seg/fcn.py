@@ -98,7 +98,17 @@ class FCN(nn.Module):
 
   Arguemnts
   ---------
+  head_ic        : int
+                   The number of in_channels for the FCN Head
 
+  backbone       : nn.Module
+                   The Backbone of the FCN.
+
+  aux_classifier : nn.Module
+                   The Aux Classifier.
+
+  pad_input      : bool
+                   Whether to pad the incoming input or not.
   """
   def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
                pad_input:bool=False):
@@ -123,8 +133,8 @@ class FCN(nn.Module):
     return out
 
 
-# FCN32
-def fcn_alexnet(nc=21, aux:bool=True):
+# FCN32-Alexnet
+def fcn_alexnet(nc=21, aux:bool=False):
   backbone = InterLayer(nets.alexnet().features, {'9': 'aux', '12': 'out'})
   aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
   return FCN(head_ic=256, backbone=backbone, nc=21, 
