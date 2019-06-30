@@ -18,6 +18,41 @@ from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG
 from scratchai.datasets import *
 
+def dogs_and_cats(net, **kwargs):
+  # NOTE Not Working
+  """
+  Train on MNIST with net.
+
+  Arguments
+  ---------
+  net : nn.Module
+        The net which to train.
+
+  Returns
+  -------
+  trainer : scratchai.trainers.trainer
+            The Trainer Object which holds the training details.
+  """
+  
+  root, bs, opti, crit, evaluate, kwargs = \
+          preprocess_opts(net, dset=MNIST, **kwargs)
+
+  trf = get_trf('rz224_tt_normimgnet')
+
+  t = DogsCats(root, image_set='train', download=True, transform=trf)
+  v = DogsCats(root, image_set='val', download=True, transform=trf)
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+  vloader = DataLoader(v, shuffle=True, batch_size=bs)
+
+  
+  dc_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
+                         train_loader=tloader, val_loader=vloader, 
+                         verbose=False, nc=10, **kwargs)
+  dc_trainer.fit()
+  dc_trainer.plot_train_vs_val()
+  return dc_trainer
+
+
 def mnist(net, **kwargs):
   """
   Train on MNIST with net.
@@ -74,8 +109,7 @@ def cifar10(net, **kwargs):
   t = datasets.CIFAR10(root, train=True, download=True, transform=trf)
   v = datasets.CIFAR10(root, train=False, download=True, transform=trf)
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
-  vloader = DataLoader(v, shuffle=True, batch_size=bs)
-  
+  vloader = DataLoader(v, shuffle=True, batch_size=bs) 
   cifar10_trainer = Trainer(net=net, criterion=crit, optimizer=opti, 
                             train_loader=tloader, val_loader=vloader, 
                             verbose=False, nc=10, **kwargs)

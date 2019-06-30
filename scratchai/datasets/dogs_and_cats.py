@@ -39,7 +39,7 @@ class DogsCats(VisionDataset):
 
   def __init__(self, root='./', image_set='train', download=True, 
                transform=None):
-    
+    # NOTE Not Working
     super().__init__(root, transform)
     
     self.root = os.path.abspath(root)
@@ -66,7 +66,8 @@ class DogsCats(VisionDataset):
 
     img = Image.open(self.cat_files[index] if cat_idx \
           else self.dog_files[index]).convert('RGB')
-    target = torch.Tensor([0 if cat_idx else 1])
+    idx = [0, 1] if cat_idx else [1, 0]
+    target = torch.Tensor([*idx]).float()
 
     if self.transforms is not None:
       img = self.transforms(img)
