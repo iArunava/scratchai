@@ -12,7 +12,7 @@ __all__ = ['VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16',
 
 
 def conv(ic:int, oc:int, k:int=3, s:int=1, p:int=1, norm:bool=True):
-  layers = [nn.Conv2d(ic, oc, k, s, p, bias=not norm)]
+  layers = [nn.Conv2d(ic, oc, k, s, p, bias=True)]
   if norm: layers += [nn.BatchNorm2d(oc)]
   layers += [nn.ReLU(inplace=True)]
   return layers
@@ -80,10 +80,10 @@ def vgg13_bn():
 
 ### VGG D ###
 def vgg16():
-  return VGG(lconf=[2, 2, 2, 2, 2], norm=False)
+  return VGG(lconf=[2, 2, 3, 3, 3], norm=False)
  
 def vgg16_bn():
-  return VGG(lconf=[2, 2, 2, 2, 2])
+  return VGG(lconf=[2, 2, 3, 3, 3])
 
 ### VGG E ###
 def vgg19():

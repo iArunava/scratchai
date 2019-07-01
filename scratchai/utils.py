@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
+import requests
 
 import cv2
 from torchvision import transforms
@@ -11,7 +12,7 @@ from scratchai._config import home
 
 __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
            'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params',
-           'gpfactor', 'sgdivisor']
+           'gpfactor', 'sgdivisor', 'download_from_gdrive']
 
 
 def count_params(net):
@@ -283,6 +284,41 @@ def sgdivisor(num:int):
         break
   mdiv = num // sdiv
   return sdiv, mdiv
+
+
+def download_from_gdrive(fid:str, dest:str):
+  """
+  Download any file hosted on Google Drive!
+  Reference: https://stackoverflow.com/a/39225272/7343328
+
+  Arguments
+  ---------
+  fid  : str
+         The link to the file hosted on gdrive.
+
+  dest : str
+         The file location in which to save the files.
+  """
+
+  URL = 'https://docs.google.com/uc?export=download'
+  sess = requests.session()
+  response = sess.get(URL, params={'id': fid}, stream=True)
+  
+  # Get the token
+  token = None
+  for key, value in response.cookies.items():
+    if key.startswith('download_warning'):
+      token = value
+      if token:
+        params = {'id': fid, 'confirm': token}
+        response = sess.get(URL, params=params, stream=True)
+      break
+
+  # Save response content
+  CHUNK_SIZE = 32768
+  with open(dest, 'wb') as f:
+    for chunk in response.iter_content(CHUNK_SIZE):
+      if chunk: f.write(chunk)
 
 
 def count_modules(net:nn.Module):
