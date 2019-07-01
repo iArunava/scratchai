@@ -100,6 +100,7 @@ def vgg19():
 def vgg19_bn():
   return VGG(lconf=[2, 2, 4, 4, 4])
 
+"""
 def alexnet_mnist(pretrained=True, **kwargs):
   cust_nc = kwargs['nc'] if 'nc' in kwargs else None
   kwargs['ic'] = 1; kwargs['nc'] = 10
@@ -108,3 +109,4 @@ def alexnet_mnist(pretrained=True, **kwargs):
     return load_pretrained(net, urls.alexnet_mnist_url, 'alexnet_mnist', 
                            nc=cust_nc, attr='classifier', inn=9216)
   return net
+"""
