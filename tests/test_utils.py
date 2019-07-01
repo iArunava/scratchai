@@ -211,6 +211,16 @@ class TestUtils(unittest.TestCase):
         if n % pf == 0: self.assertFalse(pf > gp , 'nope!')
     self.assertRaises(AssertionError, lambda: utils.gpfactor(0))
 
+
+  def test_download_from_gdrive(self):
+    fid = '1BlC5cQ8oIe52sXpjQPjN49BVB0vdmeZF'
+    utils.download_from_gdrive(fid, '/tmp/p.png')
+    self.assertTrue(os.path.exists('/tmp/p.png'), 'Nope!')
+
+    fid = '1AlC5cQ8oIe52sXpjQPjN49BVB0vdmeZF'
+    self.assertRaises(Exception, lambda : \
+                      utils.download_from_gdrive(fid, '/tmp/p.png'), 'Nope!')
+
 #############################################
 ### Check the functions in scratchai/attacks/utils.py
 #############################################

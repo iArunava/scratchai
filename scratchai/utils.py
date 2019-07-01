@@ -304,6 +304,10 @@ def download_from_gdrive(fid:str, dest:str):
   sess = requests.session()
   response = sess.get(URL, params={'id': fid}, stream=True)
   
+  if response.status_code == 404:
+    sess.close()
+    raise Exception('File ID doesn\'t exist / or not shared publicly!')
+                    
   # Get the token
   token = None
   for key, value in response.cookies.items():
@@ -313,6 +317,7 @@ def download_from_gdrive(fid:str, dest:str):
         params = {'id': fid, 'confirm': token}
         response = sess.get(URL, params=params, stream=True)
       break
+  sess.close()
 
   # Save response content
   CHUNK_SIZE = 32768
