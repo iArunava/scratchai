@@ -8,7 +8,7 @@ from scratchai.nets.common import Flatten
 
 
 __all__ = ['VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 
-           'vgg16_bn', 'vgg19', 'vgg19_bn']
+           'vgg16_bn', 'vgg19', 'vgg19_bn', 'vgg_block']
 
 
 def vgg_block(ic:int, oc:int, k:int=3, s:int=1, p:int=1, norm:bool=True):
@@ -56,9 +56,7 @@ class VGG(nn.Module):
       features += [nn.MaxPool2d(2, 2)]
     
     self.features = nn.Sequential(*features)
-
     self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
-
     self.classifier = nn.Sequential(Flatten(), *linear(512 * 7 * 7, 4096), 
                                     *linear(4096, 4096), nn.Linear(4096, nc)]
 
