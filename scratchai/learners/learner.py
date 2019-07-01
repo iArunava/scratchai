@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 from scratchai.learners import metrics
-from tabulate import tabulate
 from tqdm import tqdm
 
 
