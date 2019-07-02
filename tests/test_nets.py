@@ -194,7 +194,7 @@ class TestVGG(unittest.TestCase):
     ns = ['vgg{}', 'vgg{}_bn']
     for c in ['11', '13', '16', '19']:
       for n in ns:
-        net = getattr(nets, n.format(c))()
+        net = getattr(nets, n.format(c))(pretrained=False)
         out = net(n1)
         self.assertEqual(list(out.shape), [2, 1000], 'Nope!')
       

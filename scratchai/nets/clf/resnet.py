@@ -7,12 +7,10 @@ import torch.nn as nn
 import scratchai.pretrained.urls as urls
 
 from scratchai.utils import load_from_pth, load_pretrained
-from scratchai.nets.blocks.resblock import Resnext
 
 
 __all__ = ['resnet18_mnist', 'resnet18', 'resnet34', 'resnet50', 'resnet50', 
-           'resnet101', 'resnet152', 'resnext18', 'resnext34', 'resnext50', 
-           'resnext101', 'resnext152']
+           'resnet101', 'resnet152']
 
 
 def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
@@ -220,6 +218,8 @@ def resnet152(pretrained=True, **kwargs):
   return net
 
 # FIXME The resnet blocks work okay but resnext needs a check
+# Uncomment when fixed.
+"""
 def resnext18(nc, **kwargs):
   kwargs['nc'] = nc
   kwargs['layers'] = [2, 2, 2, 2]
@@ -254,3 +254,4 @@ def resnext152(nc, **kwargs):
   kwargs['lconv'] = 3
   kwargs['block'] = ResneXt
   return Resnet(**kwargs)
+"""

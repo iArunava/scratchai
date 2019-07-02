@@ -4,7 +4,6 @@ The metrics used to measure the performance of models.
 
 import torch
 import numpy as np
-from tabulate import tabulate
 
 
 def miou(pred, gt, nc, c2n=None):
