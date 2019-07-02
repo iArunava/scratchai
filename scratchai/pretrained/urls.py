@@ -13,12 +13,12 @@ alexnet_mnist_url = 'https://www.dropbox.com/s/hlejnkp1c8s6l2q/alexnet_mnist.pth
 # - VGG19_BN
 # NOTE: I checked the pretrained models in PyTorch
 # but it doesn't seem to work! So, I have not taken those.
-vgg11    = '1bx9rrTFqaJuMamh9zz3CTVLBXj4TFv9Y'
-vgg11_bn = '1A25RIXstbWJugflXMR9_FIi_7FQdrvJp'
-vgg13    = '1-1vlwL6h8M5rDb5mU0QDeUHTJMq1UFP6'
-vgg16    = '1a59iu1J2ahRfyhWKxcB3gd4spKP8ZOJA'
-vgg16_bn = '1Wa5LzQE8wIDA0x6NNkwxLfNqjKDj81-a'
-vgg19    = '1-0CuXiEHIe8p8F7UjR93fgFoaGnj7V_X'
+vgg11    = '1h0OzI34qdihN8FWhZXEPVmZ4OisbvUS7'
+vgg11_bn = '1-f6I-ozoRNRe32kKj67Nqg93Gj5SHayD'
+vgg13    = '1e5DbFBc9S5aTgSog4Bl3iK3MyQp8VNaK'
+vgg16    = '136sYqBlGtCxV7CCJgiWObjSMzRfjfNtN'
+vgg16_bn = '14mishIaePaAT0v7u0c65FAYfvCmOsNNH'
+vgg19    = '1MqY9HOmTlubxo9Y1AZxRM1F6uZJq6w1j'
 
 
 # Pretrained Models from the Resnet Family

@@ -47,11 +47,12 @@ def load_from_pth(url, fname='random', key='state_dict'):
         The value.
   """
   
-  # TODO Download this file to a location where it doesn't need to 
-  # be downloaded again and again.
   prefix = home
   if not os.path.isfile(prefix + fname + '.pth'):
-    call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
+    if url.startswith('https://'):
+      call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
+    else:
+      download_from_gdrive(url, prefix + fname + '.pth')
   ckpt = torch.load('{}{}.pth'.format(prefix, fname), map_location='cpu')
   return ckpt[key] if key in ckpt else ckpt
 
@@ -302,6 +303,8 @@ def download_from_gdrive(fid:str, dest:str):
 
   URL = 'https://docs.google.com/uc?export=download'
   sess = requests.session()
+
+  print ('[INFO] Starting to fetch file from Google Drive. . .')
   response = sess.get(URL, params={'id': fid}, stream=True)
   
   if response.status_code == 404:
@@ -318,6 +321,7 @@ def download_from_gdrive(fid:str, dest:str):
         response = sess.get(URL, params=params, stream=True)
       break
   sess.close()
+  print ('[INFO] Completed fetch!')
 
   # Save response content
   CHUNK_SIZE = 32768

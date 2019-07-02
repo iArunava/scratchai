@@ -4,8 +4,10 @@ VGG Model
 
 import torch
 import torch.nn as nn
-from scratchai.nets.common import Flatten
 
+from scratchai.nets.utils import get_net
+from scratchai.nets.common import Flatten
+from scratchai.pretrained import urls
 
 __all__ = ['VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 
            'vgg16_bn', 'vgg19', 'vgg19_bn', 'vgg_block']
@@ -43,10 +45,11 @@ class VGG(nn.Module):
          If true, BatchNormalization is used after each layer.
          Defaults to True.
   """
-  def __init__(self, nc=1000, lconf:list=[1, 1, 2, 2, 2], norm:bool=True):
+  def __init__(self, nc=1000, lconf:list=[1, 1, 2, 2, 2], ic:int=3, 
+               norm:bool=True):
     super().__init__()
     
-    ic = 3; oc = 64
+    ic = ic; oc = 64
     features = []
     for l in lconf:
       features += vgg_block(ic, oc, norm=norm)
@@ -66,53 +69,69 @@ class VGG(nn.Module):
     x = self.classifier(x)
     return x
 
-
-
-def get_net(pretrained=True, **kwargs):
-  cust_nc = kwargs['nc'] if 'nc' in kwargs else None
-  kwargs['ic'] = 1; kwargs['nc'] = 10
-  net = VGG(**kwargs)
-  if pretrained:
-    return load_pretrained(net, urls.alexnet_mnist_url, 'alexnet_mnist', 
-                           nc=cust_nc, attr='classifier', inn=9216)
-  return net
   
-# =============================================
+# =======================================================================
 # VGG A 
-# =============================================
-def vgg11():
-  return VGG(lconf=[1, 1, 2, 2, 2], norm=False)
+# =======================================================================
+def vgg11(pretrained=True, **kwargs):
+  kwargs['lconf'] = [1, 1, 2, 2, 2]
+  kwargs['norm']  = False
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg11, 
+                 fname='vgg11', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 
-def vgg11_bn():
-  return VGG(lconf=[1, 1, 2, 2, 2])
+def vgg11_bn(pretrained=True, **kwargs):
+  kwargs['lconf'] = [1, 1, 2, 2, 2]
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg11_bn, 
+                 fname='vgg11_bn', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 
-# =============================================
+# =======================================================================
 # VGG B
-# =============================================
-def vgg13():
-  return VGG(lconf=[2, 2, 2, 2, 2], norm=False)
+# =======================================================================
+def vgg13(pretrained=True, **kwargs):
+  kwargs['lconf'] = [2, 2, 2, 2, 2]
+  kwargs['norm']  = False
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg13, 
+                 fname='vgg13', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 
-def vgg13_bn():
-  return VGG(lconf=[2, 2, 2, 2, 2])
+def vgg13_bn(pretrained=False, **kwargs):
+  if pretrained: raise Exception('No pretrained models avaialble!')
+  kwargs['lconf'] = [2, 2, 2, 2, 2]
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg13, 
+                 fname='vgg13', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 
-# =============================================
+# =======================================================================
 # VGG D
-# =============================================
-def vgg16():
-  return VGG(lconf=[2, 2, 3, 3, 3], norm=False)
+# =======================================================================
+def vgg16(pretrained=True, **kwargs):
+  kwargs['lconf'] = [2, 2, 3, 3, 3]
+  kwargs['norm']  = False
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg16, 
+                 fname='vgg16', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
  
-def vgg16_bn():
-  return VGG(lconf=[2, 2, 3, 3, 3])
+def vgg16_bn(pretrained=True, **kwargs):
+  kwargs['lconf'] = [2, 2, 3, 3, 3]
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg16_bn,
+                 fname='vgg16_bn', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 
-# =============================================
+# =======================================================================
 # VGG E
-# =============================================
-def vgg19():
-  return VGG(lconf=[2, 2, 4, 4, 4], norm=False)
+# =======================================================================
+def vgg19(pretrained=True, **kwargs):
+  kwargs['lconf'] = [2, 2, 4, 4, 4]
+  kwargs['norm']  = False
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg19,
+                 fname='vgg19', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
   
-def vgg19_bn():
-  return VGG(lconf=[2, 2, 4, 4, 4])
-
-"""
-def alexnet_mnist(pretrained=True, **kwargs):
-"""
+def vgg19_bn(pretrained=False, **kwargs):
+  if pretrained: raise Exception('No pretrained models avaialble!')
+  kwargs['lconf'] = [2, 2, 4, 4, 4]
+  return get_net(VGG, pretrained=pretrained, pretrain_url=None,
+                 fname='vgg19_bn', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
