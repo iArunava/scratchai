@@ -6,8 +6,10 @@ import numpy as np
 import scratchai
 
 from PIL import Image
+
 from scratchai import imgutils
 from scratchai import *
+from scratchai.pretrained import urls
 
 
 
@@ -221,9 +223,9 @@ class TestUtils(unittest.TestCase):
     self.assertRaises(Exception, lambda : \
                       utils.download_from_gdrive(fid, '~/.scratchai/p.png'), 'Nope!')
 
-#############################################
-### Check the functions in scratchai/attacks/utils.py
-#############################################
+# ==============================================================================
+# Check the functions in scratchai/attacks/utils.py
+# ==============================================================================
 
 class TestAtkUtils(unittest.TestCase):
   
@@ -236,3 +238,29 @@ class TestAtkUtils(unittest.TestCase):
     #TODO add tests for testing it further
     if not callable(getattr(scratchai.attacks.utils, 'clip_eta', None)):
       raise NotImplementedError
+
+
+# ==============================================================================
+# Check the functions in scratchai/nets/utils.py
+# ==============================================================================
+
+class TestNetsUtils(unittest.TestCase):
+  
+  def test_get_net(self):
+    # TODO Add more tests
+
+    # 1st Case - Not Pretrained with custom classes
+    net = nets.utils.get_net(nets.VGG, pretrained=False, kwargs_net={'nc':10})
+    self.assertEqual(net.classifier[-1].out_features, 10, 'Nope!')
+
+    # 2nd Case - Pretrained with custom classes
+    net = nets.utils.get_net(nets.VGG, pretrained=True, fname='vgg11', 
+                             pretrain_url=urls.vgg11, kwargs_net={'nc':10, 
+                             'norm': False}, inn=25088, attr='classifier')
+    self.assertEqual(net.classifier.out_features, 10, 'Nope!')
+
+  def test_transfer_weights(self):
+    utils.implemented(nets.utils, 'transfer_weights')
+
+  def test_transfer_weights_with_sd(self):
+    utils.implemented(nets.utils, 'transfer_weights_with_sd')

@@ -9,13 +9,42 @@ from scratchai.utils import load_pretrained
 __all__ = ['get_net', 'transfer_weights', 'transfer_weights_with_sd']
 
 
-# No tests written
 def get_net(net, pretrained=True, pretrain_url=None, fname=None, 
             kwargs_net=None, **kwargs_load_pretrained):
+  """
+  Function to load a model and do some required cutting and splitting on it.
+
+  Arguments
+  ---------
+  net                    : scratchai.nets.*
+                           The class which to initialize, 
+                           *not an initialized net.*
+
+  pretrained             : bool
+                           Whether to load a pretrained net or not.
+
+  pretrain_url           : str
+                           The url from which to load a pretrained model.
+                           It should be just the file id, if the file is 
+                           hosted on Google Drive.
+
+  fname                  : str
+                           The file name with which to store the pretrained 
+                           file.
+
+  kwargs_net             : dict
+                           The extra parameters which are passed while 
+                           initializing the net
+
+  kwargs_load_pretrained : dict
+                           The extra parameters passed to load_pretrained.
+  """
   cust_nc = kwargs_net['nc'] if 'nc' in kwargs_net else None
+  if pretrained: kwargs_net.pop('nc')
   net = net(**kwargs_net)
   if pretrained:
-    return load_pretrained(net, pretrain_url, fname, **kwargs_load_pretrained)
+    return load_pretrained(net, pretrain_url, fname, nc=cust_nc, 
+                           **kwargs_load_pretrained)
   return net
 
 
@@ -48,6 +77,7 @@ def transfer_weights(net1, net2):
   return net2
 
 
+# No tests written
 def transfer_weights_with_sd(sd1, sd2):
   """
   This function allows to transfer the weights using just
