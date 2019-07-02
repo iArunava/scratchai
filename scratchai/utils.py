@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
+import requests
 import cv2
 
 from torchvision import transforms
@@ -15,7 +16,7 @@ from scratchai._config import home
 
 __all__ = ['load_from_pth', 'implemented', 'name_from_object', 'setatrib',
            'load_pretrained', 'Topk', 'freeze', 'AvgMeter', 'count_params',
-           'gpfactor', 'sgdivisor']
+           'gpfactor', 'sgdivisor', 'download_from_gdrive']
 
 
 def count_params(net):
@@ -50,11 +51,12 @@ def load_from_pth(url, fname='random', key='state_dict'):
         The value.
   """
   
-  # TODO Download this file to a location where it doesn't need to 
-  # be downloaded again and again.
   prefix = home
   if not os.path.isfile(prefix + fname + '.pth'):
-    call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
+    if url.startswith('https://'):
+      call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
+    else:
+      download_from_gdrive(url, prefix + fname + '.pth')
   ckpt = torch.load('{}{}.pth'.format(prefix, fname), map_location='cpu')
   return ckpt[key] if key in ckpt else ckpt
 
@@ -307,6 +309,49 @@ def sgdivisor(num:int):
         break
   mdiv = num // sdiv
   return sdiv, mdiv
+
+
+def download_from_gdrive(fid:str, dest:str):
+  """
+  Download any file hosted on Google Drive!
+  Reference: https://stackoverflow.com/a/39225272/7343328
+
+  Arguments
+  ---------
+  fid  : str
+         The link to the file hosted on gdrive.
+
+  dest : str
+         The file location in which to save the files.
+  """
+
+  URL = 'https://docs.google.com/uc?export=download'
+  sess = requests.session()
+
+  print ('[INFO] Starting to fetch file from Google Drive. . .')
+  response = sess.get(URL, params={'id': fid}, stream=True)
+  
+  if response.status_code == 404:
+    sess.close()
+    raise Exception('File ID doesn\'t exist / or not shared publicly!')
+                    
+  # Get the token
+  token = None
+  for key, value in response.cookies.items():
+    if key.startswith('download_warning'):
+      token = value
+      if token:
+        params = {'id': fid, 'confirm': token}
+        response = sess.get(URL, params=params, stream=True)
+      break
+  sess.close()
+  print ('[INFO] Completed fetch!')
+
+  # Save response content
+  CHUNK_SIZE = 32768
+  with open(dest, 'wb') as f:
+    for chunk in response.iter_content(CHUNK_SIZE):
+      if chunk: f.write(chunk)
 
 
 def count_modules(net:nn.Module):
