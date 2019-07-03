@@ -15,7 +15,7 @@ from scratchai.utils import bilinear_kernel
 from scratchai.init import zero_init
 
 
-__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_resnet50', 'fcn_resnet101']
+__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_resnet50', 'fcn_resnet101']
 
 
 def conv(ic:int, oc:int, ks:int):
@@ -138,6 +138,14 @@ def fcn_alexnet(nc=21, aux:bool=False):
   backbone = InterLayer(nets.alexnet().features, {'9': 'aux', '12': 'out'})
   aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
   return FCN(head_ic=256, backbone=backbone, nc=21, 
+             aux_classifier=aux_classifier, pad_input=True)
+
+
+# FCN32-VGG16_BN
+def fcn_vgg(nc=21, aux:bool=False):
+  backbone = InterLayer(nets.vgg16_bn().features, {'23': 'aux', '30': 'out'})
+  aux_classifier = FCNHead(ic=512, oc=nc) if aux else None
+  return FCN(head_ic=512, backbone=backbone, nc=21, 
              aux_classifier=aux_classifier, pad_input=True)
 
 

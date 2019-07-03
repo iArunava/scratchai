@@ -40,7 +40,7 @@ def get_net(net, pretrained=True, pretrain_url=None, fname=None,
                            The extra parameters passed to load_pretrained.
   """
   cust_nc = kwargs_net['nc'] if 'nc' in kwargs_net else None
-  if pretrained: kwargs_net.pop('nc')
+  if pretrained and 'nc' in kwargs_net: kwargs_net.pop('nc')
   net = net(**kwargs_net)
   if pretrained:
     return load_pretrained(net, pretrain_url, fname, nc=cust_nc, 
