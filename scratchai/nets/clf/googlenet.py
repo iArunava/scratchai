@@ -9,6 +9,11 @@ import torch.nn.functional as F
 
 from scratchai.nets.utils import get_net
 from scratchai.nets.common import Flatten
+from scratchai.pretrained import urls
+
+
+__all__ = ['InceptionB', 'googlenet']
+from scratchai.nets.common import Flatten
 
 
 __all__ = ['InceptionB', 'googlenet']
