@@ -129,7 +129,7 @@ class GoogLeNet(nn.Module):
     return x
 
 
-def googlenet(pretrained=False, **kwargs):
+def googlenet(pretrained=True, **kwargs):
   """
   GoogLeNet Model with weights as given by the officials who 
   trained it on TensorFlow.
@@ -137,9 +137,10 @@ def googlenet(pretrained=False, **kwargs):
   kwargs['aux'] = False if 'aux' not in kwargs else kwargs['aux']
   kwargs['replace5x5with3x3'] = True if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
-  return get_net(GoogLeNet, pretrained=pretrained, pretrain_url=None, 
-                 fname='googlenet', kwargs_net=kwargs, attr='classifier',
-                 inn=1024)
+
+  return get_net(GoogLeNet, pretrained=pretrained, fname='googlenet', 
+                 kwargs_net=kwargs, attr='classifier', inn=1024,
+                 pretrain_url=urls.googlenet_url)
 
 
 def googlenet_paper(pretrained=False, **kwargs):
@@ -149,6 +150,7 @@ def googlenet_paper(pretrained=False, **kwargs):
   kwargs['aux'] = True if 'aux' not in kwargs else kwargs['aux']
   kwargs['replace5x5with3x3'] = False if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
+
   return get_net(GoogLeNet, pretrained=pretrained, pretrain_url=None, 
                  fname='googlenet', kwargs_net=kwargs, attr='classifier',
                  inn=1024)
