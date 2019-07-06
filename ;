@@ -37,7 +37,7 @@ class AuxClassifier(nn.Sequential):
     super().__init__()
 
     self.net = nn.Sequential(nn.AdaptiveAvgPool2d((4, 4)),
-                             *conv(ic, 128, 1, 1, 0), Flatten(),
+                             nn.Conv2d(ic, 128, 1, 1, 0), Flatten(),
                              nn.Linear(2048, 1024), nn.Dropout2d(0.7),
                              nn.Linear(1024, nc))
                              
@@ -130,25 +130,7 @@ class GoogLeNet(nn.Module):
 
 
 def googlenet(pretrained=False, **kwargs):
-  """
-  GoogLeNet Model with weights as given by the officials who 
-  trained it on TensorFlow.
-  """
-  kwargs['aux'] = False if 'aux' not in kwargs else kwargs['aux']
-  kwargs['replace5x5with3x3'] = True if 'replace5x5with3x3' not in kwargs \
-                                else kwargs['replace5x5with3x3']
-  return get_net(GoogLeNet, pretrained=pretrained, pretrain_url=None, 
-                 fname='googlenet', kwargs_net=kwargs, attr='classifier',
-                 inn=1024)
-
-
-def googlenet_paper(pretrained=False, **kwargs):
-  """
-  GoogLeNet Model as given in the official Paper.
-  """
   kwargs['aux'] = True if 'aux' not in kwargs else kwargs['aux']
-  kwargs['replace5x5with3x3'] = False if 'replace5x5with3x3' not in kwargs \
-                                else kwargs['replace5x5with3x3']
   return get_net(GoogLeNet, pretrained=pretrained, pretrain_url=None, 
                  fname='googlenet', kwargs_net=kwargs, attr='classifier',
                  inn=1024)
