@@ -16,6 +16,7 @@ Table of Contents:
 | Alexnet | https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/alexnet.py) | |
 | VGG | https://arxiv.org/pdf/1409.1556.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/vgg.py) | VGG11, VGG11_BN, VGG13, VGG13_BN, VGG16_BN, VGG19, VGG19_BN |
 | Resnet | https://arxiv.org/abs/1512.03385 | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/resnet.py#L117) | |
+| GoogLeNet | https://www.cs.unc.edu/~wliu/papers/GoogLeNet.pdf | [Implementation](https://github.com/iArunava/scratchai/blob/master/scratchai/nets/clf/googlenet.py) | |
 | Resnext | https://arxiv.org/abs/1611.05431 | NA | |
 
 2. Segmentation
