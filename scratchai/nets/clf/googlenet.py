@@ -48,12 +48,47 @@ class AuxClassifier(nn.Sequential):
                              
 
 class InceptionB(nn.Module):
+  """
+  The Inception Module as described in the GoogLeNet paper.
+
+  Arguements
+  ----------
+  ic                : int
+                      The number of in channels
+  
+  oc1x1             : int
+                      The number of out channels from the 1x1 conv
+
+  mc3x3             : int
+                      The number of reduce channels from the 1x1 convs 
+                      before getting passed into the 3x3 conv.
+
+  oc3x3             : int
+                      The number of out channels from the 3x3 conv
+
+  mc5x5             : int
+                      The number of reduce channels from the 1x1 convs 
+                      before getting passed into the 5x5 conv.
+
+  oc5x5             : int
+                      The number of out channels from the 5x5 conv
+
+  ocpool            : int
+                      The number of out channels of the 1x1 conv after 
+                      the pooling.
+
+  replace5x5with3x3 : bool
+                      Changes the branch with 5x5 convs to 3x3 convs
+  """
   def __init__(self, ic:int, oc1x1:int, mc3x3, oc3x3, mc5x5, oc5x5, ocpool,
                replace5x5with3x3:bool=False):
     super().__init__()
     
     ks5x5 = 5
-    if replace5x5with3x3: ks5x5 = 3
+    pad5x5 = 2
+    if replace5x5with3x3: 
+      ks5x5 = 3
+      pad5x5 = 1
 
     self.net1x1 = nn.Sequential(*conv(ic, oc1x1, 1, 1, 0))
 
@@ -61,18 +96,19 @@ class InceptionB(nn.Module):
                                 *conv(mc3x3, oc3x3, 3, 1, 1))
 
     self.net5x5 = nn.Sequential(*conv(ic, mc5x5, 1, 1, 0), 
-                                *conv(mc5x5, oc5x5, ks5x5, 1, 2))
+                                *conv(mc5x5, oc5x5, ks5x5, 1, pad5x5))
 
-    self.pool   = nn.Sequential(nn.MaxPool2d(3, 1, 1), 
+    self.pool   = nn.Sequential(nn.MaxPool2d(3, 1, 1, ceil_mode=True), 
                                 *conv(ic, ocpool, 1, 1, 0))
-def forward(self, x):
-    x1 = self.net1x1(x)
-    x2 = self.net3x3(x)
-    x3 = self.net5x5(x)
-    x4 = self.pool(x)
 
-    x = torch.cat([x1, x2, x3, x4], dim=1)
-    return x
+  def forward(self, x):
+      x1 = self.net1x1(x)
+      x2 = self.net3x3(x)
+      x3 = self.net5x5(x)
+      x4 = self.pool(x)
+
+      x = torch.cat([x1, x2, x3, x4], dim=1)
+      return x
     
 
 class GoogLeNet(nn.Module):
@@ -140,6 +176,7 @@ def googlenet(pretrained=True, **kwargs):
   trained it on TensorFlow.
   """
   kwargs['aux'] = False if 'aux' not in kwargs else kwargs['aux']
+  kwargs['nc'] = 1000 if 'nc' not in kwargs else kwargs['nc']
   kwargs['replace5x5with3x3'] = True if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
 
@@ -153,6 +190,7 @@ def googlenet_paper(pretrained=False, **kwargs):
   GoogLeNet Model as given in the official Paper.
   """
   kwargs['aux'] = True if 'aux' not in kwargs else kwargs['aux']
+  kwargs['nc'] = 1000 if 'nc' not in kwargs else kwargs['nc']
   kwargs['replace5x5with3x3'] = False if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
 
