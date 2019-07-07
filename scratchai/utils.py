@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import os
 import requests
+import logging as LOG
 import cv2
 
 from torchvision import transforms
@@ -328,7 +329,7 @@ def download_from_gdrive(fid:str, dest:str):
   URL = 'https://docs.google.com/uc?export=download'
   sess = requests.session()
 
-  print ('[INFO] Starting to fetch file from Google Drive. . .')
+  LOG.info ('[INFO] Starting to fetch file from Google Drive. . .')
   response = sess.get(URL, params={'id': fid}, stream=True)
   
   if response.status_code == 404:
@@ -345,13 +346,15 @@ def download_from_gdrive(fid:str, dest:str):
         response = sess.get(URL, params=params, stream=True)
       break
   sess.close()
-  print ('[INFO] Completed fetch!')
+  LOG.info ('[INFO] Completed fetch!')
 
   # Save response content
+  LOG.info('Starting to save content to disk!')
   CHUNK_SIZE = 32768
   with open(dest, 'wb') as f:
     for chunk in response.iter_content(CHUNK_SIZE):
       if chunk: f.write(chunk)
+  LOG.info('Completed saving content on disk.!')
 
 
 def count_modules(net:nn.Module):

@@ -40,7 +40,7 @@ def get_net(net, pretrained=True, pretrain_url=None, fname=None,
                            The extra parameters passed to load_pretrained.
   """
   cust_nc = kwargs_net['nc'] if 'nc' in kwargs_net else None
-  if pretrained and 'nc' in kwargs_net: kwargs_net.pop('nc')
+  if pretrained and cust_nc is not None: kwargs_net.pop('nc')
   net = net(**kwargs_net)
   if pretrained:
     return load_pretrained(net, pretrain_url, fname, nc=cust_nc, 
@@ -67,8 +67,8 @@ def transfer_weights(net1, net2):
   Even though the keys doesn't need to match.
   The shape for each weight tensor should match!
   """
-  sd1 = net.state_dict()
-  sd2 = net.state_dict()
+  sd1 = net1.state_dict()
+  sd2 = net2.state_dict()
   
   sd2 = transfer_weights_with_sd(sd1, sd2)
   net2.load_state_dict(sd2)

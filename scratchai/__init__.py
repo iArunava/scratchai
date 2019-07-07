@@ -10,7 +10,11 @@ from scratchai import one_call
 from scratchai._config import *
 
 import os
+import logging as LOG
 
 # TODO Confirm if this is the most efficient way to do so.
 if not os.path.exists(home):
   os.makedirs(home)
+
+# Setting Logging to DEBUG Level
+LOG.basicConfig(level=LOG.DEBUG)

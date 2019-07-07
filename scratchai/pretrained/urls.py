@@ -45,6 +45,12 @@ snake_skin_url = 'https://www.dropbox.com/s/98nmx8gcsce49zr/snake_skin.pth?dl=1'
 
 
 # =============================================================================
+# Pretrained Models from the GoogLeNet Family
+# =============================================================================
+googlenet_url = '17pFsY_sSTqVco_-B03BzdpQlTZfqR3oW'
+
+
+# =============================================================================
 # Others
 # =============================================================================
 # This is a test dataset which is very small in size and 
