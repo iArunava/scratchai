@@ -12,8 +12,8 @@ from scratchai.nets.common import Flatten
 from scratchai.pretrained import urls
 
 
-__all__ = ['InceptionB', 'googlenet']
-from scratchai.nets.common import Flatten
+__all__ = ['InceptionB', 'googlenet', 'googlenet_paper']
+
 
 
 def conv(ic:int, oc:int, k, s, p):

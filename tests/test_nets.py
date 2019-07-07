@@ -198,6 +198,23 @@ class TestVGG(unittest.TestCase):
         out = net(n1)
         self.assertEqual(list(out.shape), [2, 1000], 'Nope!')
       
+
+class TestGoogLeNet(unittest.TestCase):
+  
+  def test_googlenet(self):
+    n1 = torch.randn(2, 3, 224, 224)
+    for c in ['googlenet', 'googlenet_paper']:
+      net = getattr(nets, c)(pretrained=False)
+      out = net(n1)
+      self.assertEqual(list(out.shape), [2, 1000], 'Nope!')
+    
+  def test_inception(self):
+    n1 = torch.randn(2, 192, 2, 2)
+    net = nets.googlenet(pretrained=False).inception3a
+    out = net(n1)
+    self.assertEqual(list(out.shape), [2, 256, 2, 2], 'Nope!')
+    
+
 class TestCommon(nn.Module):
   
   def test_flatten(self):
