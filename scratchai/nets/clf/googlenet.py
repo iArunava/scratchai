@@ -16,12 +16,9 @@ __all__ = ['InceptionB', 'googlenet']
 from scratchai.nets.common import Flatten
 
 
-__all__ = ['InceptionB', 'googlenet']
-
-
 def conv(ic:int, oc:int, k, s, p):
   layers = [nn.Conv2d(ic, oc, k, s, p, bias=False), 
-            nn.BatchNorm2d(oc, eps=0.001)]
+            nn.BatchNorm2d(oc, eps=0.001), nn.ReLU(inplace=True)]
   return layers
 
 
@@ -115,6 +112,7 @@ class GoogLeNet(nn.Module):
   def __init__(self, nc:int=1000, inception=InceptionB, aux:bool=False,
                **kwargs):
     super().__init__()
+    self.aux = aux
 
     self.conv1 = nn.Sequential(*conv(3, 64, 7, 2, 1),
                                 nn.MaxPool2d(3, 2, ceil_mode=True))
@@ -135,14 +133,14 @@ class GoogLeNet(nn.Module):
     self.inception5a = inception(832, 256, 160, 320, 32, 128, 128, **kwargs)
     self.inception5b = inception(832, 384, 192, 384, 48, 128, 128, **kwargs)
     
-    if aux:
+    if self.aux:
       self.aux1 = AuxClassifier(512, nc)
       self.aux2 = AuxClassifier(528, nc)
 
     self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
     self.classifier = nn.Sequential(nn.Dropout(0.4), nn.Linear(1024, nc))
     
-    self.maxpool = nn.MaxPool2d(3, 1, ceil_mode=True)
+    self.maxpool = nn.MaxPool2d(3, 2, ceil_mode=True)
 
   def forward(self, x):
     x = self.conv1(x)
@@ -156,10 +154,12 @@ class GoogLeNet(nn.Module):
     x = self.inception4a(x)
     x = self.inception4b(x)
     x = self.inception4c(x)
-    x = self.inception4d(x)
-    x = self.inception4e(x)
+    x1 = self.inception4d(x)
+    x2 = self.inception4e(x1)
+    
+    # TODO Add the auxiliary classifiers in the forward pass
 
-    x = self.maxpool(x)
+    x = self.maxpool(x2)
 
     x = self.inception5a(x)
     x = self.inception5b(x)
@@ -176,7 +176,6 @@ def googlenet(pretrained=True, **kwargs):
   trained it on TensorFlow.
   """
   kwargs['aux'] = False if 'aux' not in kwargs else kwargs['aux']
-  kwargs['nc'] = 1000 if 'nc' not in kwargs else kwargs['nc']
   kwargs['replace5x5with3x3'] = True if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
 
@@ -190,7 +189,6 @@ def googlenet_paper(pretrained=False, **kwargs):
   GoogLeNet Model as given in the official Paper.
   """
   kwargs['aux'] = True if 'aux' not in kwargs else kwargs['aux']
-  kwargs['nc'] = 1000 if 'nc' not in kwargs else kwargs['nc']
   kwargs['replace5x5with3x3'] = False if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
 

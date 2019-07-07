@@ -47,7 +47,7 @@ snake_skin_url = 'https://www.dropbox.com/s/98nmx8gcsce49zr/snake_skin.pth?dl=1'
 # =============================================================================
 # Pretrained Models from the GoogLeNet Family
 # =============================================================================
-googlenet_url = '1gpkwXzgMMeRsO8aN3YLWyhoC5q1EQ6y2'
+googlenet_url = '17pFsY_sSTqVco_-B03BzdpQlTZfqR3oW'
 
 
 # =============================================================================
