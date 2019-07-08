@@ -12,6 +12,7 @@ import torchvision
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms as T
+from torchvision.transforms import functional as TF
 from urllib.request import urlretrieve
 
 from scratchai import utils
@@ -19,7 +20,7 @@ from scratchai import utils
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
            'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
-           'diff_imgs', 'mean', 'std', 'seg2labl', 'label2seg']
+           'diff_imgs', 'mean', 'std', 'seg2labl', 'label2seg', 'center_crop']
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -459,6 +460,36 @@ def label2seg(label, colors):
     rgb[idx] = colors[l]
     
   return rgb
+
+
+def center_crop(img, output_size):
+  """
+  Center Crops an PIL.Image or a Tensor.
+  
+  Arguments
+  ---------
+  img : PIL.Image, torch.Tensor
+        The image which to crop.
+
+  output_size : int, tuple
+                The output size of the image, if tuple it is taken as 
+                (height, width) and if int, the same value is taken for both
+                height and width.
+  """
+  if type(img) == PIL.Image.Image:
+    return TF.center_crop(img, output_size)
+
+  elif type(img) == torch.Tensor:
+    *_, oh, ow = img.shape
+    if isinstance(output_size, tuple): h, w = output_size
+    else: h, w = (output_size, output_size)
+    i, j  = (oh - h) // 2, (ow - w) // 2
+    img = img[..., i:(i+h), j:(j+w)]
+    return img
+
+  else:
+    raise Exception('Unexpected type!')
+
 
 
 def get_trf(trfs:str):

@@ -6,6 +6,7 @@ import numpy as np
 import scratchai
 
 from PIL import Image
+from torchvision import transforms as T
 
 from scratchai import imgutils
 from scratchai import *
@@ -13,9 +14,11 @@ from scratchai.pretrained import urls
 
 
 
-#############################################
-### Check functions for scratchai/imgutils.py
-#############################################
+# =============================================================================
+#
+# Check functions for scratchai/imgutils.py
+#
+# =============================================================================
 
 class TestImgUtils(unittest.TestCase):
   
@@ -149,10 +152,43 @@ class TestImgUtils(unittest.TestCase):
         lambda : imgutils.label2seg(gt.long(), colors=list(cols)))
 
 
+  def test_center_crop(self):
+    for _ in range(np.random.randint(1, 20)):
+      print ('df')
+      n1 = torch.randn(3, 224, 224)
 
-#############################################
-### Check the functions in scratchai/utils.py
-#############################################
+      # Unsqueeze the tensor with a random probability.
+      if np.random.rand() < np.random.rand():
+        n1.unsqueeze_(0)
+      
+      # Changing the torch.Tensor to PIL.Image.Image with a random probability.
+      if np.random.rand() < np.random.rand():
+        n1 = T.ToPILImage()(n1.squeeze())
+      
+      # Getting the output height and width
+      h, w = np.random.randint(0, 100), np.random.randint(0, 100)
+      
+      # Sending tuple or int to the function with random probability
+      if np.random.rand() < np.random.rand():
+        out = imgutils.center_crop(n1, (h, w))
+      else:
+        out = imgutils.center_crop(n1, w)
+        h = w
+      
+      if isinstance(out, PIL.Image.Image):
+        self.assertEqual(list(out.size), [w, h], 'Nope!')
+      elif isinstance(out, torch.Tensor):
+        self.assertEqual(list(out.shape[-3:]), [3, h, w], 'nope!')
+      else:
+        raise Exception('Unknown type returned!')
+
+
+
+# =============================================================================
+#
+# Check the functions in scratchai/utils.py
+#
+# =============================================================================
 
 class TestUtils(unittest.TestCase):
   
@@ -270,9 +306,13 @@ class TestUtils(unittest.TestCase):
     self.assertRaises(Exception, lambda : \
                       utils.download_from_gdrive(fid, '/tmp/.png'), 'Nope!')
 
-# ==============================================================================
+
+
+# =============================================================================
+# 
 # Check the functions in scratchai/attacks/utils.py
-# ==============================================================================
+#
+# =============================================================================
 
 class TestAtkUtils(unittest.TestCase):
   
@@ -288,7 +328,9 @@ class TestAtkUtils(unittest.TestCase):
 
 
 # ==============================================================================
+#
 # Check the functions in scratchai/nets/utils.py
+#
 # ==============================================================================
 
 class TestNetsUtils(unittest.TestCase):

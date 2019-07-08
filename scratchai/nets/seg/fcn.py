@@ -10,13 +10,13 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from scratchai import nets
+from scratchai.imgutils import center_crop
 from scratchai.nets.common import InterLayer
 from scratchai.utils import bilinear_kernel
 from scratchai.init import zero_init
 
 
-__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_resnet50', 
-           'fcn_resnet101', 'fcn_googlenet']
+__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_googlenet']
 
 
 def conv(ic:int, oc:int, ks:int):
@@ -28,6 +28,9 @@ def conv(ic:int, oc:int, ks:int):
 
 
 class FCNHead_Mod1(nn.Module):
+  """
+  The FCNHead Mod that was used in torchvision
+  """
   def __init__(self, ic:int, oc:int=21, compress:int=4):
     super().__init__()
     inter_channels = ic // compress
@@ -82,15 +85,9 @@ class FCNHead(nn.Module):
     self.net[-1].weight.requires_grad_(False)
 
   def forward(self, x, shape): 
-    print (x.shape)
     x = self.net(x)
-
-    # Crop the Upsampled image to the required size
-    # TODO Move this to imgutils and test it
-    _, _, oh, ow = x.shape
-    h, w = shape[-2], shape[-1]
-    i, j = abs(h - oh) // 2, abs(w - ow) // 2
-    x = x[:, :, i:(i+h), j:(j+w)]
+    # Cropping the image to the required size (as mentioned by shape)
+    x = center_crop(x, shape)
     return x
 
 
@@ -128,12 +125,21 @@ class FCN(nn.Module):
     out = OrderedDict()
     features_out = self.backbone(x)
 
-    if self.aux_classifier is not None:
+    if self.aux_classifier is not None and 'aux' in features_out:
       out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
+    """
+    if len(features_out) > 1:
+      for key in features_out.keys():
+        out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
+    """
 
     out['out'] = self.fcn_head(features_out['out'], x_shape)
     return out
 
+
+# =============================================================================
+# FCN-32s
+# =============================================================================
 
 # FCN32-Alexnet
 def fcn_alexnet(nc=21, aux:bool=False):
@@ -160,13 +166,20 @@ def fcn_googlenet(nc=21, aux:bool=False):
              aux_classifier=aux_classifier, pad_input=True)
 
 
-def fcn_resnet50():
-  net = nets.resnet50()
-  backbone = net.net[:20]
-  return FCN(head_ic=2048, backbone=backbone)
+
+# =============================================================================
+# FCN-16s
+# =============================================================================
+
+# FCN16-Alexnet
+def fcn16_alexnet(nc=21, aux:bool=False):
+  backbone = InterLayer(nets.alexnet().features, {'9': 'skip1', '12': 'out'})
+  aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
+  return FCN(head_ic=256, backbone=backbone, nc=21, 
+             aux_classifier=aux_classifier, pad_input=True)
 
 
-def fcn_resnet101():
-  net = nets.resnet101()
-  backbone = net.net[:37]
-  return FCN(head_ic=2048, backbone=backbone)
+
+# =============================================================================
+# FCN-8s
+# =============================================================================
