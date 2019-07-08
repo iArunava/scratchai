@@ -1,2 +1,3 @@
-from .enet import *
-from .unet import *
+from scratchai.nets.seg.enet import *
+from scratchai.nets.seg.unet import *
+from scratchai.nets.seg.fcn import *

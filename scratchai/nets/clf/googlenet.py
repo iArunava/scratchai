@@ -188,10 +188,11 @@ def googlenet_paper(pretrained=False, **kwargs):
   """
   GoogLeNet Model as given in the official Paper.
   """
+  if pretrained: raise Exception('No pretrained model available!')
   kwargs['aux'] = True if 'aux' not in kwargs else kwargs['aux']
   kwargs['replace5x5with3x3'] = False if 'replace5x5with3x3' not in kwargs \
                                 else kwargs['replace5x5with3x3']
 
   return get_net(GoogLeNet, pretrained=pretrained, pretrain_url=None, 
-                 fname='googlenet', kwargs_net=kwargs, attr='classifier',
+                 fname='googlenet_paper', kwargs_net=kwargs, attr='classifier',
                  inn=1024)

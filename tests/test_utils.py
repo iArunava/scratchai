@@ -6,6 +6,7 @@ import numpy as np
 import scratchai
 
 from PIL import Image
+from torchvision import transforms as T
 
 from scratchai import imgutils
 from scratchai import *
@@ -13,9 +14,11 @@ from scratchai.pretrained import urls
 
 
 
-#############################################
-### Check functions for scratchai/imgutils.py
-#############################################
+# =============================================================================
+#
+# Check functions for scratchai/imgutils.py
+#
+# =============================================================================
 
 class TestImgUtils(unittest.TestCase):
   
@@ -102,10 +105,90 @@ class TestImgUtils(unittest.TestCase):
       std = imgutils.std(t)
       self.assertEqual(round(std - torch.std(t).item(), 2), 0.0, 'nope!')
 
+  def test_segs_labels(self):
+    # TODO Test on batches of images
+    t = torch.Tensor([[[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]]]).long()
 
-#############################################
-### Check the functions in scratchai/utils.py
-#############################################
+    gt = torch.Tensor([[0., 1., 2.],
+                       [0., 1., 2.],
+                       [0., 1., 2.]]).double()
+    
+    cols = np.array([(1., 2., 3.), (4., 5., 6.), (7., 8., 9.)])
+
+    label = imgutils.seg2labl(t, colors=cols)
+    
+    self.assertEqual(list(label.shape), [3, 3], 'Not working!')
+    self.assertTrue(torch.all(label == gt), 'Not working!')
+    
+    # =======================================================
+    # Tests for label2seg
+    # =======================================================
+
+    # TODO Test on batches of images
+    # Check with float type that it doesn't raises an exception
+    seg = imgutils.label2seg(gt.float(), colors=cols)
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    # Check with long type that it doesn't raises an exception
+    seg = imgutils.label2seg(gt.long(), colors=cols)
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    # Check to ensure colors can be in torch.Tensor type
+    seg = imgutils.label2seg(gt.long(), colors=torch.from_numpy(cols))
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    self.assertRaises(AssertionError, 
+        lambda : imgutils.label2seg(gt.long(), colors=list(cols)))
+
+
+  def test_center_crop(self):
+    for _ in range(np.random.randint(1, 20)):
+      print ('df')
+      n1 = torch.randn(3, 224, 224)
+
+      # Unsqueeze the tensor with a random probability.
+      if np.random.rand() < np.random.rand():
+        n1.unsqueeze_(0)
+      
+      # Changing the torch.Tensor to PIL.Image.Image with a random probability.
+      if np.random.rand() < np.random.rand():
+        n1 = T.ToPILImage()(n1.squeeze())
+      
+      # Getting the output height and width
+      h, w = np.random.randint(0, 100), np.random.randint(0, 100)
+      
+      # Sending tuple or int to the function with random probability
+      if np.random.rand() < np.random.rand():
+        out = imgutils.center_crop(n1, (h, w))
+      else:
+        out = imgutils.center_crop(n1, w)
+        h = w
+      
+      if isinstance(out, PIL.Image.Image):
+        self.assertEqual(list(out.size), [w, h], 'Nope!')
+      elif isinstance(out, torch.Tensor):
+        self.assertEqual(list(out.shape[-3:]), [3, h, w], 'nope!')
+      else:
+        raise Exception('Unknown type returned!')
+
+
+
+# =============================================================================
+#
+# Check the functions in scratchai/utils.py
+#
+# =============================================================================
 
 class TestUtils(unittest.TestCase):
   
@@ -223,9 +306,13 @@ class TestUtils(unittest.TestCase):
     self.assertRaises(Exception, lambda : \
                       utils.download_from_gdrive(fid, '/tmp/.png'), 'Nope!')
 
-# ==============================================================================
+
+
+# =============================================================================
+# 
 # Check the functions in scratchai/attacks/utils.py
-# ==============================================================================
+#
+# =============================================================================
 
 class TestAtkUtils(unittest.TestCase):
   
@@ -241,7 +328,9 @@ class TestAtkUtils(unittest.TestCase):
 
 
 # ==============================================================================
+#
 # Check the functions in scratchai/nets/utils.py
+#
 # ==============================================================================
 
 class TestNetsUtils(unittest.TestCase):

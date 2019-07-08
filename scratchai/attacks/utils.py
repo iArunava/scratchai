@@ -7,7 +7,7 @@ from torchvision import transforms as T
 from torchvision import datasets
 from torch.utils.data import DataLoader
 from scratchai.utils import freeze, Topk
-from scratchai.learners.metrics import accuracy
+from scratchai.trainers.metrics import accuracy
 from scratchai.attacks.attacks import *
 from scratchai.imgutils import get_trf
 from scratchai.utils import name_from_object

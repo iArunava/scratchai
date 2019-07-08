@@ -8,5 +8,4 @@ from scratchai.nets.clf.alexnet import *
 from scratchai.nets.clf.googlenet import *
 
 from scratchai.nets.style_transfer import *
-
 from scratchai.nets.common import *

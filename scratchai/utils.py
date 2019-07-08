@@ -4,10 +4,14 @@ import numpy as np
 import os
 import requests
 import logging as LOG
-
 import cv2
+
 from torchvision import transforms
 from subprocess import call
+from tqdm import tqdm
+from zipfile import ZipFile
+from urllib.request import urlretrieve
+
 from scratchai._config import home
 
 
@@ -165,26 +169,46 @@ class AvgMeter():
          The name of the meter
   fmt : str
         The format in which to show the results
-
-  Notes
-  -----
-  When you call an instance of this class, make sure to call it
-  with (val/cnt, cnt) where the val is already divided by cnt.
   """
   def __init__(self, name, fmt=':.2f'):
     self.name = name
     self.fmt = fmt
     self.reset()
   
-  def __call__(self, val, cnt):
-    self.val = val
-    self.sum += val * cnt
+  def __call__(self, val, cnt=1, slot_idx='present'):
+    assert slot_idx in ['present', 'next'] or isinstance(slot_idx, int)
+    if isinstance(slot_idx, int):
+      if slot_idx == (self.slot_idx + 1): slot_idx = 'next'
+      elif slot_idx == self.slot_idx: slot_idx = 'present'
+      else: raise Exception('The Unknown has happened!')
+    if slot_idx == 'next': self.create_and_shift_to_new_slot()
+    elif slot_idx == 'present': slot_idx = self.slot_idx
+    
+    self.slots[slot_idx].append((val, cnt))
+    self.sum += val
     self.cnt += cnt
-    self.avg = self.sum / self.cnt
+    self.avg = float(self.sum) / self.cnt
+  
+  def get_curr_slot_avg(self):
+    return self.get_slot_avg(self.slot_idx)
+
+  def get_slot_avg(self, slot_idx):
+    val, cnt = np.array(self.slots[slot_idx]).sum(0)
+    return val / cnt
+  
+  def create_and_shift_to_new_slot(self):
+    self.slot_idx += 1
+    self.slots.append([])
+    
+  def get_total_avg(self):
+    return self.avg
 
   def reset(self):
-    self.val = 0.; self.sum = 0.
-    self.cnt = 0.; self.avg = 0.
+    self.sum = 0.
+    self.cnt = 0.
+    self.avg = 0.
+    self.slots = []
+    self.slot_idx = -1
   
   def __str__(self):
     return '{name} - {avg}'.format(**self.__dict__)
@@ -348,3 +372,77 @@ def count_modules(net:nn.Module):
       mdict[name] = 1
 
   return mdict
+
+def progress_bar():
+  pbar = tqdm(total=None)
+
+  def bar_update(count, block_size, total_size):
+    if pbar.total is None and total_size: 
+      pbar.total = total_size
+    progress_bytes = count * block_size
+    pbar.update(progress_bytes - pbar.n)
+  
+  return bar_update
+
+  
+def download(url, root, fname=None):
+  if fname is None: fname = os.path.basename(url)
+  fpath = os.path.join(root, fname)
+  
+  # TODO Check md5 hash to confirm the same file exists
+  if os.path.exists(fpath):
+    print ('[INFO] Skipping Downloading, as file is already present!')
+    return fpath
+
+  try:
+    urlretrieve(url, fpath, reporthook=progress_bar())
+  except:
+    raise Exception("Can't fetch URL!!")
+  
+  return fpath
+
+def download_and_extract(url, root, fname=None):
+  fpath = download(url, root, fname)
+  ext = os.path.basename(fpath).split('.')[-1]
+  
+  if ext == 'zip':
+    zip_file = ZipFile(fpath, 'r')
+    zip_root = zip_file.filelist[0].filename
+    if os.path.exists(os.path.join(os.path.dirname(fpath), zip_root)):
+      print ('[INFO] Skipping Unzipping files as the root is present')
+      return
+    zip_file.extractall(root)
+    zip_file.close()
+  else:
+    raise Exception('{} extension not supported!'.format(ext))
+
+
+def bilinear_kernel(ic:int, oc:int, ks:int):
+  """
+  Returns a Bilinear Upsampling Kernel.
+
+  Arguments
+  ---------
+  ic : int
+       The number of input channels.
+
+  oc : int
+       The number of output channels.
+
+  ks : int
+       The kernel_size.
+  """
+
+  factor = (ks + 1) // 2
+
+  center = factor - 1
+  if ks % 2 == 0: center = factor - 0.5
+
+  og = np.ogrid[:ks, :ks]
+  b_filter = (1 - abs(og[0] - center) / factor) * \
+             (1 - abs(og[1] - center) / factor)
+
+  weight = np.zeros((ic, oc, ks, ks))
+  weight[range(ic), range(oc), :, :] = b_filter
+  weight = torch.from_numpy(weight).float()
+  return weight

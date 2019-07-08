@@ -6,17 +6,21 @@ import operator
 import PIL
 import os
 import requests
+import scratchai
+import torchvision
 
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from torchvision import transforms as T
+from torchvision.transforms import functional as TF
+from urllib.request import urlretrieve
 
 from scratchai import utils
 
 
 __all__ = ['thresh_img', 'mask_reg', 'mark_pnt_on_img', 'load_img', 't2i', 
            'imsave', 'imshow', 'unnorm', 'get_trf', 'surface_plot', 'gray',
-           'diff_imgs', 'mean', 'std']
+           'diff_imgs', 'mean', 'std', 'seg2labl', 'label2seg', 'center_crop']
 
 
 def thresh_img(img:np.ndarray, rgb, tcol:list=[0, 0, 0]):
@@ -388,6 +392,106 @@ def surface_plot(matrix:np.ndarray):
   plt.show()
 
 
+def seg2labl(simg:torch.Tensor, colors):
+  """
+  Function to convert a segmentation map to a 2D image with class labels.
+
+  Arguments
+  ---------
+  simg : torch.Tensor
+         The Segmentation Map.
+          
+  colors : list, str
+          Defaults to None. This is a list in which the colors are
+          present in the corresponding class indexes.
+          If an str is passed, that corresponding label will be taken from
+          datasets.labels
+
+  Returns
+  -------
+  labl_img : torch.Tensor
+             The image whose each pixel contains the class labels for
+             that particular image.
+  """
+  if isinstance(colors, str): colors = getattr(datasets.labels, colors)
+  
+  simg_np = simg.numpy()
+  limg = np.zeros((simg.shape[-2], simg.shape[-1]))
+
+  for ii, col in enumerate(colors):
+    cimg = np.full_like(limg, col)
+    limg[np.all(simg_np == cimg, axis=2)] = ii
+
+  return torch.from_numpy(limg)
+
+
+def label2seg(label, colors):
+  """
+  Function to convert a 2D matrix which contains the class labels into 
+  a segmentation map.
+
+  Arguments
+  ---------
+  label   : torch.Tensor
+            The 2D matrix whose each pixel (x, y) represents the class
+            label to which that pixel belongs to.
+
+  colors  : list
+            Whose each index contains colors. Where the index
+            represents the class for which that color belongs to.
+
+  Returns
+  -------
+  rgb : torch.ndarray
+        The Segmengtation map which is a 3D matrix where each pixel position
+        is replaced with the color of the class to which that pixel that
+        belongs to.
+  """
+  assert type(label) is torch.Tensor
+  assert (type(colors) in [torch.Tensor, np.ndarray, list]) is True
+  
+  if type(colors) in [np.ndarray, list]: colors = torch.as_tensor(colors)
+  colors = colors.long()
+
+  rgb = torch.zeros(*label.shape, 3).long()
+  
+  for l in range(0, len(colors)):
+    idx = label == l
+    rgb[idx] = colors[l]
+    
+  return rgb
+
+
+def center_crop(img, output_size):
+  """
+  Center Crops an PIL.Image or a Tensor.
+  
+  Arguments
+  ---------
+  img : PIL.Image, torch.Tensor
+        The image which to crop.
+
+  output_size : int, tuple
+                The output size of the image, if tuple it is taken as 
+                (height, width) and if int, the same value is taken for both
+                height and width.
+  """
+  if type(img) == PIL.Image.Image:
+    return TF.center_crop(img, output_size)
+
+  elif type(img) == torch.Tensor:
+    *_, oh, ow = img.shape
+    if isinstance(output_size, tuple): h, w = output_size
+    else: h, w = (output_size, output_size)
+    i, j  = (oh - h) // 2, (ow - w) // 2
+    img = img[..., i:(i+h), j:(j+w)]
+    return img
+
+  else:
+    raise Exception('Unexpected type!')
+
+
+
 def get_trf(trfs:str):
   """
   A function to quickly get required transforms.
@@ -406,18 +510,33 @@ def get_trf(trfs:str):
   -----
   >>> get_trf('rz256_cc224_tt_normimgnet')
   >>> T.Compose([T.Resize(256),
-                          T.CenterCrop(224),
-                          T.ToTensor(),
-                          T.Normalize([0.485, 0.456, 0.406], 
-                                      [0.229, 0.224, 0.225])])
+                 T.CenterCrop(224),
+                 T.ToTensor(),
+                 T.Normalize([0.485, 0.456, 0.406], 
+                             [0.229, 0.224, 0.225])])
   """
   # TODO Write tests
   # TODO Add more options
+
   trf_list = []
   for trf in trfs.split('_'):
+
     if trf.startswith('rz'):
-      val = (int(trf[2:]), int(trf[2:]))
-      trf_list.append(T.Resize(val))
+      kwargs = {}
+
+      if '.' in trf:
+        size, *args = trf[2:].split('.')
+        for arg in args:
+          if arg[0] == 'i': kwargs['interpolation'] = int(arg[1:])
+      else: size = trf[2:]
+      
+      size = size.split(',') if ',' in size else size
+      # TODO Add tests
+      size = list(map(lambda x : int(x), 
+             size if len(size) == 2 else (size, size)))
+      
+      trf_list.append(T.Resize(size, **kwargs))
+
     elif trf.startswith('cc'):
       val = (int(trf[2:]), int(trf[2:]))
       trf_list.append(T.CenterCrop(val))
@@ -448,8 +567,68 @@ def get_trf(trfs:str):
     elif trf == 'normmnist':
       trf_list.append(T.Normalize((0.1307,), (0.3081,)))
     elif trf == 'fm255':
-      trf_list.append(T.Lambda(lambda x : x.mul(255)))
+      trf_list.append(T.Lambda(lambda x : x.mul(255).long().squeeze()))
     else:
       raise NotImplementedError
 
+  return T.Compose(trf_list)
+
+
+def get_2trf(trfs:str):
+  """
+  A function to quickly get required transforms through
+  which both inputs and targets can be passed.
+
+  Arguments
+  ---------
+  trfs : str
+         An str that represents what T are needed. See Notes
+
+  Returns
+  -------
+  trf : scratchai.trainers.transforms
+        The transforms as a transforms object from torchvision.
+
+  Notes
+  -----
+  >>> get_2trf('rrz256_tt_normimgnet')
+  >>> T.Compose([T.Resize(256),
+                 T.CenterCrop(224),
+                 T.ToTensor(),
+                 T.Normalize([0.485, 0.456, 0.406], 
+                             [0.229, 0.224, 0.225])])
+  """
+  T = scratchai.trainers.transforms
+
+  trf_list = []
+  for trf in trfs.split('_'):
+    
+    if trf.startswith('rrz'):
+      kwargs = {}
+
+      if '.' in trf:
+        size, *args = trf[3:].split('.')
+        for arg in args:
+          if arg[0] == 'i': kwargs['interpolation'] = int(arg[1:])
+      else: size = trf[3:]
+      
+      size = size.split(',') if ',' in size else size
+      # TODO Add tests
+      min_size, max_size = list(map(lambda x : int(x), 
+                    size if len(size) == 2 else (size, size)))
+      
+      trf_list.append(T.RandomResize(min_size, max_size, **kwargs))
+
+    elif trf.startswith('rhf'):
+      val = float(trf[3:]) if trf[3:].strip() != '' else 0.5
+      trf_list.append(T.RandomHorizontalFlip(val))
+    elif trf.startswith('rc'):
+      trf_list.append(T.RandomCrop(int(trf[2:])))
+    elif trf.startswith('tt'):
+      trf_list.append(T.ToTensor())
+    elif trf == 'normimgnet':
+      trf_list.append(T.Normalize([0.485, 0.456, 0.406],
+                                  [0.229, 0.224, 0.225]))
+    else:
+      raise NotImplementedError
   return T.Compose(trf_list)
