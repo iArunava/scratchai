@@ -54,6 +54,8 @@ class InterLayer(nn.Module):
       x = layer(x)
       if name in self.return_layers:
         out[self.return_layers[name]] = x
+      
+      if len(self.return_layers) == len(out): break
     return out
 
 

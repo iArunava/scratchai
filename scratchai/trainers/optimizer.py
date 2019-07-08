@@ -6,6 +6,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+
+__all__ = ['Optimizer']
+
+
 class Optimizer():
   """
   Base Class to build optimizers.
@@ -67,6 +71,10 @@ class Optimizer():
     if bias_2lr:
       print ('[INFO] Biases will have double learning rate and '
               'weight decay set to zero.')
+      
+      self.d =[{'params': self.get_parameters(net, bias=False)},
+         {'params': self.get_parameters(net, bias=True),
+          'lr': self.lr * 2, 'weight_decay': 0}]
 
       self.opt = opt(
         [
@@ -83,6 +91,7 @@ class Optimizer():
 
 
   def get_parameters(self, net, bias=False):
+    # TODO Try doing some optimizations here
     supported_modules = (
       nn.Conv2d,
       nn.ConvTranspose2d,
@@ -93,7 +102,7 @@ class Optimizer():
       if isinstance(m, supported_modules):
         if bias and m.bias is not None and m.bias.requires_grad:
           yield m.bias
-        elif m.weight.requires_grad:
+        elif not bias and m.weight.requires_grad:
           yield m.weight
 
       else:

@@ -15,7 +15,8 @@ from scratchai.utils import bilinear_kernel
 from scratchai.init import zero_init
 
 
-__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_resnet50', 'fcn_resnet101']
+__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_resnet50', 
+           'fcn_resnet101', 'fcn_googlenet']
 
 
 def conv(ic:int, oc:int, ks:int):
@@ -81,6 +82,7 @@ class FCNHead(nn.Module):
     self.net[-1].weight.requires_grad_(False)
 
   def forward(self, x, shape): 
+    print (x.shape)
     x = self.net(x)
 
     # Crop the Upsampled image to the required size
@@ -146,6 +148,15 @@ def fcn_vgg(nc=21, aux:bool=False):
   backbone = InterLayer(nets.vgg16_bn().features, {'23': 'aux', '30': 'out'})
   aux_classifier = FCNHead(ic=512, oc=nc) if aux else None
   return FCN(head_ic=512, backbone=backbone, nc=21, 
+             aux_classifier=aux_classifier, pad_input=True)
+
+
+# FCN32-GoogLeNet
+def fcn_googlenet(nc=21, aux:bool=False):
+  backbone = InterLayer(nets.googlenet(), {'inception4e': 'aux', \
+                                           'inception5b': 'out'})
+  aux_classifier = FCNHead(ic=1024, oc=nc) if aux else None
+  return FCN(head_ic=1024, backbone=backbone, nc=21, 
              aux_classifier=aux_classifier, pad_input=True)
 
 
