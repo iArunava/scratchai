@@ -4,7 +4,9 @@ The metrics used to measure the performance of models.
 
 import torch
 import numpy as np
-from tabulate import tabulate
+
+
+__all__ = ['ConfusionMatrix', 'accuracy']
 
 
 class ConfusionMatrix():
