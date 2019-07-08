@@ -137,34 +137,62 @@ class FCN(nn.Module):
     return out
 
 
+
+def get_fcn(nc, aux, features, out_layer:str, extra_outs:dict, head_ic):
+  """
+  Helper Function to Get a FCN.
+
+  Arguments
+  ---------
+  nc : int
+       The number of classes.
+
+  features: nn.Module
+            The backbone.
+
+  out_layer : str
+              The name of the out layer.
+
+  extra_outs : dict
+               Dict containing all the other layer names along with 
+               what name they should have in the output dictionary.
+
+  head_ic : int
+            The number of in_channels to the FCN Head.
+  """
+  return_layers = {out_layer : 'out'}
+  for key, val in extra_outs.items():
+    return_layers[key] = val
+
+  backbone = InterLayer(features, return_layers)
+  aux_classifier = FCNHead(ic=head_ic, oc=nc) if aux else None
+  return FCN(head_ic=head_ic, backbone=backbone, nc=nc, 
+             aux_classifier=aux_classifier, pad_input=True)
+
+
 # =============================================================================
 # FCN-32s
 # =============================================================================
 
 # FCN32-Alexnet
 def fcn_alexnet(nc=21, aux:bool=False):
-  backbone = InterLayer(nets.alexnet().features, {'9': 'aux', '12': 'out'})
-  aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
-  return FCN(head_ic=256, backbone=backbone, nc=21, 
-             aux_classifier=aux_classifier, pad_input=True)
+  extra_outs = {}
+  if aux: extra_outs['9'] = 'aux'
+  return get_fcn(nc, aux, nets.alexnet().features, '12', extra_outs, 256)
 
 
 # FCN32-VGG16_BN
 def fcn_vgg(nc=21, aux:bool=False):
-  backbone = InterLayer(nets.vgg16_bn().features, {'23': 'aux', '30': 'out'})
-  aux_classifier = FCNHead(ic=512, oc=nc) if aux else None
-  return FCN(head_ic=512, backbone=backbone, nc=21, 
-             aux_classifier=aux_classifier, pad_input=True)
+  extra_outs = {}
+  if aux: extra_outs['23'] = 'aux'
+  return get_fcn(nc, aux, nets.vgg16_bn().features, '30', extra_outs, 512)
 
 
 # FCN32-GoogLeNet
 def fcn_googlenet(nc=21, aux:bool=False):
-  backbone = InterLayer(nets.googlenet(), {'inception4e': 'aux', \
-                                           'inception5b': 'out'})
-  aux_classifier = FCNHead(ic=1024, oc=nc) if aux else None
-  return FCN(head_ic=1024, backbone=backbone, nc=21, 
-             aux_classifier=aux_classifier, pad_input=True)
-
+  extra_outs = {}
+  if aux: extra_outs['inception4e'] = 'aux'
+  return get_fcn(nc, aux, nets.googlenet(), 'inception5b', extra_outs, 1024)
 
 
 # =============================================================================
@@ -173,10 +201,10 @@ def fcn_googlenet(nc=21, aux:bool=False):
 
 # FCN16-Alexnet
 def fcn16_alexnet(nc=21, aux:bool=False):
-  backbone = InterLayer(nets.alexnet().features, {'9': 'skip1', '12': 'out'})
-  aux_classifier = FCNHead(ic=256, oc=nc) if aux else None
-  return FCN(head_ic=256, backbone=backbone, nc=21, 
-             aux_classifier=aux_classifier, pad_input=True)
+  # TODO
+  extra_outs = {'7': 'skip1'}
+  if aux: extra_outs['9'] = 'aux'
+  return get_fcn(nc, aux, nets.alexnet().features, '12', extra_outs, 256)
 
 
 
