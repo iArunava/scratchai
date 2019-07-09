@@ -58,6 +58,15 @@ class InterLayer(nn.Module):
       if len(self.return_layers) == len(out): break
     return out
 
+  def get_ic_for(self, layer_names):
+    # TODO Optimize this function. No need to go over all the children.
+    out = {}
+    for name, layer in self.net.named_children():
+      if name in layer_names:
+        out[name] = layer.in_channels
+      if len(out) == len(layer_names): break
+    return out
+
 
 class Flatten(nn.Module):
   def forward(self, x):

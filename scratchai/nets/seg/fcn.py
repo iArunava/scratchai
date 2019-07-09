@@ -108,14 +108,23 @@ class FCN(nn.Module):
 
   pad_input      : bool
                    Whether to pad the incoming input or not.
+
+  skips          : int
+                   The number of skip connections the net will have.
   """
   def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
-               pad_input:bool=False):
+               pad_input:bool=False, skips:int=0):
     super().__init__()
     self.pad_input = pad_input
     self.backbone = backbone
     self.fcn_head = FCNHead(ic=head_ic, oc=nc)
     self.aux_classifier = aux_classifier
+
+    if skips > 0:
+      channels_dict = self.backbone.get_ic_for([])
+      skip_dicts = {}
+      for ii in range(skips):
+        skip_dicts['skip' + str(ii)] = nn.Conv2d(self.backbone.get_ic_for(
 
   def forward(self, x):
     x_shape = x.shape[-2:]
@@ -125,13 +134,16 @@ class FCN(nn.Module):
     out = OrderedDict()
     features_out = self.backbone(x)
 
+    """
     if self.aux_classifier is not None and 'aux' in features_out:
       out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
     """
     if len(features_out) > 1:
       for key in features_out.keys():
-        out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
-    """
+        if key == 'aux':
+          out[key] = self.aux_classifier(features_out[key], x_shape)
+        else:
+          
 
     out['out'] = self.fcn_head(features_out['out'], x_shape)
     return out
@@ -201,7 +213,6 @@ def fcn_googlenet(nc=21, aux:bool=False):
 
 # FCN16-Alexnet
 def fcn16_alexnet(nc=21, aux:bool=False):
-  # TODO
   extra_outs = {'7': 'skip1'}
   if aux: extra_outs['9'] = 'aux'
   return get_fcn(nc, aux, nets.alexnet().features, '12', extra_outs, 256)
