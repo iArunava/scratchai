@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from collections import OrderedDict
+from copy import deepcopy
 
 from scratchai import nets
 from scratchai.imgutils import center_crop
@@ -16,7 +17,8 @@ from scratchai.utils import bilinear_kernel
 from scratchai.init import zero_init
 
 
-__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_googlenet']
+__all__ = ['FCNHead', 'fcn_alexnet', 'fcn_vgg', 'fcn_googlenet', 
+           'fcn16_alexnet']
 
 
 def conv(ic:int, oc:int, ks:int):
@@ -71,23 +73,21 @@ class FCNHead(nn.Module):
   Also, do note, that the required image size must be passed in while calling 
   the forward fuction.
   """
-  def __init__(self, ic:int, oc:int=21):
+  def __init__(self, ic:int, oc:int=21, dconv_ks:int=64, dconv_s:int=32):
     super().__init__()
 
     self.net = nn.Sequential(
                   *conv(ic, 4096, 6), *conv(4096, 4096, 1),
                    nn.Conv2d(4096, oc, 1, 1, 0),
-                   nn.ConvTranspose2d(oc, oc, 63, stride=32, bias=False),
+                   nn.ConvTranspose2d(oc, oc, dconv_ks, dconv_s, bias=False),
               )
     
     self.net.apply(zero_init)
-    self.net[-1].weight.data.copy_(bilinear_kernel(oc, oc, 63))
+    self.net[-1].weight.data.copy_(bilinear_kernel(oc, oc, dconv_ks))
     self.net[-1].weight.requires_grad_(False)
 
-  def forward(self, x, shape): 
+  def forward(self, x): 
     x = self.net(x)
-    # Cropping the image to the required size (as mentioned by shape)
-    x = center_crop(x, shape)
     return x
 
 
@@ -113,18 +113,34 @@ class FCN(nn.Module):
                    The number of skip connections the net will have.
   """
   def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
-               pad_input:bool=False, skips:int=0):
+               pad_input:bool=False):
     super().__init__()
+
+    dconv_ks = 64; dconv_s = 32
     self.pad_input = pad_input
     self.backbone = backbone
-    self.fcn_head = FCNHead(ic=head_ic, oc=nc)
     self.aux_classifier = aux_classifier
+    
+    # Creating Extra Convolutional Layers as required.
+    skips = deepcopy(self.backbone.rev_return_layers)
+    skips.pop('out', None); skips.pop('aux', None)
+    self.skip_dicts = {}
+    num_skips = len(skips)
+    if num_skips > 0:
+      channels_dict = self.backbone.get_oc_for(skips)
+      print (channels_dict.keys())
+      for ii, (key, val) in enumerate(channels_dict.items(), 1):
+        dfactor = 2 ** ii
+        dc_ks, dc_s = (dconv_ks//dfactor, dconv_s//dfactor) \
+                      if num_skips - 1 == ii else (4, 2)
 
-    if skips > 0:
-      channels_dict = self.backbone.get_ic_for([])
-      skip_dicts = {}
-      for ii in range(skips):
-        skip_dicts['skip' + str(ii)] = nn.Conv2d(self.backbone.get_ic_for(
+        self.skip_dicts[key] = [nn.Conv2d(val, nc, 1, 1, 0),
+                                nn.ConvTranspose2d(nc, nc, dc_ks, dc_s, 
+                                bias=False)]
+      dconv_ks, dconv_s = 4, 2
+
+    self.fcn_head = FCNHead(head_ic, nc, dconv_ks=dconv_ks, dconv_s=dconv_s)
+
 
   def forward(self, x):
     x_shape = x.shape[-2:]
@@ -133,24 +149,33 @@ class FCN(nn.Module):
     
     out = OrderedDict()
     features_out = self.backbone(x)
-
-    """
+    
     if self.aux_classifier is not None and 'aux' in features_out:
-      out['aux'] = self.aux_classifier(features_out['aux'], x_shape)
-    """
-    if len(features_out) > 1:
-      for key in features_out.keys():
-        if key == 'aux':
-          out[key] = self.aux_classifier(features_out[key], x_shape)
-        else:
-          
+      # TODO Since we removed shape from fcn_head, aux will fail
+      # if the input is padded, as is the case in general. as the output shape
+      # and the target shape will differ.
+      raise Exception('You poked the bear!')
+      out['aux'] = self.aux_classifier(features_out['aux'])
+    
+    out['out'] = self.fcn_head(features_out['out'])
 
-    out['out'] = self.fcn_head(features_out['out'], x_shape)
+    if len(self.skip_dicts) > 0:
+      sout = out['out']
+      for key, val in self.skip_dicts.items():
+        curr_skip = val[0](features_out[key])
+        print (center_crop(curr_skip, sout.shape).shape, sout.shape)
+        print (key)
+        curr_x = center_crop(curr_skip, sout.shape) + sout
+        sout = val[1](curr_x)
+
+    # Cropping the image to the required size (as mentioned by shape)
+    out['out'] = center_crop(sout, x_shape)
+
     return out
 
 
 
-def get_fcn(nc, aux, features, out_layer:str, extra_outs:dict, head_ic):
+def get_fcn(nc, aux, features, return_layers:dict, head_ic):
   """
   Helper Function to Get a FCN.
 
@@ -162,20 +187,13 @@ def get_fcn(nc, aux, features, out_layer:str, extra_outs:dict, head_ic):
   features: nn.Module
             The backbone.
 
-  out_layer : str
-              The name of the out layer.
-
-  extra_outs : dict
+  return_layers : dict
                Dict containing all the other layer names along with 
                what name they should have in the output dictionary.
 
   head_ic : int
             The number of in_channels to the FCN Head.
   """
-  return_layers = {out_layer : 'out'}
-  for key, val in extra_outs.items():
-    return_layers[key] = val
-
   backbone = InterLayer(features, return_layers)
   aux_classifier = FCNHead(ic=head_ic, oc=nc) if aux else None
   return FCN(head_ic=head_ic, backbone=backbone, nc=nc, 
@@ -188,23 +206,23 @@ def get_fcn(nc, aux, features, out_layer:str, extra_outs:dict, head_ic):
 
 # FCN32-Alexnet
 def fcn_alexnet(nc=21, aux:bool=False):
-  extra_outs = {}
-  if aux: extra_outs['9'] = 'aux'
-  return get_fcn(nc, aux, nets.alexnet().features, '12', extra_outs, 256)
+  return_layers = {'12': 'out'}
+  if aux: return_layers['9'] = 'aux'
+  return get_fcn(nc, aux, nets.alexnet().features, return_layers, 256)
 
 
 # FCN32-VGG16_BN
 def fcn_vgg(nc=21, aux:bool=False):
-  extra_outs = {}
-  if aux: extra_outs['23'] = 'aux'
-  return get_fcn(nc, aux, nets.vgg16_bn().features, '30', extra_outs, 512)
+  return_layers = {'30': 'out'}
+  if aux: return_layers['23'] = 'aux'
+  return get_fcn(nc, aux, nets.vgg16_bn().features, return_layers, 512)
 
 
 # FCN32-GoogLeNet
 def fcn_googlenet(nc=21, aux:bool=False):
-  extra_outs = {}
-  if aux: extra_outs['inception4e'] = 'aux'
-  return get_fcn(nc, aux, nets.googlenet(), 'inception5b', extra_outs, 1024)
+  return_layers = {'inception5b': 'out'}
+  if aux: return_layers['inception4e'] = 'aux'
+  return get_fcn(nc, aux, nets.googlenet(), return_layers, 1024)
 
 
 # =============================================================================
@@ -213,9 +231,9 @@ def fcn_googlenet(nc=21, aux:bool=False):
 
 # FCN16-Alexnet
 def fcn16_alexnet(nc=21, aux:bool=False):
-  extra_outs = {'7': 'skip1'}
-  if aux: extra_outs['9'] = 'aux'
-  return get_fcn(nc, aux, nets.alexnet().features, '12', extra_outs, 256)
+  return_layers = {'5': 'skip1', '12': 'out'}
+  if aux: return_layers['9'] = 'aux'
+  return get_fcn(nc, aux, nets.alexnet().features, return_layers, 256)
 
 
 

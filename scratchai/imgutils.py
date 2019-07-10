@@ -481,7 +481,7 @@ def center_crop(img, output_size):
 
   elif type(img) == torch.Tensor:
     *_, oh, ow = img.shape
-    if isinstance(output_size, tuple): h, w = output_size
+    if isinstance(output_size, tuple): *_, h, w = output_size
     else: h, w = (output_size, output_size)
     i, j  = (oh - h) // 2, (ow - w) // 2
     img = img[..., i:(i+h), j:(j+w)]

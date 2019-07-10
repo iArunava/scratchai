@@ -47,6 +47,7 @@ class InterLayer(nn.Module):
     if isinstance(net, str): net = getattr(nets, net)()
     self.net = net
     self.return_layers = return_layers
+    self.rev_return_layers = dict((v, k) for k, v in self.return_layers.items())
   
   def forward(self, x):
     out = OrderedDict()
@@ -58,12 +59,18 @@ class InterLayer(nn.Module):
       if len(self.return_layers) == len(out): break
     return out
 
-  def get_ic_for(self, layer_names):
+  def get_oc_for(self, layer_names):
     # TODO Optimize this function. No need to go over all the children.
+    # NOTE Major assumption here: Only nn.Conv2d layers change the number
+    # of channels. Probably this is not true.
     out = {}
+    # NOTE The following line of code is wrong if inputs are grayscale.
+    curr_oc = 3
     for name, layer in self.net.named_children():
+      if isinstance(layer, nn.Conv2d):
+        curr_oc = layer.out_channels
       if name in layer_names:
-        out[name] = layer.in_channels
+        out[layer_names[name]] = curr_oc
       if len(out) == len(layer_names): break
     return out
 
