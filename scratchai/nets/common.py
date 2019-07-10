@@ -47,7 +47,6 @@ class InterLayer(nn.Module):
     if isinstance(net, str): net = getattr(nets, net)()
     self.net = net
     self.return_layers = return_layers
-    self.rev_return_layers = dict((v, k) for k, v in self.return_layers.items())
   
   def forward(self, x):
     out = OrderedDict()
@@ -72,6 +71,8 @@ class InterLayer(nn.Module):
       if name in layer_names:
         out[layer_names[name]] = curr_oc
       if len(out) == len(layer_names): break
+    # This reversing is necessary. For working of the FCN Model.
+    out = OrderedDict(reversed(list(out.items())))
     return out
 
 
