@@ -83,32 +83,47 @@ def classify(path:str, nstr='resnet18', trf:str=None, gray:bool=False):
   return label, val
 
 
-def segment(path:str, nstr='fcn_alexnet', aux:bool=True, trf:str=None, 
+def segment(path, nstr='fcn_alexnet', aux:bool=True, trf:str=None, 
             colors=datasets.labels.voc_colors, **kwargs):
-
-  if not trf:
-    trf = imgutils.get_trf('rz256_tt_normimgnet')
-  else: trf = imgutils.get_trf(trf)
-  
+  """
+  Arguments
+  ---------
+  path : str, torch.Tensor
+         
+  """
   # Getting the net
   if type(nstr) is str: net = getattr(nets, nstr)()
   else: net = nstr
   net.cpu().eval()
 
-  # Getting the image from `path`
-  if type(path) == str: pil_image = imgutils.load_img(path)
-  else: pil_image = path
-  img = trf(pil_image).unsqueeze(0)
+  if not isinstance(path, torch.Tensor):
+    if not trf:
+      trf = imgutils.get_trf('rz256_tt_normimgnet')
+    else: trf = imgutils.get_trf(trf)
+
+    # Getting the image from `path`
+    if type(path) == str: pil_image = imgutils.load_img(path)
+    else: pil_image = path
+    img = trf(pil_image).unsqueeze(0)
   
+  else: 
+    print ('[INFO] torch.Tensor is assumed to be normalized')
+    img = path
+    pil_image = img.clone()
+    if len(img.shape) != 4:
+      img.unsqueeze_(0)
+
   # Get the output
   out = net(img)
-  if aux: out = out['out']
+  # TODO Disabling the ['out'], this will fail with fcn_alexnets, so the model
+  # needs to be updated.
+  if aux: out = out#['out']
   out = torch.argmax(out.squeeze(), dim=0)
   
   # Get the segmented mask
   out = imgutils.label2seg(out, colors=colors)
   out = out.transpose(2, 1).transpose(1, 0)
-  imgutils.imshow([pil_image, T.ToPILImage()(out.float())])
+  imgutils.imshow([pil_image, T.ToPILImage()(out.float())], normd=True)
 
 
 def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):

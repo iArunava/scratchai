@@ -1,3 +1,8 @@
+from scratchai.nets.seg import *
+from scratchai.nets.clf import *
+
+from scratchai.nets.gans.dcgan import *
+
 from scratchai.nets.seg.enet import *
 from scratchai.nets.seg.unet import *
 

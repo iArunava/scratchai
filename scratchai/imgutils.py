@@ -200,7 +200,10 @@ def t2i(img, rt=PIL.Image.Image, no255=False):
   Converting to PIL.Image.Image losses precision if source image
   is of type float
   """
-  out= img.squeeze().transpose(0, 1).transpose(1, 2).detach().clone().cpu()
+  img = img.squeeze()
+  if len(img.shape) == 3: img = img.transpose(0, 1).transpose(1, 2)
+  out = img.detach().clone().cpu()
+
   if not no255: out = out.mul(255).clamp(0, 255)
   out = out.numpy()
   if rt == PIL.Image.Image:
@@ -243,7 +246,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
        Defaults to 224.
   """
   if isinstance(rz, int): rz = (rz, rz)
-  if isinstance(img, list):
+  if isinstance(img, list) or (isinstance(img, torch.Tensor) and len(img.shape) == 4):
     nimgs = len(img)
     fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases

@@ -8,12 +8,16 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 
+from abc import ABC
 from tqdm import tqdm
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 from torchvision import datasets, transforms
+from torch.nn import functional as F
 
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
+from scratchai import imgutils
+from scratchai import one_call
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -35,7 +39,7 @@ class Trainer():
   def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
-               topk:tuple=(1, 5), verbose:bool=True):
+               topk:tuple=(1, 5), verbose:bool=True, **kwargs):
     
     # TODO Fix this
     if topk != (1, 5):
@@ -49,9 +53,9 @@ class Trainer():
     self.nc           = nc
     self.net          = net
     self.topk         = topk
-    self.crit         = criterion
+    self.criterion         = criterion
     self.seed         = seed
-    self.optim        = optimizer
+    self.optimizer        = optimizer
     self.device       = torch.device(device)
     self.epochs       = epochs
     self.lr_step      = lr_step
@@ -119,12 +123,12 @@ class Trainer():
     if metric() < self.best_loss:
       self.best_loss = metric()
       torch.save({'net'   : self.net.state_dict(), 
-                  'optim' : self.optim.state_dict()},
+                  'optim' : self.optimizer.state_dict()},
                   'best_net-{:.2f}.pth'.format(metric()))
 
   def save_epoch_model(self, e):
     torch.save({'net' : self.net.cpu().state_dict(), 
-                'opti' : self.optim.state_dict()},
+                'opti' : self.optimizer.state_dict()},
                 'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
   def get_curr_val_acc(self):
@@ -162,6 +166,12 @@ class Trainer():
     self.store_details(part='train')
   
   
+  def fit_one_batch(self):
+    fobatch = ClfFitOneBatch(**vars(self))
+    fobatch.fit()
+    return fobatch
+
+
   def store_details(self, part):
     if part == 'train':
       self.train_list.append(((self.t1t_accmtr.get_curr_slot_avg(), 
@@ -189,16 +199,23 @@ class Trainer():
         self.t5v_accmtr(acc5)
 
       else:
-        raise ('Invalid Part! Not Supported!')
+        raise Exception('Invalid Part! Not Supported!')
       
-    
+  
+  def show_a_pred(self):
+    x, _ = next(iter(self.train_loader))
+    x = x[0]
+    raise Exception('You poked the dinosaur!')
+    one_call.classify(x, nstr=self.net)
+
   def get_loss(self, out, target):
-    self.loss = self.crit(out, target)
+    self.loss = self.criterion(out, target)
+    print (self.loss)
     
   def update(self):
-    self.optim.zero_grad()
+    self.optimizer.zero_grad()
     self.loss.backward()
-    self.optim.step()
+    self.optimizer.step()
   
   def before_test(self):
     self.net.to(self.device)
@@ -224,7 +241,7 @@ class Trainer():
     """
     # See: https://discuss.pytorch.org/t/adaptive-learning-rate/320/4
     self.lr /= (1. / self.lr_decay)
-    for pgroup in self.optim.param_groups: pgroup['lr'] = self.lr
+    for pgroup in self.optimizer.param_groups: pgroup['lr'] = self.lr
     print ('[INFO] Learning rate decreased to {}'.format(lr))
 
   def plot_train_vs_val(self):
@@ -321,15 +338,30 @@ class SegTrainer(Trainer):
                                 self.train_list[-1][1], self.val_list[-1][2], 
                                 self.val_list[-1][0],   self.val_list[-1][1]))
 
+
+  def fit_one_batch(self):
+    fobatch = SegFitOneBatch(**vars(self))
+    fobatch.fit()
+    return fobatch
+  
+  def show_a_pred(self):
+    x, _ = next(iter(self.train_loader))
+    x = x[0]
+    one_call.segment(x, nstr=self.net)
+
   def update_metrics(self, out, labl, part):
     with torch.no_grad():
       nc = out.shape[1]
+      # TODO Remove the line below
+      out = F.log_softmax(out, dim=1)
       out = torch.argmax(out, dim=1)
 
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
       if part == 'train':
         self.t_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
+        print (np.sum(out == labl))
+        print (out.size)
         #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
         #self.t_accmtr(acc)
         #miu = mean_iu(nc, true=labl, pred=out)
@@ -385,6 +417,7 @@ class SegTrainer(Trainer):
     plt.show()
 
 
+
 class SegAuxTrainer(SegTrainer):
   """
   Trainer Object to train a Auxiliary Model.
@@ -407,15 +440,53 @@ class SegAuxTrainer(SegTrainer):
     self.loss = 0
     for name, x in out.items():
       weight = self.loss_wdict[name] if name in self.loss_wdict else 0.5
-      self.loss += weight * self.crit(x, target)
+      self.loss += weight * self.criterion(x, target)
 
   def update_metrics(self, out, labl, part):
     super().update_metrics(out['out'], labl, part)
 
 
-# =====================================================================
+# =============================================================================
+# FitOneBatch
+# =============================================================================
+
+class FitOneBatch(ABC):
+  def reset_batch_and_get_loaders(self):
+    tx, ty = next(iter(self.train_loader))
+    tr = TensorDataset(tx, ty)
+    tloader = DataLoader(tr, batch_size=self.batch_size, shuffle=True)
+    if not self.same_train_val:
+      vx, vy = next(iter(self.val_loader))
+      va = TensorDataset(tx, ty)
+      vloader = DataLoader(va, batch_size=self.batch_size, shuffle=True)
+    else:
+      vloader = DataLoader(tr, batch_size=self.batch_size, shuffle=True)
+    
+    self.train_loader = tloader
+    self.val_loader = vloader
+
+  def show_batch(self):
+    tx, _ = next(iter(self.train_loader))
+    imgutils.imshow(tx, normd=True)
+
+
+class ClfFitOneBatch(FitOneBatch, Trainer):
+  def __init__(self, same_train_val:bool=True, **kwargs):
+    super().__init__(**kwargs)
+    self.same_train_val = same_train_val
+    self.reset_batch_and_get_loaders()
+
+
+class SegFitOneBatch(FitOneBatch, SegTrainer):
+  def __init__(self, same_train_val:bool=True, **kwargs):
+    super().__init__(**kwargs)
+    self.same_train_val = same_train_val
+    self.reset_batch_and_get_loaders()
+
+
+# =============================================================================
 # Evaluaters
-# =====================================================================
+# =============================================================================
 
 class SegEvaluater(SegTrainer):
   def __init__(self, **kwargs):

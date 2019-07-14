@@ -101,7 +101,7 @@ def cifar10(net, **kwargs):
   trainer : scratchai.trainers.trainer
             The Trainer Object which holds the training details.
   """
-  opti, bs, crit, opti, evaluate, kwargs = \
+  root, bs, opti, crit, evaluate, kwargs = \
         preprocess_opts(net, dset=CIFAR10, **kwargs)
 
   trf = get_trf('pad4_rc32_tt_normimgnet')

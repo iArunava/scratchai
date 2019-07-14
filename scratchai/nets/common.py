@@ -51,6 +51,7 @@ class InterLayer(nn.Module):
   def forward(self, x):
     out = OrderedDict()
     for name, layer in self.net.named_children():
+      print (name)
       x = layer(x)
       if name in self.return_layers:
         out[self.return_layers[name]] = x
