@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from torchvision import datasets, transforms
+from abc import ABC
 
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
-from scratchai import imgutils
+from scratchai.imgutils import imshow
+from scratchai.one_call import classify, segment
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -36,9 +38,6 @@ class Trainer():
   def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
-               # NOTE kwargs was added so when calling fit_one_batch, the 
-               # arguments that are not taken by default can also be passed in
-               # Maybe come up with a better way to perform this.
                topk:tuple=(1, 5), verbose:bool=True, **kwargs):
     
     # TODO Fix this
@@ -166,6 +165,12 @@ class Trainer():
     self.store_details(part='train')
   
   
+  def fit_one_batch(self):
+    fobatch = ClfFitOneBatch(**vars(self))
+    fobatch.fit()
+    return fobatch
+
+
   def store_details(self, part):
     if part == 'train':
       self.train_list.append(((self.t1t_accmtr.get_curr_slot_avg(), 
@@ -193,9 +198,15 @@ class Trainer():
         self.t5v_accmtr(acc5)
 
       else:
-        raise ('Invalid Part! Not Supported!')
+        raise Exception('Invalid Part! Not Supported!')
       
-    
+  
+  def show_a_pred(self):
+    x, _ = next(iter(self.train_loader))
+    x = x[0]
+    raise Exception('You poked the dinosaur!')
+    classify(x, nstr=self.net)
+
   def get_loss(self, out, target):
     self.loss = self.criterion(out, target)
     
@@ -208,12 +219,6 @@ class Trainer():
     self.net.to(self.device)
     self.net.eval()
     
-
-  def show_batch(self):
-    x, _ = next(iter(self.train_loader))
-    imgutils.imshow(x, normd=True)
-
-
   def test(self):
     self.before_test()
 
@@ -228,11 +233,6 @@ class Trainer():
     self.store_details(part='val')
   
     
-  def fit_one_batch(self):
-    fobatch = ClfFitOneBatch(same_train_val=True, **vars(self))
-    fobatch.fit()
-    return fobatch
-
   def adjust_lr(self):
     """
     Sets learning rate to the initial LR decayed by 10 every `step` epochs.
@@ -293,11 +293,6 @@ class SegTrainer(Trainer):
     self.v_accmtr.create_and_shift_to_new_slot()
     self.t_miumtr.create_and_shift_to_new_slot()
     self.v_miumtr.create_and_shift_to_new_slot()
-  
-  def fit_one_batch(self):
-    fobatch = SegFitOneBatch(same_train_val=True, **vars(self))
-    fobatch.fit()
-    return fobatch
 
   def before_train(self):
     self.net.to(self.device)
@@ -341,6 +336,17 @@ class SegTrainer(Trainer):
                                 self.train_list[-1][1], self.val_list[-1][2], 
                                 self.val_list[-1][0],   self.val_list[-1][1]))
 
+
+  def fit_one_batch(self):
+    fobatch = SegFitOneBatch(**vars(self))
+    fobatch.fit()
+    return fobatch
+  
+  def show_a_pred(self):
+    x, _ = next(iter(self.train_loader))
+    x = x[0]
+    segment(x, nstr=self.net)
+
   def update_metrics(self, out, labl, part):
     with torch.no_grad():
       nc = out.shape[1]
@@ -348,20 +354,13 @@ class SegTrainer(Trainer):
 
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
       if part == 'train':
+        print (np.sum(out == labl), out.size)
         self.t_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
-        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        #self.t_accmtr(acc)
-        #miu = mean_iu(nc, true=labl, pred=out)
-        #self.t_miumtr(miu)
 
       elif part == 'val':
         self.v_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
-        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        #self.v_accmtr(acc)
-        #miu = mean_iu(nc, true=labl, pred=out)
-        #self.v_miumtr(miu)
 
       else:
         raise ('Invalid Part! Not Supported!')
@@ -405,6 +404,7 @@ class SegTrainer(Trainer):
     plt.show()
 
 
+
 class SegAuxTrainer(SegTrainer):
   """
   Trainer Object to train a Auxiliary Model.
@@ -433,45 +433,40 @@ class SegAuxTrainer(SegTrainer):
     super().update_metrics(out['out'], labl, part)
 
 
-
 # =============================================================================
 # FitOneBatch
 # =============================================================================
-class FitOneBatch():
-  """
-  Class to fit one batch.
-  """
-  def __init__(self, same_train_val:bool=True, **kwargs):
-    super().__init__(**kwargs)
-    self.same_train_val = same_train_val
-    self.set_new_loaders()
 
-  def set_new_loaders(self):
-    x, y = next(iter(self.train_loader))
-    train = TensorDataset(x, y)
-    tloader = DataLoader(train, batch_size=self.batch_size, shuffle=True)
+class FitOneBatch(ABC):
+  def reset_batch_and_get_loaders(self):
+    tx, ty = next(iter(self.train_loader))
+    tr = TensorDataset(tx, ty)
+    tloader = DataLoader(tr, batch_size=self.batch_size, shuffle=True)
     if not self.same_train_val:
-      x, y = next(iter(self.val_loader))
-      val = TensorDataset(x, y)
-      vloader = DataLoader(val, batch_size=self.batch_size, shuffle=True)
+      vx, vy = next(iter(self.val_loader))
+      va = TensorDataset(tx, ty)
+      vloader = DataLoader(va, batch_size=self.batch_size, shuffle=True)
     else:
-      vloader = tloader
-    self.train_loader = tloader
-    self.val_loader = vloader
+      vloader = DataLoader(tr, batch_size=self.batch_size, shuffle=True)
+    return tloader, vloader
+
+  def show_batch(self):
+    tx, _ = next(iter(self.train_loader))
+    imshow(tx, normd=True)
 
 
 class ClfFitOneBatch(FitOneBatch, Trainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.set_new_loaders()
-  
+    self.train_loader, self.val_loader = self.reset_batch_and_get_loaders()
+
 
 class SegFitOneBatch(FitOneBatch, SegTrainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.set_new_loaders()
+    self.train_loader, self.val_loader = self.reset_batch_and_get_loaders()
 
 
 # =============================================================================
@@ -492,4 +487,4 @@ class SegEvaluater(SegTrainer):
     self.before_epoch_start()
     self.test()
     self.show_epoch_details(0)
-
+   

@@ -79,9 +79,12 @@ class FCNHead(nn.Module):
     inter_channels = 2 << (expand-1)
     self.net = nn.Sequential(
                    *conv(ic, inter_channels, 6), 
-                   #*conv(inter_channels, inter_channels, 1),
+                   *conv(inter_channels, inter_channels, 1),
                    nn.Conv2d(inter_channels, oc, 1, 1, 0),
                    nn.ConvTranspose2d(oc, oc, dconv_ks, dconv_s, bias=False),
+                   # Remove all layers below
+                   #nn.Conv2d(ic, oc, 1, 1, 0),
+                   #nn.ConvTranspose2d(oc, oc, dconv_ks, dconv_s, bias=False),
               )
     
     #self.net.apply(zero_init)
@@ -121,7 +124,8 @@ class FCN(nn.Module):
     dconv_ks = 64; dconv_s = 32
     self.pad_input = pad_input
     #self.backbone = backbone
-    self.backbone = nn.Sequential(nn.Conv2d(3, 256, 1, 1, 0), nn.ReLU())
+    #self.backbone = nn.Sequential(nn.Conv2d(3, nc, 5, 1, 1), nn.ReLU())
+    self.backbone = nn.Sequential(nn.Conv2d(3, 256, 5, 3, 0), nn.ReLU())
     self.aux_classifier = aux_classifier
     
     """
@@ -149,16 +153,18 @@ class FCN(nn.Module):
                                 getattr(self, str(key)+str(ii+1))]
       dconv_ks, dconv_s = 4, 2
     """
-    #self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, **kwargs)
+    self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, **kwargs)
 
 
   def forward(self, x):
     x_shape = x.shape[-2:]
     if self.pad_input:
       x = F.pad(x, (100, 100, 100, 100), mode='constant', value=0)
+      pass
     
     out = OrderedDict()
     features_out = self.backbone(x)
+    print (features_out.shape)
     """
     if self.aux_classifier is not None and 'aux' in features_out:
       # TODO Since we removed shape from fcn_head, aux will fail
@@ -179,9 +185,11 @@ class FCN(nn.Module):
     # Cropping the image to the required size (as mentioned by shape)
     out['out'] = center_crop(sout, x_shape)
     """
-    #features_out = self.fcn_head(features_out)
-    out = center_crop(features_out, x_shape)
-    return out
+    features_out = self.fcn_head(features_out)
+    print (features_out.shape)
+    #features_out = F.interpolate(features_out, size=x_shape, mode='bilinear', align_corners=False)
+    features_out = center_crop(features_out, x_shape)
+    return features_out
 
 
 
