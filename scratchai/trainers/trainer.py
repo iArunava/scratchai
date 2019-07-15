@@ -218,6 +218,11 @@ class Trainer():
     self.store_details(part='val')
   
     
+  def fit_one_batch(self):
+    fobatch = ClfFitOneBatch(same_train_val=True, **vars(self))
+    fobatch.fit()
+    return fobatch
+
   def adjust_lr(self):
     """
     Sets learning rate to the initial LR decayed by 10 every `step` epochs.
@@ -278,6 +283,11 @@ class SegTrainer(Trainer):
     self.v_accmtr.create_and_shift_to_new_slot()
     self.t_miumtr.create_and_shift_to_new_slot()
     self.v_miumtr.create_and_shift_to_new_slot()
+  
+  def fit_one_batch(self):
+    fobatch = SegFitOneBatch(same_train_val=True, **vars(self))
+    fobatch.fit()
+    return fobatch
 
   def before_train(self):
     self.net.to(self.device)
@@ -411,6 +421,47 @@ class SegAuxTrainer(SegTrainer):
 
   def update_metrics(self, out, labl, part):
     super().update_metrics(out['out'], labl, part)
+
+
+
+# =====================================================================
+# FitOneBatch
+# =====================================================================
+class FitOneBatch():
+  """
+  Class to fit one batch.
+  """
+  def __init__(self, same_train_val:bool=True, **kwargs):
+    super().__init__(**kwargs)
+    self.same_train_val = same_train_val
+    self.set_new_loaders()
+
+  def set_new_loaders(self):
+    x, y = next(iter(self.train_loader))
+    train = TensorDataset(x, y)
+    tloader = DataLoader(train, batch_size=self.batch_size, shuffle=True)
+    if not self.same_train_val:
+      x, y = next(iter(self.val_loader))
+      val = TensorDataset(x, y)
+      vloader = DataLoader(val, batch_size=self.batch_size, shuffle=True)
+    else:
+      vloader = tloader
+    self.train_loader = tloader
+    self.val_loader = vloader
+
+
+class ClfFitOneBatch(FitOneBatch, Trainer):
+  def __init__(self, same_train_val:bool=True, **kwargs):
+    super().__init__(**kwargs)
+    self.same_train_val = same_train_val
+    self.get_new_loaders()
+  
+
+class SegFitOneBatch(FitOneBatch, SegTrainer):
+  def __init__(self, same_train_val:bool=True, **kwargs):
+    super().__init__(**kwargs)
+    self.same_train_val = same_train_val
+    self.get_new_loaders()
 
 
 # =====================================================================
