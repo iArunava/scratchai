@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 from torchvision import datasets, transforms
 
 from scratchai.trainers.metrics import *
@@ -35,7 +35,10 @@ class Trainer():
   def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
-               topk:tuple=(1, 5), verbose:bool=True):
+               # NOTE kwargs was added so when calling fit_one_batch, the 
+               # arguments that are not taken by default can also be passed in
+               # Maybe come up with a better way to perform this.
+               topk:tuple=(1, 5), verbose:bool=True, **kwargs):
     
     # TODO Fix this
     if topk != (1, 5):
@@ -49,9 +52,9 @@ class Trainer():
     self.nc           = nc
     self.net          = net
     self.topk         = topk
-    self.crit         = criterion
+    self.criterion         = criterion
     self.seed         = seed
-    self.optim        = optimizer
+    self.optimizer        = optimizer
     self.device       = torch.device(device)
     self.epochs       = epochs
     self.lr_step      = lr_step
@@ -454,14 +457,14 @@ class ClfFitOneBatch(FitOneBatch, Trainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.get_new_loaders()
+    self.set_new_loaders()
   
 
 class SegFitOneBatch(FitOneBatch, SegTrainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.get_new_loaders()
+    self.set_new_loaders()
 
 
 # =====================================================================
