@@ -14,6 +14,7 @@ from torchvision import datasets, transforms
 
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
+from scratchai import imgutils
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -207,6 +208,11 @@ class Trainer():
     self.net.to(self.device)
     self.net.eval()
     
+
+  def show_batch(self):
+    x, _ = next(iter(self.train_loader))
+    imgutils.imshow(x, normd=True)
+
   def test(self):
     self.before_test()
 

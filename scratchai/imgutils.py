@@ -243,7 +243,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
        Defaults to 224.
   """
   if isinstance(rz, int): rz = (rz, rz)
-  if isinstance(img, list):
+  if isinstance(img, list) and (isinstance(img, torch.Tensor) and len(img) == 4):
     nimgs = len(img)
     fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases
