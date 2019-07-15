@@ -9,13 +9,31 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 
-__all__ = ['G']#, 'D']
+__all__ = ['G', 'D']
+
+
+def convt(ic:int, oc:int, k:int, s:int, p:int):
+  layers = [nn.ConvTranspose2d(ic, oc, k, s, p, bias=False), nn.BatchNorm2d(oc)]
+  return layers
 
 
 def conv(ic:int, oc:int, k:int, s:int, p:int):
-  layers = [nn.ConvTranspose2d(ic, oc, k, s, p, bias=False), nn.BatchNorm2d(oc)]
+  layers = [nn.Conv2d(ic, oc, k, s, p, bias=False), nn.BatchNorm2d(oc)]
   return layers
-            
+
+
+def create_layers(ic, sc, conv0_s, conv0_p, fconv_s, fconv_p, conv_func, foc):
+  layers_dict = nn.ModuleDict()
+  prefix = 'conv'
+  layers_dict[prefix + '0'] = nn.Sequential(*conv_func(ic, sc, 4, conv0_s, conv0_p))
+  for ii in range(3):
+    oc = sc // (2<<ii)
+    ic = oc * 2
+    layers_dict[prefix + str(ii+1)] = nn.Sequential(*conv_func(ic, oc, 4, 2, 1))
+  fconv = nn.Sequential(*conv_func(oc, foc, 4, fconv_s, fconv_p))
+  return layers_dict, fconv
+
+  
 class G(nn.Module):
   """
   Generator for the DCGAN.
@@ -26,19 +44,33 @@ class G(nn.Module):
   """
   def __init__(self, sc:int=512, zc:int=100):
     super().__init__()
-    layers_dict = nn.ModuleDict()
-    prefix = 'conv'
-    layers_dict[prefix + '0'] = nn.Sequential(*conv(zc, sc, 4, 1, 0))
-    for ii in range(3):
-      oc = sc // (2<<ii)
-      ic = oc * 2
-      layers_dict[prefix + str(ii+1)] = nn.Sequential(*conv(ic, oc, 4, 2, 1))
 
-    self.layers_dict = layers_dict
-    self.fconv = nn.Sequential(*conv(oc, 3, 4, 2, 1))
+    self.layers_dict, self.fconv = create_layers(zc, sc, 1, 0, 2, 1, convt, 3)
 
   def forward(self, x):
     for name, layer in self.layers_dict.items():
       x = F.relu(layer(x), inplace=True)
     x = F.tanh(self.fconv(x))
+    return x
+
+
+class D(nn.Module):
+  """
+  Discriminator for the DCGAN.
+
+  Arguments
+  ---------
+
+  """
+  def __init__(self, sc:int=64, expand:int=2):
+    super().__init__()
+
+    self.layers_dict, self.fconv = create_layers(3, sc, 2, 1, 1, 0, conv, 1)
+
+  def forward(self, x):
+    for name, layer in self.layers_dict.items():
+      x = F.leaky_relu(layer(x), negative_slope=0.2, inplace=True)
+    x = F.sigmoid(self.fconv(x))
+    print (x.shape)
+    x = x.view(-1, 1)
     return x
