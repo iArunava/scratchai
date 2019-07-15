@@ -44,7 +44,6 @@ class G(nn.Module):
   """
   def __init__(self, sc:int=512, zc:int=100):
     super().__init__()
-
     self.layers_dict, self.fconv = create_layers(zc, sc, 1, 0, 2, 1, convt, 3)
 
   def forward(self, x):
@@ -64,7 +63,6 @@ class D(nn.Module):
   """
   def __init__(self, sc:int=64, expand:int=2):
     super().__init__()
-
     self.layers_dict, self.fconv = create_layers(3, sc, 2, 1, 1, 0, conv, 1)
 
   def forward(self, x):
