@@ -123,12 +123,12 @@ class Trainer():
     if metric() < self.best_loss:
       self.best_loss = metric()
       torch.save({'net'   : self.net.state_dict(), 
-                  'optim' : self.optim.state_dict()},
+                  'optim' : self.optimizer.state_dict()},
                   'best_net-{:.2f}.pth'.format(metric()))
 
   def save_epoch_model(self, e):
     torch.save({'net' : self.net.cpu().state_dict(), 
-                'opti' : self.optim.state_dict()},
+                'opti' : self.optimizer.state_dict()},
                 'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
   def get_curr_val_acc(self):
@@ -197,12 +197,12 @@ class Trainer():
       
     
   def get_loss(self, out, target):
-    self.loss = self.crit(out, target)
+    self.loss = self.criterion(out, target)
     
   def update(self):
-    self.optim.zero_grad()
+    self.optimizer.zero_grad()
     self.loss.backward()
-    self.optim.step()
+    self.optimizer.step()
   
   def before_test(self):
     self.net.to(self.device)
@@ -212,6 +212,7 @@ class Trainer():
   def show_batch(self):
     x, _ = next(iter(self.train_loader))
     imgutils.imshow(x, normd=True)
+
 
   def test(self):
     self.before_test()
@@ -238,7 +239,7 @@ class Trainer():
     """
     # See: https://discuss.pytorch.org/t/adaptive-learning-rate/320/4
     self.lr /= (1. / self.lr_decay)
-    for pgroup in self.optim.param_groups: pgroup['lr'] = self.lr
+    for pgroup in self.optimizer.param_groups: pgroup['lr'] = self.lr
     print ('[INFO] Learning rate decreased to {}'.format(lr))
 
   def plot_train_vs_val(self):
@@ -426,16 +427,16 @@ class SegAuxTrainer(SegTrainer):
     self.loss = 0
     for name, x in out.items():
       weight = self.loss_wdict[name] if name in self.loss_wdict else 0.5
-      self.loss += weight * self.crit(x, target)
+      self.loss += weight * self.criterion(x, target)
 
   def update_metrics(self, out, labl, part):
     super().update_metrics(out['out'], labl, part)
 
 
 
-# =====================================================================
+# =============================================================================
 # FitOneBatch
-# =====================================================================
+# =============================================================================
 class FitOneBatch():
   """
   Class to fit one batch.
@@ -473,9 +474,9 @@ class SegFitOneBatch(FitOneBatch, SegTrainer):
     self.set_new_loaders()
 
 
-# =====================================================================
+# =============================================================================
 # Evaluaters
-# =====================================================================
+# =============================================================================
 
 class SegEvaluater(SegTrainer):
   def __init__(self, **kwargs):

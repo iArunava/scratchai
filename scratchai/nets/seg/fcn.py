@@ -121,8 +121,7 @@ class FCN(nn.Module):
     dconv_ks = 64; dconv_s = 32
     self.pad_input = pad_input
     #self.backbone = backbone
-    self.backbone = nn.Sequential(nn.Conv2d(3, 10, 1, 1, 0), nn.ReLU(),
-                                  nn.Conv2d(10, 256, 1, 1, 0))
+    self.backbone = nn.Sequential(nn.Conv2d(3, 256, 1, 1, 0), nn.ReLU())
     self.aux_classifier = aux_classifier
     
     """
@@ -150,7 +149,7 @@ class FCN(nn.Module):
                                 getattr(self, str(key)+str(ii+1))]
       dconv_ks, dconv_s = 4, 2
     """
-    self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, **kwargs)
+    #self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, **kwargs)
 
 
   def forward(self, x):
@@ -180,7 +179,8 @@ class FCN(nn.Module):
     # Cropping the image to the required size (as mentioned by shape)
     out['out'] = center_crop(sout, x_shape)
     """
-    out = center_crop(self.fcn_head(features_out), x_shape)
+    #features_out = self.fcn_head(features_out)
+    out = center_crop(features_out, x_shape)
     return out
 
 
