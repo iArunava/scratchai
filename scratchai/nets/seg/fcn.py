@@ -118,11 +118,10 @@ class FCN(nn.Module):
                    The number of skip connections the net will have.
   """
   def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
-               pad_input:bool=False, **kwargs):
+               **kwargs):
     super().__init__()
 
     dconv_ks = 64; dconv_s = 32
-    self.pad_input = pad_input
     #self.backbone = backbone
     #self.backbone = nn.Sequential(nn.Conv2d(3, nc, 5, 1, 1), nn.ReLU())
     self.backbone = nn.Sequential(nn.Conv2d(3, 256, 5, 3, 0), nn.ReLU())
@@ -158,9 +157,6 @@ class FCN(nn.Module):
 
   def forward(self, x):
     x_shape = x.shape[-2:]
-    if self.pad_input:
-      x = F.pad(x, (100, 100, 100, 100), mode='constant', value=0)
-      pass
     
     out = OrderedDict()
     features_out = self.backbone(x)
@@ -213,9 +209,13 @@ def get_fcn(nc, aux, features, return_layers:dict, head_ic, **kwargs):
             The number of in_channels to the FCN Head.
   """
   backbone = InterLayer(features, return_layers)
+  # NOTE Assumes all backbones have their first backbone.net[0] returning the 
+  # first conv layer.
+  backbone.net[0].padding = (100, 100)
+  print ('[INFO] Increased the padding of the first Convolutional Layer to 100')
   aux_classifier = FCNHead(ic=head_ic, oc=nc) if aux else None
   return FCN(head_ic=head_ic, backbone=backbone, nc=nc, 
-             aux_classifier=aux_classifier, pad_input=True, **kwargs)
+             aux_classifier=aux_classifier, **kwargs)
 
 
 
