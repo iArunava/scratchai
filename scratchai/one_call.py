@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms as T
 from matplotlib.gridspec import GridSpec
-from scratchai.nets.style_transfer.image_transformation_net import ITN_ST
 from scratchai.datasets.labels import *
 from scratchai.pretrained import urls
 from scratchai import *
@@ -152,6 +151,9 @@ def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   normalizes it using imagenet specific normalization values and passes it to 
   a resnet output the predicted value.
   """
+  # Function specific imports
+  from scratchai.nets.style_transfer.image_transformation_net import ITN_ST
+
   avbl_styles = ['elephant_skin', 'snake_skin']
   if style is None: style = np.random.choice(avbl_styles, 1)[0]
   sdict = utils.load_from_pth(getattr(urls, style + '_url'), style)
