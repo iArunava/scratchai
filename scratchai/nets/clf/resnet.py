@@ -132,20 +132,20 @@ class Resnet(nn.Module):
        block:nn.Module=resblock, ic:int=3, oc1:int=64, **kwargs):
     super().__init__()
 
-    layers = [*conv(ic, oc1, 7, 2, 3),
+    features = [*conv(ic, oc1, 7, 2, 3),
               nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
               *res_stage(block, oc1, oc1*ex, layers[0], dflag=False, **kwargs),
               *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
               *res_stage(block, oc1*ex*2, oc1*ex*4, layers[2], **kwargs),
-              *res_stage(block, oc1*ex*4, oc1*ex*8, layers[3], **kwargs),
-              nn.AdaptiveAvgPool2d((1, 1))]
-    self.net = nn.Sequential(*layers)
-    
+              *res_stage(block, oc1*ex*4, oc1*ex*8, layers[3], **kwargs)]
+    self.features = nn.Sequential(*features)
+    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
     self.fc = nn.Linear(512*ex, nc)
 
   def forward(self, x):
     bs = x.size(0)
-    x = self.net(x)
+    x = self.features(x)
+    x = self.avgpool(x)
     x = x.view(bs, -1)
     x = self.fc(x)
     return x
