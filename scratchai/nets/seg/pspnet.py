@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from torch.nn import functional as F
+from collections import OrderedDict
 
 from scratchai import nets
 from scratchai.nets.common import InterLayer
