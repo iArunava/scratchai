@@ -87,30 +87,37 @@ class Trainer():
     self.loss  = 0.0
 
     if verbose: print (self.__str__())
+    
   
   def fit(self):
     """
     This function is used to train the classification networks.
     """
+    self.set_seed()
+    for e in range(self.epochs):
+      self.fit_body()
+      # Increase completed epochs by 1
+      self.epochs_complete += 1
+
+  def set_seed(self):
     torch.manual_seed(self.seed)
     np.random.seed(self.seed)
     # TODO Make a function which prints out all the info.
     # And call that before calling fit, maybe in the constructor
     print ('[INFO] Setting torch seed to {}'.format(self.seed))
     
-    for e in range(self.epochs):
-      if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
-      
-      self.before_epoch_start()
-      self.train()
-      self.test()
-      self.save_if_best(self.get_curr_val_loss)
-      self.show_epoch_details(e)
-      self.save_epoch_model(e)
 
-      # Increase completed epochs by 1
-      self.epochs_complete += 1
-  
+  def fit_body(self):
+    if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
+    
+    self.before_epoch_start()
+    self.train()
+    self.test()
+    self.save_if_best(self.get_curr_val_loss)
+    self.show_epoch_details(e)
+    self.save_epoch_model(e)
+
+
   def before_epoch_start(self):
     self.t_lossmtr.create_and_shift_to_new_slot()
     self.v_lossmtr.create_and_shift_to_new_slot()
