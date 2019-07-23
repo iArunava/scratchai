@@ -9,15 +9,16 @@ from scratchai.nets.utils import get_net
 from scratchai.nets.common import Flatten
 from scratchai.pretrained import urls
 
-__all__ = ['VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 
+__all__ = ['VGG', 'vgg11', 'vgg11_dilated', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 
            'vgg16_bn', 'vgg19', 'vgg19_bn', 'vgg_block']
 
 
-def vgg_block(ic:int, oc:int, k:int=3, s:int=1, p:int=1, norm:bool=True):
-  layers = [nn.Conv2d(ic, oc, k, s, p, bias=True)]
+def vgg_block(ic:int, oc:int, k:int=3, s:int=1, p:int=1, d:int=1, norm:bool=True):
+  layers = [nn.Conv2d(ic, oc, k, s, p, dilation=d, bias=True)]
   if norm: layers += [nn.BatchNorm2d(oc)]
   layers += [nn.ReLU(inplace=True)]
   return layers
+
 
 def linear(inn:int, onn:int, drop:bool=True):
   layers = [nn.Linear(inn, onn)]
@@ -46,15 +47,15 @@ class VGG(nn.Module):
          Defaults to True.
   """
   def __init__(self, nc=1000, lconf:list=[1, 1, 2, 2, 2], ic:int=3, 
-               norm:bool=True):
+               norm:bool=True, dilation:int=1):
     super().__init__()
     
     ic = ic; oc = 64
     features = []
     for l in lconf:
-      features += vgg_block(ic, oc, norm=norm)
+      features += vgg_block(ic, oc, d=dilation, norm=norm)
       ic = oc
-      for _ in range(l-1): features += vgg_block(ic, oc, norm=norm)
+      for _ in range(l-1): features += vgg_block(ic, oc, d=dilation, norm=norm)
       oc *= 2 if oc*2 <= 512 else 1
       features += [nn.MaxPool2d(2, 2)]
     
@@ -70,6 +71,13 @@ class VGG(nn.Module):
     return x
 
   
+def vgg11_dilated(pretrained=True, **kwargs):
+  kwargs['lconf'] = [1, 1, 2, 2, 2]
+  kwargs['norm']  = False
+  kwargs['dilation'] = 2
+  return get_net(VGG, pretrained=pretrained, pretrain_url=urls.vgg11, 
+                 fname='vgg11', kwargs_net=kwargs, attr='classifier',
+                 inn=25088)
 # =======================================================================
 # VGG A 
 # =======================================================================
