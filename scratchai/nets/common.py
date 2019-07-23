@@ -44,9 +44,14 @@ class InterLayer(nn.Module):
   def __init__(self, net, return_layers):
     super().__init__()
     #assert type(net) in [str, nn.Module, nn.Sequential]
+    # TODO Remove this print after there is a nice check that this sorted thing
+    # is indeed the case.
+    print ('[INFO] The layers in return_layers needs to be in a sorted fashion'\
+           'Eg: ["skip1", "aux1", "skip2"], but not ["skip2", "aux1", "skip1"]')
     if isinstance(net, str): net = getattr(nets, net)()
     self.net = net
     self.return_layers = return_layers
+    self.find_ocs(self.return_layers)
   
   def forward(self, x):
     out = OrderedDict()
@@ -57,23 +62,44 @@ class InterLayer(nn.Module):
       
       if len(self.return_layers) == len(out): break
     return out
+  
 
-  def get_oc_for(self, layer_names):
+  def get_ocs(self, type_out):
+    type_out = type_out.lower()
+    if type_out.startswith('skip'): return self.skip_outs
+    elif type_out.startswith('aux') : return self.aux_outs
+    elif type_out.startswith('out') : return self.outs
+    else: raise NotImplementedError('The type is not present')
+
+
+  def find_ocs(self, layer_names):
     # TODO Optimize this function. No need to go over all the children.
-    # NOTE Major assumption here: Only nn.Conv2d layers change the number
+    # NOTE Major assumption here: Only *nn.Conv2d* layers change the number
     # of channels. Probably this is not true.
-    out = {}
+
+    self.skip_outs = OrderedDict()
+    self.aux_outs = OrderedDict()
+    self.outs = OrderedDict()
+
     # NOTE The following line of code is wrong if inputs are grayscale.
     curr_oc = 3
     for name, layer in self.net.named_children():
       if isinstance(layer, nn.Conv2d):
         curr_oc = layer.out_channels
       if name in layer_names:
-        out[layer_names[name]] = curr_oc
+        key = layer_names[name]
+        if key.startswith('skip'):
+          self.skip_outs[layer_names[name]] = curr_oc
+        elif key.startswith('aux'):
+          self.aux_outs[layer_names[name]] = curr_oc
+        else:
+          self.outs[layer_names[name]] = curr_oc
+      
+      # Breaking out if all the required layers are found.
       if len(out) == len(layer_names): break
+
     # This reversing is necessary. For working of the FCN Model.
-    out = OrderedDict(reversed(list(out.items())))
-    return out
+    #out = OrderedDict(reversed(list(out.items())))
 
 
 class Flatten(nn.Module):

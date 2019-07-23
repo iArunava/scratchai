@@ -122,22 +122,14 @@ class FCN(nn.Module):
     super().__init__()
 
     dconv_ks = 64; dconv_s = 32
-    #self.backbone = backbone
-    #self.backbone = nn.Sequential(nn.Conv2d(3, nc, 5, 1, 1), nn.ReLU())
-    self.backbone = nn.Sequential(nn.Conv2d(3, 256, 5, 3, 0), nn.ReLU())
+    self.backbone = backbone
     self.aux_classifier = aux_classifier
     
-    """
     # Creating Extra Convolutional Layers as required.
-    skips = deepcopy(self.backbone.return_layers)
-    # TODO Think of a way to not reverse the dict twice.
-    skips = dict((v, k) for k, v in skips.items())
-    skips.pop('out', None); skips.pop('aux', None)
-    skips = dict((v, k) for k, v in skips.items())
     self.skip_dicts = OrderedDict()
     num_skips = len(skips)
     if num_skips > 0:
-      channels_dict = self.backbone.get_oc_for(skips)
+      channels_dict = self.backbone.get_ocs('skips')
       for ii, (key, val) in enumerate(channels_dict.items()):
         if (num_skips-1) == ii:
           dfactor = 2 << ii
@@ -145,13 +137,19 @@ class FCN(nn.Module):
         else:
           dc_ks, dc_s = (4, 2)
         
-        setattr(self, str(key)+str(ii), nn.Conv2d(val, nc, 1, 1, 0))
-        setattr(self, str(key)+str(ii+1), nn.ConvTranspose2d(nc, nc, dc_ks, 
-                                                             dc_s, bias=False))
-        self.skip_dicts[key] = [getattr(self, str(key)+str(ii)),
-                                getattr(self, str(key)+str(ii+1))]
+        key1 = str(key) + str(ii)
+        key2 = str(key) + str(ii+1)
+
+        setattr(self, key1, nn.Conv2d(val, nc, 1, 1, 0))
+        setattr(self, key2, nn.ConvTranspose2d(nc, nc, dc_ks, dc_s, bias=False))
+
+        getattr(self, key2).weight.data.copy_(bilinear_kernel(oc, oc, dconv_ks))
+        getattr(self, key2).weight.requires_grad_(False)
+
+        self.skip_dicts[key] = [getattr(self, key1), getattr(self, key2)]
+
       dconv_ks, dconv_s = 4, 2
-    """
+
     self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, **kwargs)
 
 

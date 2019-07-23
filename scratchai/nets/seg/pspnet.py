@@ -67,9 +67,10 @@ class PSPNet(nn.Module):
     super().__init__()
     self.backbone = backbone
     self.aux_clf = None
-    layers_dict = self.backbone.get_oc_for(self.backbone.return_layers)
     head_ic = head_ic
     self.head = PyramidPooling(head_ic)
+
+    layers_dict = self.backbone.get_oc_for(self.backbone.return_layers)
     self.drop1 = nn.Dropout2d(0.3, inplace=True)
     self.drop2 = nn.Dropout2d(0.15, inplace=True)
     

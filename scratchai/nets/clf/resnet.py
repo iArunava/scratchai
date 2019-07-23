@@ -30,12 +30,6 @@ class resblock(nn.Module):
        # of input channels
   oc : int
        # of output channels
-  ks : int
-       kernel_size of the mid_conv
-  s : int
-      stride of the mid_conv
-  p : int
-      padding of the mid_conv
   norm : nn.Module
          The Normalization to be used.
   act : bool
@@ -90,7 +84,7 @@ def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int, dflag:bool=True,
        # of input channels
   oc : int
        # of output channels
-  num_layers - int
+  num_layers : int
                # of blocks to be stacked
   dflag : bool
           Whether the first resblock needs to perform downsampling.
@@ -162,6 +156,10 @@ def resnet18_mnist(pretrained=False, **kwargs):
   '''
   return net
   
+
+# =============================================================================
+# Resnet18
+# =============================================================================
 def resnet18(pretrained=True, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
   cust_nc = None
@@ -172,6 +170,10 @@ def resnet18(pretrained=True, **kwargs):
     return load_pretrained(net, urls.resnet18_url, 'resnet18', nc=cust_nc)
   return net
 
+
+# =============================================================================
+# Resnet34
+# =============================================================================
 def resnet34(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   cust_nc = None
@@ -181,6 +183,10 @@ def resnet34(pretrained=True, **kwargs):
     return load_pretrained(net, urls.resnet34_url, 'resnet34', nc=cust_nc)
   return net
 
+
+# =============================================================================
+# Resnet50
+# =============================================================================
 def resnet50(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   kwargs['btype'] = 'bottleneck'
@@ -193,6 +199,10 @@ def resnet50(pretrained=True, **kwargs):
                            inn=512*kwargs['ex'])
   return net
 
+
+# =============================================================================
+# Resnet101
+# =============================================================================
 def resnet101(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 23, 3]
   kwargs['btype'] = 'bottleneck'
@@ -205,6 +215,10 @@ def resnet101(pretrained=True, **kwargs):
                            inn=512*kwargs['ex'])
   return net
 
+
+# =============================================================================
+# Resnet152
+# =============================================================================
 def resnet152(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 8, 36, 3]
   kwargs['btype'] = 'bottleneck'
