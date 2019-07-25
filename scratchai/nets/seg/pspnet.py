@@ -137,7 +137,7 @@ def pspnet_alexnet(nc=21, aux:bool=False, **kwargs):
   return get_pspnet(nc, aux, nets.clf.alexnet().features, return_layers, head_ic=256, **kwargs)
 
 
-def pspnet_resnet101(nc=21, aux:bool=False, **kwargs):
+def pspnet_resnet50(nc=21, aux:bool=False, **kwargs):
   return_layers = {'36': 'out'}
   if aux: return_layers ['22'] = 'aux'
-  return get_pspnet(nc, aux, nets.clf.resnet101().features, return_layers, head_ic=2048, **kwargs)
+  return get_pspnet(nc, aux, nets.clf.resnet_dilated('resnet50').features, return_layers, head_ic=2048, **kwargs)
