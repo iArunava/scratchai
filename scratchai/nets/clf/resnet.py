@@ -11,12 +11,12 @@ from scratchai.utils import load_from_pth, load_pretrained
 
 
 __all__ = ['resnet18_mnist', 'resnet18', 'resnet34', 'resnet50', 'resnet50', 
-           'resnet101', 'resnet152']
+           'resnet101', 'resnet152', 'resnet_dilated']
 
 
-def conv(ic:int, oc:int, ks:int=3, s:int=1, d:int=1, p:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
-  #p = d if d > 1 else p
-  layers = [nn.Conv2d(ic, oc, kernel_size=ks, stride=s, padding=p, bias=not norm)]
+def conv(ic:int, oc:int, ks:int=3, s:int=1, p:int=1, d:int=1, norm:nn.Module=nn.BatchNorm2d, act:bool=True):
+  p = d if d > 1 else p
+  layers = [nn.Conv2d(ic, oc, ks, s, p, dilation=d, bias=not norm)]
   if norm: layers += [norm(oc)]
   if act: layers += [nn.ReLU(inplace=True)]
   return layers
@@ -63,7 +63,7 @@ class resblock(nn.Module):
     elif btype == 'bottleneck':
         interc = oc // 4
         self.main = nn.Sequential(*conv(ic, interc, 1, 1, 0), \
-                                  *conv(interc, interc, s=s),
+                                  *conv(interc, interc, s=s, d=dilation),
                                   *conv(interc, oc, 1, 1, 0, act=None),)
     self.act = nn.ReLU(inplace=True)
     
@@ -143,22 +143,25 @@ class Resnet(nn.Module):
 
   def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=0,
        block:nn.Module=resblock, ic:int=3, oc1:int=64, dilate_last:int=0,
-       downx:int=32, **kwargs):
+       downx:int=32, dilation:int=1, increase_dilation_by_2:bool=True, **kwargs):
     super().__init__()
     
     features = [*conv(ic, oc1, 7, 2, 3), nn.MaxPool2d(3, 2, 1)]
     blocks = len(layers)
     curr_dilation = 1
-    ps1_last = blocks - np.log2(downx)
+    ps1_last = blocks - np.log2(downx) + 1
 
     for ii, layer in enumerate(layers):
-      if ii >= (blocks-ps1_last): pool_stride = 1
-      if ii >= (blocks-dilate_last): curr_dilation = dilation
       dflag = False if ii == 0 else True
+      if ii >= (blocks-ps1_last): dflag = False
+      if ii >= (blocks-dilate_last):
+        curr_dilation = dilation
+        if increase_dilation_by_2:
+          dilation *= 2
       
       features += res_stage(block, oc1*(1<<(ex*int(0<ii)))*(1<<max(0, ii-1)),  \
                             oc1*(1<<(ex*int(0<(ii+1))))*(1<<(ii)), \
-                            layer, dflag=dflag, **kwargs)
+                            layer, dflag=dflag, dilation=curr_dilation, **kwargs)
 
 
     self.features = nn.Sequential(*features)
@@ -192,6 +195,15 @@ def resnet18_mnist(pretrained=False, **kwargs):
   '''
   return net
   
+
+def resnet_dilated(resnet='resnet50', pretrained=True, **kwargs):
+  kwargs['dilation'] = 2
+  kwargs['dilate_last'] = 2
+  kwargs['increase_dilation_by_2'] = True
+  kwargs['downx'] = 8
+  return globals()[resnet](pretrained=pretrained, **kwargs)
+
+
 def resnet18(pretrained=True, **kwargs):
   kwargs['layers'] = [2, 2, 2, 2]
   cust_nc = None
