@@ -118,7 +118,6 @@ def res_stage(block:nn.Module, ic:int, oc:int, num_layers:int, dflag:bool=True,
   layers : list
            A list containing all the nn.Module that is required for this layer.
   """
-  print (ic, oc, 'j')
   layers = [block(ic, oc, dflag=dflag, btype=btype, fdown=fdown, \
                   dilation=dilation)]
   layers += [block(oc, oc, btype=btype, dilation=dilation) \
@@ -142,20 +141,11 @@ class Resnet(nn.Module):
           # of conv layers in each Residual Block
   """
 
-  def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=1, 
+  def __init__(self, layers:list, nc:int=1000, lconv:int=2, ex:int=0,
        block:nn.Module=resblock, ic:int=3, oc1:int=64, dilate_last:int=0,
        downx:int=32, **kwargs):
     super().__init__()
     
-    """
-    features = [*conv(ic, oc1, 7, 2, 3),
-              nn.MaxPool2d(3, 2, 1),
-              *res_stage(block, oc1, oc1*ex, layers[0], dflag=False, **kwargs),
-              *res_stage(block, oc1*ex, oc1*ex*2, layers[1], **kwargs),
-              *res_stage(block, oc1*ex*2, oc1*ex*4, layers[2], **kwargs),
-              *res_stage(block, oc1*ex*4, oc1*ex*8, layers[3], **kwargs)]
-    """
-
     features = [*conv(ic, oc1, 7, 2, 3), nn.MaxPool2d(3, 2, 1)]
     blocks = len(layers)
     curr_dilation = 1
@@ -164,12 +154,8 @@ class Resnet(nn.Module):
     for ii, layer in enumerate(layers):
       if ii >= (blocks-ps1_last): pool_stride = 1
       if ii >= (blocks-dilate_last): curr_dilation = dilation
-      dflag = True if ii == 0 else False
+      dflag = False if ii == 0 else True
       
-      #features += self._make_stage(ii, ex, layers, dflag, **kwargs)
-      #print (1<<(max(0, ii-1)), 1<<ii)
-      #print (1<<(ex*int(0<ii)), 1<<(ex*int(0<(ii+1))))
-      print (oc1*(1<<(ex*int(0<ii)))*(1<<max(0, ii-1)), oc1*(1<<(ex*int(0<(ii+1))))*(1<<(ii)))
       features += res_stage(block, oc1*(1<<(ex*int(0<ii)))*(1<<max(0, ii-1)),  \
                             oc1*(1<<(ex*int(0<(ii+1))))*(1<<(ii)), \
                             layer, dflag=dflag, **kwargs)
@@ -228,7 +214,7 @@ def resnet34(pretrained=True, **kwargs):
 def resnet50(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 6, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4; kwargs['fdown'] = True
+  kwargs['ex'] = 2; kwargs['fdown'] = True
   cust_nc = None
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
@@ -240,7 +226,7 @@ def resnet50(pretrained=True, **kwargs):
 def resnet101(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 4, 23, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4; kwargs['fdown'] = True
+  kwargs['ex'] = 2; kwargs['fdown'] = True
   cust_nc = None
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
@@ -252,7 +238,7 @@ def resnet101(pretrained=True, **kwargs):
 def resnet152(pretrained=True, **kwargs):
   kwargs['layers'] = [3, 8, 36, 3]
   kwargs['btype'] = 'bottleneck'
-  kwargs['ex'] = 4; kwargs['fdown'] = True
+  kwargs['ex'] = 2; kwargs['fdown'] = True
   cust_nc = None
   if pretrained and 'nc' in kwargs: cust_nc = kwargs['nc']; kwargs['nc'] = 1000
   net = Resnet(**kwargs)
