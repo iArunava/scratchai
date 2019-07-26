@@ -25,6 +25,9 @@ class GANTraniner(Trainer):
     super().__init__(**kwargs)
     self.G = G
     self.D = self.net
+
+    self.real = 1
+    self.fake = 0
     
     # Setting up the optimizers
     assert isinstance(self.opt, tuple) and len(tuple) == 2
@@ -42,4 +45,25 @@ class GANTraniner(Trainer):
 
   def fit_body(self):
     self.before_epoch_start()
+    self.train()
+
+  
+  def trainD(self, data):
+    real = self.D(data)
+    label = torch.full((self.batch_size,), self.real, device=self.device)
+    loss = self.criterion(real, label)
+    
+    # NOTE This was at the start, make sure, this doesn't change things
+    self.optD.zero_grad()
+
+
+  def train_body(self):
+    raise NotImplementedError
+    for ii, (rimages, _) in enumerate(tqdm(self.tran_loader)):
+      rimages = rimages.to(self.device)
+      
+      # Train the Discriminator
+      self.trainD(rimages)
+
+
     

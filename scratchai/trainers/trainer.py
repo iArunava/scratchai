@@ -53,16 +53,16 @@ class Trainer():
     self.nc           = nc
     self.net          = net
     self.topk         = topk
-    self.criterion         = criterion
     self.seed         = seed
-    self.optimizer        = optimizer
     self.device       = torch.device(device)
     self.epochs       = epochs
     self.lr_step      = lr_step
     self.lr_decay     = lr_decay
+    self.optimizer    = optimizer
+    self.criterion    = criterion
+    self.batch_size   = self.train_loader.batch_size
     self.val_loader   = val_loader
     self.train_loader = train_loader
-    self.batch_size   = self.train_loader.batch_size
     
     self.best_loss  = float('inf')
     self.epochs_complete = 0
@@ -161,7 +161,11 @@ class Trainer():
   def train(self):
     
     self.before_train()
-
+    self.train_body()
+    self.store_details(part='train')
+  
+  
+  def train_body(self):
     for ii, (data, labl) in enumerate(tqdm(self.train_loader)):
       data, labl = data.to(self.device), labl.to(self.device)
       out = self.net(data)
@@ -170,9 +174,7 @@ class Trainer():
       self.update()
       self.update_metrics(out, labl, part='train')
     
-    self.store_details(part='train')
-  
-  
+
   def fit_one_batch(self):
     fobatch = ClfFitOneBatch(**vars(self))
     fobatch.fit()
