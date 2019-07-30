@@ -57,7 +57,7 @@ class GANTraniner(Trainer):
 
   def trainD(self, data):
     real = self.D(data)
-    label.fill_(self.real)
+    self.label.fill_(self.real)
     rloss = self.criterion(real, label)
 
     self.optD.zero_grad()
@@ -71,7 +71,7 @@ class GANTraniner(Trainer):
     z = self.create_random_noise()
     
     fimages = self.G(z)
-    label.fill_(self.fake)
+    self.label.fill_(self.fake)
     # NOTE This detach is very much needed for things to work!
     # Its the first Big Bug I faced while coding DCGAN
     fake = self.D(fimages.detach())
@@ -80,16 +80,29 @@ class GANTraniner(Trainer):
 
     dloss = rloss + floss
     self.optD.step()
-    
-    
 
+    return fimages
+    
+    
+  def trainG(self, data):
+    self.label.fill_(self.real)
+    fake = self.D(data)
+    gloss = self.criterion(fake, label)
+    # TODO Move the below two lines in updateG()
+    gloss.backward()
+    self.optG.step()
+    
+  
   def train_body(self):
     raise NotImplementedError
     for ii, (rimages, _) in enumerate(tqdm(self.tran_loader)):
       rimages = rimages.to(self.device)
       
       # Train the Discriminator
-      self.trainD(rimages)
+      fimages = self.trainD(rimages)
+
+      # Train the Generator
+      self.trainG(fimages)
 
 
     
