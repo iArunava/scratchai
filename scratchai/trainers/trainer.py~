@@ -135,7 +135,7 @@ class Trainer():
 
   def save_epoch_model(self, e):
     torch.save({'net' : self.net.cpu().state_dict(), 
-                'optim' : self.optimizer.state_dict()},
+                'opti' : self.optimizer.state_dict()},
                 'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
   def get_curr_val_acc(self):

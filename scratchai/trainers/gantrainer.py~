@@ -38,6 +38,8 @@ class GANTraniner(Trainer):
     
     self.lossD = AvgMeter('Discriminator Loss')
     self.lossG = AvgMeter('Generator Loss')
+
+    self.train_list = []
   
 
   def before_epoch_start():
@@ -78,7 +80,7 @@ class GANTraniner(Trainer):
     floss = self.criterion(fake, label)
     floss.backward()
 
-    dloss = rloss + floss
+    self.dloss = rloss + floss
     self.optD.step()
 
     return fimages
@@ -87,22 +89,50 @@ class GANTraniner(Trainer):
   def trainG(self, data):
     self.label.fill_(self.real)
     fake = self.D(data)
-    gloss = self.criterion(fake, label)
+    self.gloss = self.criterion(fake, label)
     # TODO Move the below two lines in updateG()
-    gloss.backward()
+    self.gloss.backward()
     self.optG.step()
     
   
   def train_body(self):
     raise NotImplementedError
-    for ii, (rimages, _) in enumerate(tqdm(self.tran_loader)):
+    for ii, (rimages, _) in enumerate(tqdm(self.train_loader)):
       rimages = rimages.to(self.device)
+      self.D.to(self.device)
+      self.G.to(self.device)
       
       # Train the Discriminator
       fimages = self.trainD(rimages)
-
       # Train the Generator
       self.trainG(fimages)
+      
+      self.update_metrics(self)
+      # Skipping the save_if_best() as there's no hard and fast rule which
+      # can say looking at the losses whether the generator is performing better
+      #self.save_if_best()
 
+      # TODO Implement the functions below
+      # Show epoch details
+      self.show_epoch_details(e)
+      # Save epoch model
+      self.save_epoch_model(e)
+  
 
+  def update_metrics(self):
+    self.lossD(self.dloss)
+    self.lossG(self.gloss)
     
+
+  def store_details(self, part):
+    self.train_list.append((self.lossD.get_curr_slot_avg(),
+                            self.lossG.get_curr_slot_avg()))
+  
+  def show_epoch_details(self, e):
+      print ('Epoch: {}/{} - DLoss: {:3f} - GLoss: {:3f}'.format(e, self.epochs,
+             self.train_list[-1][0], self.train_list[-1][1]))
+
+  def save_epoch_model(self):
+      torch.save({'net' : self.G.state_dict(),
+                  'optim' : self.optG.state_dict()},
+                  'G-{}-{}'.format(e, self.train_list[-1][1]))
