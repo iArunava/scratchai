@@ -18,6 +18,14 @@ from scratchai import utils
 from scratchai._config import CIFAR10, MNIST, SKY_SEG
 from scratchai.datasets import *
 
+
+
+# =============================================================================
+# 
+# Classification Trainers
+#
+# =============================================================================
+
 def dogs_and_cats(net, **kwargs):
   # NOTE Not Working
   """
@@ -144,6 +152,11 @@ def custom(net, tloader, vloader, **kwargs):
   return trainer
 
 
+# =============================================================================
+# 
+# Segmentation QuickTrainers
+#
+# =============================================================================
 def sky_segmentation(net, **kwargs):
   """
   Train on Sky Segmentation Dataset.
@@ -187,6 +200,20 @@ def sky_segmentation(net, **kwargs):
 
   return sky
 
+
+# =============================================================================
+# TODO I think "Trainers" is not the right word. 
+# Gan Trainers
+#
+# =============================================================================
+
+
+
+# =============================================================================
+# 
+# Preprocessing Operations
+#
+# =============================================================================
 
 def preprocess_opts(net, dset:str=None, **kwargs):
   """

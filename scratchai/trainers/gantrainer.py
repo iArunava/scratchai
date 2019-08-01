@@ -93,7 +93,7 @@ class GANTraniner(Trainer):
     # TODO Move the below two lines in updateG()
     self.gloss.backward()
     self.optG.step()
-    
+   
   
   def train_body(self):
     raise NotImplementedError
