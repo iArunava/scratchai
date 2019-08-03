@@ -36,7 +36,7 @@ class Trainer():
   val_loader   : nn.utils.DataLoader
                  The Validation Loader.
   """
-  def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
+  def __init__(self, net, train_loader, val_loader=None, nc:int=None, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
                topk:tuple=(1, 5), verbose:bool=True, **kwargs):
@@ -60,9 +60,9 @@ class Trainer():
     self.lr_decay     = lr_decay
     self.optimizer    = optimizer
     self.criterion    = criterion
+    self.train_loader = train_loader
     self.batch_size   = self.train_loader.batch_size
     self.val_loader   = val_loader
-    self.train_loader = train_loader
     
     self.best_loss  = float('inf')
     self.epochs_complete = 0
@@ -89,27 +89,15 @@ class Trainer():
     if verbose: print (self.__str__())
     
   
-  def fit(self):
-    """
-    This function is used to train the classification networks.
-    """
-    self.set_seed()
-    for e in range(self.epochs):
-      self.fit_body()
-      # Increase completed epochs by 1
-      self.epochs_complete += 1
-
   def set_seed(self):
     torch.manual_seed(self.seed)
     np.random.seed(self.seed)
     # TODO Make a function which prints out all the info.
     # And call that before calling fit, maybe in the constructor
     print ('[INFO] Setting torch seed to {}'.format(self.seed))
-    
 
-  def fit_body(self):
+  def fit_body(self, e):
     if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
-    
     self.before_epoch_start()
     self.train()
     self.test()
@@ -117,7 +105,17 @@ class Trainer():
     self.show_epoch_details(e)
     self.save_epoch_model(e)
 
+  def fit(self):
+    """
+    This function is used to train the classification networks.
+    """
+    self.set_seed()
+    for e in range(self.epochs):
+      self.fit_body(e)
+      # Increase completed epochs by 1
+      self.epochs_complete += 1
 
+    
   def before_epoch_start(self):
     self.t_lossmtr.create_and_shift_to_new_slot()
     self.v_lossmtr.create_and_shift_to_new_slot()
@@ -159,7 +157,6 @@ class Trainer():
     self.net.train()
     
   def train(self):
-    
     self.before_train()
     self.train_body()
     self.store_details(part='train')

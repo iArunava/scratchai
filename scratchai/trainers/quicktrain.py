@@ -12,6 +12,7 @@ from torchvision import datasets, transforms
 
 from scratchai.imgutils import get_trf
 from scratchai.trainers.trainer import *
+from scratchai.trainers.gantrainer import GANTrainer
 from scratchai.trainers.optimizer import Optimizer
 from scratchai._config import home
 from scratchai import utils
@@ -207,6 +208,28 @@ def sky_segmentation(net, **kwargs):
 #
 # =============================================================================
 
+def dummy_gan(G, D, **kwargs):
+  """
+  Train on Dummy Data with GANs just to check everything is working.
+
+  Arguments
+  ---------
+
+  """
+  kwargs['gan'] = True
+  kwargs['net2'] = D
+  kwargs['bs'] = 2
+  root, bs, opti, crit, evaluate, kwargs = preprocess_opts(G, **kwargs)
+  trf = get_trf('tt_normimgnet')
+
+  t = GANDummyData()
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+
+  trainer = GANTrainer(G, net=D, criterion=crit, optimizer=opti,
+                       train_loader=tloader, verbose=False, **kwargs)
+
+  trainer.fit()
+  return trainer
 
 
 # =============================================================================
@@ -214,6 +237,39 @@ def sky_segmentation(net, **kwargs):
 # Preprocessing Operations
 #
 # =============================================================================
+
+def preprocess_gan_opts(G, D, **kwargs):
+  """
+  Helper function that abstracts away the preprocessing of the 
+  default kwargs for GANs.
+
+  Arguments
+  ---------
+  """
+  _kwargs = kwargs.copy()
+  if 'optim' not in _kwargs: _kwargs['optim'] = optim.Adam
+  if 'crit' not in _kwargs: _kwargs['crit'] = nn.BCELoss
+  if 'lrD' not in _kwargs: _kwargs['lrD'] = 1e-3
+  if 'lrG' not in _kwargs: _kwargs['lrG'] = 1e-3
+  if 'betasD' not in _kwargs: _kwargs['betasD'] = (0.0, 0.99)
+  if 'betasG' not in _kwargs: _kwargs['betasG'] = (0.0, 0.99)
+  if 'wdD' not in _kwargs: _kwargs['wdD'] = 5e-4
+  if 'wdG' not in _kwargs: _kwargs['wdG'] = 5e-4
+  if 'momD' not in _kwargs: _kwargs['momD'] = 0.9
+  if 'momG' not in _kwargs: _kwargs['momG'] = 0.9
+  if 'nestvD' not in _kwargs: _kwargs['nestvD'] = False
+  if 'nestvG' not in _kwargs: _kwargs['nestvG'] = False
+
+  optis = (Optimizer(_kwargs['optim'], G, lr=_kwargs['lrG'], weight_decay=_kwargs['wdG'],
+          momentum=_kwargs['momG'], nesterov=_kwargs['nestvG']), 
+          Optimizer(_kwargs['optim'], D, lr=_kwargs['lrD'], weight_decay=_kwargs['wdD'],
+          momentum=_kwargs['momD'], nesterov=_kwargs['nestvD']))
+  
+  crit = _kwargs['crit']()
+  return crit, optis
+
+
+
 
 def preprocess_opts(net, dset:str=None, **kwargs):
   """
@@ -223,7 +279,8 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   Arguments
   ---------
   net : nn.Module
-        The net to train.
+        The net to train. This is required cause the loading of ckpts happens
+        in this function itself.
   dset : str, None
          Name of the dataset.
   kwargs : dict
@@ -232,8 +289,14 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   -------
   dict : kwargs
          The passed dict with all the values.
-  """
 
+  Notes
+  -----
+  If gan, the net is the G, and I am passing an extra key in kwargs called net2
+  which will contain the D. This won't be needed when the preprocesing is made
+  into a class, so please change that while making this into a class.
+  """
+  # TODO Make the preprocess a Class Object for easy inheritance and usage
   if 'optim' not in kwargs: kwargs['optim'] = optim.SGD
   if 'crit' not in kwargs: kwargs['crit'] = nn.CrossEntropyLoss
   if 'lr' not in kwargs: kwargs['lr'] = 3e-4
@@ -250,6 +313,7 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   if 'root' not in kwargs: kwargs['root'] = home
   if 'evaluate' not in kwargs: kwargs['evaluate'] = False
   if 'bias_2lr' not in kwargs: kwargs['bias_2lr'] = False
+  if 'gan' not in kwargs: kwargs['gan'] = False
   
   # Set Dataset specific values if dset is not None here
 
@@ -264,10 +328,20 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   root = kwargs['root']; kwargs.pop('root', None)
   evaluate = kwargs['evaluate']; kwargs.pop('evaluate', None)
   bias_2lr = kwargs['bias_2lr']; kwargs.pop('bias_2lr', None)
-
-  crit = kwargs['crit']()
-  opti = Optimizer(kwargs['optim'], net, lr=lr, weight_decay=wd, momentum=mom,
-                   nesterov=nestv, bias_2lr=bias_2lr)
+  
+  # Prepare the criterion and the optimizer
+  if kwargs['gan']:
+    # NOTE Please don't do this. what you did in the line below.
+    # Remove it when preproces has its own object. Its not nice to remove the
+    # crit all of a sudden like this.t 
+    kwargs.pop('crit', None)
+    # TODO Key net2 won't be needed after making these into a class.
+    crit, opti = preprocess_gan_opts(net, kwargs['net2'], **kwargs)
+    kwargs.pop('net2', None)
+  else:
+    opti = Optimizer(kwargs['optim'], net, lr=lr, weight_decay=wd, momentum=mom,
+                     nesterov=nestv, bias_2lr=bias_2lr)
+    crit = kwargs['crit']()
   """
   opti_name = utils.name_from_object(kwargs['optim'])
   train_params = [p for p in net.parameters() if p.requires_grad]
@@ -281,21 +355,23 @@ def preprocess_opts(net, dset:str=None, **kwargs):
   """
 
   # Resume from ckpt (if ckpt is not None)
-  if kwargs['ckpt'] is not None:
-    ckpt = torch.load(kwargs['ckpt'])
-    print ('[INFO] Looking for key "opti" in ckpt file...')
-    opti.load_state_dict(ckpt['opti'])
-    # If optimizer is SGD, then momentum buffers needs to be moved to device
-    # See: https://discuss.pytorch.org/t/runtimeerror-expected-type-torch-
-    # floattensor-but-got-torch-cuda-floattensor-while-resuming-training/37936
-    if opti_name == 'sgd':
-      for p in opti.state.keys():
-        buf = opti.state[p]['momentum_buffer']
-        opti.state[p]['momentum_buffer'] = buf.cuda()
-    print ('[INFO] Found and loaded the optimizer state_dict')
-    print ('[INFO] Looking for key "net" in ckpt file...')
-    net.load_state_dict(ckpt['net'])
-    print ('[INFO] Found and loaded the model state_dict')
+  # TODO Handle the ckpt loading when its a gan
+  if kwargs['gan'] is False:
+    if kwargs['ckpt'] is not None:
+      ckpt = torch.load(kwargs['ckpt'])
+      print ('[INFO] Looking for key "opti" in ckpt file...')
+      opti.load_state_dict(ckpt['opti'])
+      # If optimizer is SGD, then momentum buffers needs to be moved to device
+      # See: https://discuss.pytorch.org/t/runtimeerror-expected-type-torch-
+      # floattensor-but-got-torch-cuda-floattensor-while-resuming-training/37936
+      if opti_name == 'sgd':
+        for p in opti.state.keys():
+          buf = opti.state[p]['momentum_buffer']
+          opti.state[p]['momentum_buffer'] = buf.cuda()
+      print ('[INFO] Found and loaded the optimizer state_dict')
+      print ('[INFO] Looking for key "net" in ckpt file...')
+      net.load_state_dict(ckpt['net'])
+      print ('[INFO] Found and loaded the model state_dict')
 
   # Pop keys from kwargs to avoid 
   # TypeError: got multiple values for 1 argument

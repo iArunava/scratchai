@@ -70,6 +70,5 @@ class D(nn.Module):
     for name, layer in self.layers_dict.items():
       x = F.leaky_relu(layer(x), negative_slope=0.2, inplace=True)
     x = F.sigmoid(self.fconv(x))
-    print (x.shape)
     x = x.view(-1, 1)
     return x

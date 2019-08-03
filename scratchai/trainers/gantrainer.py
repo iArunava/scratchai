@@ -5,13 +5,17 @@ This file stores the code that allows to train GANs.
 import torch
 import torch.nn as nn
 
+from tqdm import tqdm
+
+from scratchai.imgutils import imshow
 from scratchai.trainers.trainer import Trainer
+from scratchai.utils import AvgMeter
 
 
-__all__ = ['GANTraniner']
+__all__ = ['GANTrainer']
 
 
-class GANTraniner(Trainer):
+class GANTrainer(Trainer):
   """
   Class to Train GANs Normally.
 
@@ -32,35 +36,40 @@ class GANTraniner(Trainer):
     self.label = torch.full((self.batch_size,), self.real, device=self.device)
     
     # Setting up the optimizers
-    assert isinstance(self.opt, tuple) and len(tuple) == 2
+    assert isinstance(self.optimizer, tuple) and len(self.optimizer) == 2
     print ('[INFO] The first optimizer is assumed to be for the Generator!')
-    self.optG, self.optD = self.opt
+    self.optG, self.optD = self.optimizer
     
     self.lossD = AvgMeter('Discriminator Loss')
     self.lossG = AvgMeter('Generator Loss')
 
     self.train_list = []
+
+    self.z_size = 100
   
 
-  def before_epoch_start():
+  def before_epoch_start(self):
     self.lossD.create_and_shift_to_new_slot()
     self.lossG.create_and_shift_to_new_slot()
 
 
-  def fit_body(self):
+  def fit_body(self, e):
     self.before_epoch_start()
     self.train()
+    self.show_epoch_details(e)
+    self.save_epoch_model(e)
 
     
-  def create_random_noise(self):
+  def create_random_noise(self, bs=None):
     # The most simple way to create the noise
-    return torch.randn(batch_size, z_size, 1, 1, device=self.device)
+    bs = self.batch_size if bs is None else bs
+    return torch.randn(bs, self.z_size, 1, 1, device=self.device)
 
 
   def trainD(self, data):
     real = self.D(data)
     self.label.fill_(self.real)
-    rloss = self.criterion(real, label)
+    rloss = self.criterion(real, self.label)
 
     self.optD.zero_grad()
     
@@ -77,7 +86,7 @@ class GANTraniner(Trainer):
     # NOTE This detach is very much needed for things to work!
     # Its the first Big Bug I faced while coding DCGAN
     fake = self.D(fimages.detach())
-    floss = self.criterion(fake, label)
+    floss = self.criterion(fake, self.label)
     floss.backward()
 
     self.dloss = rloss + floss
@@ -89,14 +98,13 @@ class GANTraniner(Trainer):
   def trainG(self, data):
     self.label.fill_(self.real)
     fake = self.D(data)
-    self.gloss = self.criterion(fake, label)
+    self.gloss = self.criterion(fake, self.label)
     # TODO Move the below two lines in updateG()
     self.gloss.backward()
     self.optG.step()
    
   
   def train_body(self):
-    raise NotImplementedError
     for ii, (rimages, _) in enumerate(tqdm(self.train_loader)):
       rimages = rimages.to(self.device)
       self.D.to(self.device)
@@ -107,17 +115,11 @@ class GANTraniner(Trainer):
       # Train the Generator
       self.trainG(fimages)
       
-      self.update_metrics(self)
+      self.update_metrics()
       # Skipping the save_if_best() as there's no hard and fast rule which
       # can say looking at the losses whether the generator is performing better
       #self.save_if_best()
 
-      # TODO Implement the functions below
-      # Show epoch details
-      self.show_epoch_details(e)
-      # Save epoch model
-      self.save_epoch_model(e)
-  
 
   def update_metrics(self):
     self.lossD(self.dloss)
@@ -132,7 +134,15 @@ class GANTraniner(Trainer):
       print ('Epoch: {}/{} - DLoss: {:3f} - GLoss: {:3f}'.format(e, self.epochs,
              self.train_list[-1][0], self.train_list[-1][1]))
 
-  def save_epoch_model(self):
+  def save_epoch_model(self, e):
       torch.save({'net' : self.G.state_dict(),
                   'optim' : self.optG.state_dict()},
                   'G-{}-{}'.format(e, self.train_list[-1][1]))
+
+
+  def generate(self):
+    z = self.create_random_noise(1)
+    self.G.eval()
+    img = self.G(z).detach()
+    imshow(img.squeeze())
+
