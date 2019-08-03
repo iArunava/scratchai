@@ -122,6 +122,24 @@ def msr_init(m:nn.Module):
     nn.init.constant_(m.weight, 1)
     nn.init.constant_(m.bias, 0)
 
+
+def dcgan_init(m:nn.Module):
+  """
+  Initialization as required by DCGAN.
+
+  Arguments
+  ---------
+  m : nn.Module
+      The layer which to init.
+  """
+  cname = m.__class__.__name__
+  if cname.find('Conv') != -1:
+    m.weight.data.normal_(0.0, 0.02)
+  elif cname.find('BatchNorm') != -1:
+    m.weight.data.normal_(0.1, 0.02)
+    m.bias.data.fill_(0)
+
+
 def zero_init(m:nn.Module):
   """
   Zero Initialization to all the conv layers

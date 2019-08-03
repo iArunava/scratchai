@@ -8,6 +8,8 @@ import torch.nn as nn
 
 from torch.nn import functional as F
 
+from scratchai.init import dcgan_init
+
 
 __all__ = ['G', 'D']
 
@@ -46,6 +48,7 @@ class G(nn.Module):
   def __init__(self, sc:int=512, zc:int=100, **kwargs):
     super().__init__()
     self.layers_dict, self.fconv = create_layers(zc, sc, 1, 0, 2, 1, convt, 3, **kwargs)
+    self.apply(dcgan_init)
 
   def forward(self, x):
     for name, layer in self.layers_dict.items():
@@ -65,6 +68,7 @@ class D(nn.Module):
   def __init__(self, sc:int=64, expand:int=2, **kwargs):
     super().__init__()
     self.layers_dict, self.fconv = create_layers(3, sc, 2, 1, 1, 0, conv, 1, **kwargs)
+    self.apply(dcgan_init)
 
   def forward(self, x):
     for name, layer in self.layers_dict.items():
