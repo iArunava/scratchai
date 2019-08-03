@@ -11,7 +11,7 @@ from torch.nn import functional as F
 from scratchai.init import dcgan_init
 
 
-__all__ = ['G', 'D']
+__all__ = ['G', 'D', 'get_dcgan', 'get_mnist_dcgan']
 
 
 def convt(ic:int, oc:int, k:int, s:int, p:int):
@@ -45,9 +45,9 @@ class G(nn.Module):
   ---------
 
   """
-  def __init__(self, sc:int=512, zc:int=100, **kwargs):
+  def __init__(self, sc:int=512, zc:int=100, oc:int=3, **kwargs):
     super().__init__()
-    self.layers_dict, self.fconv = create_layers(zc, sc, 1, 0, 2, 1, convt, 3, **kwargs)
+    self.layers_dict, self.fconv = create_layers(zc, sc, 1, 0, 2, 1, convt, oc, **kwargs)
     self.apply(dcgan_init)
 
   def forward(self, x):
@@ -65,9 +65,9 @@ class D(nn.Module):
   ---------
 
   """
-  def __init__(self, sc:int=64, expand:int=2, **kwargs):
+  def __init__(self, sc:int=64, expand:int=2, ic:int=3, **kwargs):
     super().__init__()
-    self.layers_dict, self.fconv = create_layers(3, sc, 2, 1, 1, 0, conv, 1, **kwargs)
+    self.layers_dict, self.fconv = create_layers(ic, sc, 2, 1, 1, 0, conv, 1, **kwargs)
     self.apply(dcgan_init)
 
   def forward(self, x):
@@ -76,3 +76,27 @@ class D(nn.Module):
     x = F.sigmoid(self.fconv(x))
     x = x.view(-1, 1)
     return x
+
+
+# =============================================================================
+# QuickLoaders
+# =============================================================================
+def get_mnist_dcgan():
+  """
+  This function returns the Generator and Discriminator as needed by MNIST 
+  dataset.
+  """
+  return G(sc=4, hid_layers=2, oc=1), D(sc=4, hid_layers=2, ic=1)
+
+
+def get_dcgan(scale='normal'):
+  """
+  This function returns the Generator and Discriminator as described in DCGAN
+  """
+  if scale == 'small':
+    return G(sc=4, hid_layers=1), D(sc=4, hid_layers=1, ic=1)
+  elif scale == 'normal':
+    return G(), D()
+  else:
+    raise NotImplementedError
+  

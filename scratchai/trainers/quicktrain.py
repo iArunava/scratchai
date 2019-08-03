@@ -3,7 +3,6 @@ Wrappers to quickly train on common datasets.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch.optim as optim
 
@@ -224,6 +223,31 @@ def dummy_gan(G, D, **kwargs):
 
   t = GANDummyData()
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
+
+  trainer = GANTrainer(G, net=D, criterion=crit, optimizer=opti,
+                       train_loader=tloader, verbose=False, **kwargs)
+
+  trainer.fit()
+  return trainer
+
+
+def mnist_gantrainer(G, D, **kwargs):
+  """
+  Train on Dummy Data with GANs just to check everything is working.
+
+  Arguments
+  ---------
+
+  """
+  kwargs['gan'] = True
+  kwargs['net2'] = D
+  root, bs, opti, crit, evaluate, kwargs = preprocess_opts(G, **kwargs)
+  trf = get_trf('pad2_tt_normmnist')
+
+  t = datasets.MNIST(root, train=True, download=True, transform=trf)
+  #v = datasets.MNIST(root, train=False, download=True, transform=trf)
+  tloader = DataLoader(t, shuffle=True, batch_size=bs)
+  #vloader = DataLoader(v, shuffle=True, batch_size=bs)
 
   trainer = GANTrainer(G, net=D, criterion=crit, optimizer=opti,
                        train_loader=tloader, verbose=False, **kwargs)
