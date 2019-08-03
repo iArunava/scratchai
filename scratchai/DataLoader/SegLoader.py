@@ -6,7 +6,6 @@ from PIL import Image
 import glob
 import torchvision
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import torchvision.transforms as trf
 import cv2
@@ -99,7 +98,8 @@ class SegLoader(ImageLoader):
     # Implicitly checks for self.y is not None
     assert self.x is not None
     assert t in ['inp', 'lab', 'fin']
-
+    
+    import matplotlib.pyplot as plt
     plt.figure(figsize=(10, 10))
     gs = gridspec.GridSpec(2, 1)
     gs.update(wspace=0.5, hspace=0.5)
