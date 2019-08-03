@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-import matplotlib.pyplot as plt
 
 from abc import ABC
 from tqdm import tqdm
@@ -265,6 +264,7 @@ class Trainer():
     assert self.epochs_complete == len(self.train_list)
     epochs = np.arange(1, self.epochs_complete+1)
     
+    import matplotlib.pyplot as plt
     plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
     plt.plot(epochs, vacc, 'b-', label='Val Accuracy')
     plt.plot(epochs, tloss, 'o--', label='Train Loss')
@@ -402,6 +402,7 @@ class SegTrainer(Trainer):
     assert self.epochs_complete == len(self.train_list)
     epochs = np.arange(1, self.epochs_complete+1)
     
+    import matplotlib.pyplot as plt
     plt.subplot(1, 3, 1)
     plt.plot(epochs, tacc, 'b--', label='Train Pixel Accuracy')
     plt.plot(epochs, vacc, 'b-', label='Val Pixel Accuracy')

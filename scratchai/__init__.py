@@ -1,3 +1,8 @@
+import os
+if 'DISPLAY' not in os.environ:
+  import matplotlib as mpl
+  mpl.use('Agg')
+
 from scratchai import datasets
 from scratchai import attacks
 from scratchai import DataLoader
