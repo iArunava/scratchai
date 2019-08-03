@@ -137,7 +137,7 @@ class GANTrainer(Trainer):
   def save_epoch_model(self, e):
       torch.save({'net' : self.G.state_dict(),
                   'optim' : self.optG.state_dict()},
-                  'G-{}-{}'.format(e, self.train_list[-1][1]))
+                  'G-{}-{}.pth'.format(e, self.train_list[-1][1]))
 
 
   def generate(self):
