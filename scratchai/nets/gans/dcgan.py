@@ -86,7 +86,7 @@ def get_mnist_dcgan():
   This function returns the Generator and Discriminator as needed by MNIST 
   dataset.
   """
-  return G(sc=4, hid_layers=2, oc=1), D(sc=4, hid_layers=2, ic=1)
+  return G(hid_layers=2, oc=1), D(hid_layers=2, ic=1)
 
 
 def get_dcgan(scale='normal'):
