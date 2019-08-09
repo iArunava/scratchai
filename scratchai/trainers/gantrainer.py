@@ -4,6 +4,7 @@ This file stores the code that allows to train GANs.
 
 import torch
 import torch.nn as nn
+import cv2
 
 from tqdm import tqdm
 
@@ -33,7 +34,7 @@ class GANTrainer(Trainer):
     self.real = 1
     self.fake = 0
     # TODO Please check if the label can be created and used like this
-    self.label = torch.full((self.batch_size,), self.real, device=self.device)
+    #self.label = torch.full((self.batch_size,), self.real, device=self.device)
     
     # Setting up the optimizers
     assert isinstance(self.optimizer, tuple) and len(self.optimizer) == 2
@@ -46,6 +47,9 @@ class GANTrainer(Trainer):
     self.train_list = []
 
     self.z_size = 100
+
+    print (self.G, self.D)
+    print (self.optG, self.optD)
   
 
   def before_epoch_start(self):
@@ -65,41 +69,51 @@ class GANTrainer(Trainer):
     bs = self.batch_size if bs is None else bs
     return torch.randn(bs, self.z_size, 1, 1, device=self.device)
 
+  
+
+  def before_train(self):
+    self.D.to(self.device)
+    self.G.to(self.device)
+
 
   def trainD(self, data):
     real = self.D(data)
-    self.label.fill_(self.real)
-    rloss = self.criterion(real, self.label)
+    label = torch.full((self.batch_size,), self.real, device=self.device)
+    rloss = self.criterion(real, label)
 
-    self.optD.zero_grad()
+    #self.optD.zero_grad()
     
     # TODO Check whether this can be made to pass backward at once with rloss
     # at the end, that is keep both the backwards together with opt.step
     # if so, abstract the whole thing into the updateD() function
-    rloss.backward()
+    #rloss.backward()
     
     # Create random noise to be passed to the generator
     z = self.create_random_noise()
     
     fimages = self.G(z)
-    self.label.fill_(self.fake)
+    label = torch.full((self.batch_size,), self.fake, device=self.device)
     # NOTE This detach is very much needed for things to work!
     # Its the first Big Bug I faced while coding DCGAN
     fake = self.D(fimages.detach())
-    floss = self.criterion(fake, self.label)
-    floss.backward()
+    floss = self.criterion(fake, label)
+    #floss.backward()
 
     self.dloss = rloss + floss
+
+    self.optD.zero_grad()
+    self.dloss.backward()
     self.optD.step()
 
     return fimages
     
     
   def trainG(self, data):
-    self.label.fill_(self.real)
+    label = torch.full((self.batch_size,), self.real, device=self.device)
     fake = self.D(data)
-    self.gloss = self.criterion(fake, self.label)
+    self.gloss = self.criterion(fake, label)
     # TODO Move the below two lines in updateG()
+    self.optG.zero_grad()
     self.gloss.backward()
     self.optG.step()
    
@@ -107,8 +121,9 @@ class GANTrainer(Trainer):
   def train_body(self):
     for ii, (rimages, _) in enumerate(tqdm(self.train_loader)):
       rimages = rimages.to(self.device)
-      self.D.to(self.device)
-      self.G.to(self.device)
+
+      # Rescale the images
+      #rimages = rimages * 2 - 1
       
       # Train the Discriminator
       fimages = self.trainD(rimages)
@@ -122,8 +137,8 @@ class GANTrainer(Trainer):
 
 
   def update_metrics(self):
-    self.lossD(self.dloss)
-    self.lossG(self.gloss)
+    self.lossD(self.dloss.data.cpu(), self.batch_size)
+    self.lossG(self.gloss.data.cpu(), self.batch_size)
     
 
   def store_details(self, part):
@@ -140,9 +155,10 @@ class GANTrainer(Trainer):
                   'G-{}-{}.pth'.format(e, self.train_list[-1][1]))
 
 
-  def generate(self):
+  def generate(self, save:bool=False):
     z = self.create_random_noise(1)
     self.G.eval()
     img = self.G(z).detach()
-    imshow(img.squeeze())
+    if not save: imshow(img.squeeze())
+    else: cv2.imwrite('r.png', img.squeeze().detach().cpu().numpy())
 

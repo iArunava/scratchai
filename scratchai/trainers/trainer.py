@@ -83,7 +83,7 @@ class Trainer():
 
     # Temporary Variables (Variables that needs to be reinitialized after
     # each epoch
-    self.loss  = 0.0
+    #self.loss  = 0.0
 
     if verbose: print (self.__str__())
     
@@ -108,7 +108,8 @@ class Trainer():
     """
     This function is used to train the classification networks.
     """
-    self.set_seed()
+    # TODO Turn back switch on, switching it off to get hold of DCGAN bug.
+    #self.set_seed()
     for e in range(self.epochs):
       self.fit_body(e)
       # Increase completed epochs by 1
@@ -215,7 +216,6 @@ class Trainer():
 
   def get_loss(self, out, target):
     self.loss = self.criterion(out, target)
-    print (self.loss)
     
   def update(self):
     self.optimizer.zero_grad()
@@ -366,8 +366,6 @@ class SegTrainer(Trainer):
       if part == 'train':
         self.t_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
-        print (np.sum(out == labl))
-        print (out.size)
         #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
         #self.t_accmtr(acc)
         #miu = mean_iu(nc, true=labl, pred=out)

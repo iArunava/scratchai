@@ -265,6 +265,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
       plt.axis('off'); mplot.pyplot.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
+    import matplotlib.pyplot as plt
     img = t2i(unnorm(img) if normd else img, **kwargs)
     plt.imshow(img)
 
