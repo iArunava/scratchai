@@ -14,13 +14,15 @@ from scratchai.init import dcgan_init
 __all__ = ['G', 'D', 'get_dcgan', 'get_mnist_dcgan']
 
 
-def convt(ic:int, oc:int, k:int, s:int, p:int):
-  layers = [nn.ConvTranspose2d(ic, oc, k, s, p, bias=False), nn.BatchNorm2d(oc)]
+def convt(ic:int, oc:int, k:int, s:int, p:int, norm:bool=True):
+  layers = [nn.ConvTranspose2d(ic, oc, k, s, p, bias=False)]
+  if norm: layers += [nn.BatchNorm2d(oc)]
   return layers
 
 
-def conv(ic:int, oc:int, k:int, s:int, p:int):
-  layers = [nn.Conv2d(ic, oc, k, s, p, bias=False), nn.BatchNorm2d(oc)]
+def conv(ic:int, oc:int, k:int, s:int, p:int, norm:bool=True):
+  layers = [nn.Conv2d(ic, oc, k, s, p, bias=False)]
+  if norm: layers += [nn.BatchNorm2d(oc)]
   return layers
 
 
@@ -33,7 +35,7 @@ def create_layers(ic, sc, conv0_s, conv0_p, fconv_s, fconv_p, conv_func, foc,
     oc = sc // (2<<ii)
     ic = oc * 2
     layers_dict[prefix + str(ii+1)] = nn.Sequential(*conv_func(ic, oc, 4, 2, 1))
-  fconv = nn.Sequential(*conv_func(oc, foc, 4, fconv_s, fconv_p))
+  fconv = nn.Sequential(*conv_func(oc, foc, 4, fconv_s, fconv_p, norm=False))
   return layers_dict, fconv
 
  
