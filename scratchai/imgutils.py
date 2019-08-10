@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import operator
 import PIL
@@ -248,6 +247,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
   if isinstance(rz, int): rz = (rz, rz)
   if isinstance(img, list) or (isinstance(img, torch.Tensor) and len(img.shape) == 4):
     nimgs = len(img)
+    import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases
     gp = utils.gpfactor(nimgs)
@@ -262,9 +262,10 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
         cimg = t2i(unnorm(cimg) if normd else cimg, **kwargs)
       if rz is not None: cimg = cimg.resize(rz, Image.ANTIALIAS)
 
-      plt.axis('off'); plt.imshow(cimg)
+      plt.axis('off'); mplot.pyplot.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
+    import matplotlib.pyplot as plt
     img = t2i(unnorm(img) if normd else img, **kwargs)
     plt.imshow(img)
 
@@ -388,11 +389,11 @@ def surface_plot(matrix:np.ndarray):
            The matrix for which the surface needs to be plot.
   """
   x, y = np.meshgrid(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
-  fig = plt.figure()
+  fig = mplot.pyplot.figure()
   ax = fig.add_subplot(111, projection='3d')
-  surf = ax.plot_surface(x, y, matrix, cmap=plt.cm.coolwarm)
+  surf = ax.plot_surface(x, y, matrix, cmap=mplot.pyplot.cm.coolwarm)
   #fig.colorbar(surf)
-  plt.show()
+  mplot.pyplot.show()
 
 
 def seg2labl(simg:torch.Tensor, colors):

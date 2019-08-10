@@ -1,7 +1,6 @@
 import numpy as np
 from PIL import Image
 from scratchai.DataLoader.DatasetLoader import DatasetLoader
-import matplotlib.pyplot as plt
 import torch
 import torchvision.transforms as trfs
 
@@ -75,7 +74,8 @@ class ImageLoader(DatasetLoader):
                                  shuffle=True)
 
     def show_few(self, size=1, in_row=False, figsize=(20, 10), show_axis=False):
-
+        
+        import matplotlib.pyplot as plt
         # Check argument data types
         if not isinstance(show_axis, bool):
             raise RuntimeError('Unexpected data type passed for "show_axis" argument!')

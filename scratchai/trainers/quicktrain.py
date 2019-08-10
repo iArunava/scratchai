@@ -9,6 +9,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+from scratchai.datasets import small_sets
 from scratchai.imgutils import get_trf
 from scratchai.trainers.trainer import *
 from scratchai.trainers.gantrainer import GANTrainer
@@ -231,7 +232,7 @@ def dummy_gan(G, D, **kwargs):
   return trainer
 
 
-def mnist_gantrainer(G, D, **kwargs):
+def mnist_gantrainer(G, D, pad_to_32:bool=True, debug:bool=False, **kwargs):
   """
   Train on Dummy Data with GANs just to check everything is working.
 
@@ -241,11 +242,19 @@ def mnist_gantrainer(G, D, **kwargs):
   """
   kwargs['gan'] = True
   kwargs['net2'] = D
+  kwargs['optim'] = optim.Adam
+  print (D)
   root, bs, opti, crit, evaluate, kwargs = preprocess_opts(G, **kwargs)
-  trf = get_trf('pad2_tt_normmnist')
+  print (D)
 
-  t = datasets.MNIST(root, train=True, download=True, transform=trf)
-  #v = datasets.MNIST(root, train=False, download=True, transform=trf)
+  trf_str = 'tt_normmnist'
+  if pad_to_32: trf_str = 'pad2_' + trf_str
+  trf = get_trf(trf_str)
+  
+  print (D)
+  MNIST = datasets.MNIST if not debug else small_sets.MNIST
+  t = MNIST(root=root, train=True, download=True, transform=trf)
+  #v = MNIST(root, train=False, download=True, transform=trf)
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   #vloader = DataLoader(v, shuffle=True, batch_size=bs)
 
@@ -277,17 +286,13 @@ def preprocess_gan_opts(G, D, **kwargs):
   if 'lrG' not in _kwargs: _kwargs['lrG'] = 2e-3
   if 'betasD' not in _kwargs: _kwargs['betasD'] = (0.5, 0.999)
   if 'betasG' not in _kwargs: _kwargs['betasG'] = (0.5, 0.999)
-  if 'wdD' not in _kwargs: _kwargs['wdD'] = 5e-4
-  if 'wdG' not in _kwargs: _kwargs['wdG'] = 5e-4
-  if 'momD' not in _kwargs: _kwargs['momD'] = 0.9
-  if 'momG' not in _kwargs: _kwargs['momG'] = 0.9
-  if 'nestvD' not in _kwargs: _kwargs['nestvD'] = False
-  if 'nestvG' not in _kwargs: _kwargs['nestvG'] = False
+  if 'wdD' not in _kwargs: _kwargs['wdD'] = 0.
+  if 'wdG' not in _kwargs: _kwargs['wdG'] = 0.
 
   optis = (Optimizer(_kwargs['optim'], G, lr=_kwargs['lrG'], weight_decay=_kwargs['wdG'],
-          momentum=_kwargs['momG'], nesterov=_kwargs['nestvG']), 
+           betas=_kwargs['betasG']), 
           Optimizer(_kwargs['optim'], D, lr=_kwargs['lrD'], weight_decay=_kwargs['wdD'],
-          momentum=_kwargs['momD'], nesterov=_kwargs['nestvD']))
+          betas=_kwargs['betasD']))
   
   crit = _kwargs['crit']()
   return crit, optis
