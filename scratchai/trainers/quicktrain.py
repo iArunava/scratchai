@@ -273,10 +273,10 @@ def preprocess_gan_opts(G, D, **kwargs):
   _kwargs = kwargs.copy()
   if 'optim' not in _kwargs: _kwargs['optim'] = optim.Adam
   if 'crit' not in _kwargs: _kwargs['crit'] = nn.BCELoss
-  if 'lrD' not in _kwargs: _kwargs['lrD'] = 1e-3
-  if 'lrG' not in _kwargs: _kwargs['lrG'] = 1e-3
-  if 'betasD' not in _kwargs: _kwargs['betasD'] = (0.0, 0.99)
-  if 'betasG' not in _kwargs: _kwargs['betasG'] = (0.0, 0.99)
+  if 'lrD' not in _kwargs: _kwargs['lrD'] = 2e-3
+  if 'lrG' not in _kwargs: _kwargs['lrG'] = 2e-3
+  if 'betasD' not in _kwargs: _kwargs['betasD'] = (0.5, 0.999)
+  if 'betasG' not in _kwargs: _kwargs['betasG'] = (0.5, 0.999)
   if 'wdD' not in _kwargs: _kwargs['wdD'] = 5e-4
   if 'wdG' not in _kwargs: _kwargs['wdG'] = 5e-4
   if 'momD' not in _kwargs: _kwargs['momD'] = 0.9
