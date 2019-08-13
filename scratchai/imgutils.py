@@ -262,7 +262,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
         cimg = t2i(unnorm(cimg) if normd else cimg, **kwargs)
       if rz is not None: cimg = cimg.resize(rz, Image.ANTIALIAS)
 
-      plt.axis('off'); mplot.pyplot.imshow(cimg)
+      plt.axis('off'); plt.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
     import matplotlib.pyplot as plt
