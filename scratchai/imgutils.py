@@ -389,11 +389,11 @@ def surface_plot(matrix:np.ndarray):
            The matrix for which the surface needs to be plot.
   """
   x, y = np.meshgrid(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
-  fig = mplot.pyplot.figure()
+  fig = plt.figure()
   ax = fig.add_subplot(111, projection='3d')
-  surf = ax.plot_surface(x, y, matrix, cmap=mplot.pyplot.cm.coolwarm)
+  surf = ax.plot_surface(x, y, matrix, cmap=plt.cm.coolwarm)
   #fig.colorbar(surf)
-  mplot.pyplot.show()
+  plt.show()
 
 
 def seg2labl(simg:torch.Tensor, colors):
