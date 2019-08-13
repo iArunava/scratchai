@@ -25,7 +25,7 @@ def conv(ic:int, oc:int, ks:int):
   layers = []
   layers.append(nn.Conv2d(ic, oc, ks, 1, 0))
   layers.append(nn.ReLU(inplace=True))
-  #layers.append(nn.Dropout2d(p=0.5))
+  layers.append(nn.Dropout2d(p=0.5))
   return layers
 
 
@@ -73,21 +73,18 @@ class FCNHead(nn.Module):
   Also, do note, that the required image size must be passed in while calling 
   the forward fuction.
   """
-  def __init__(self, ic:int, oc:int=21, dconv_ks:int=64, dconv_s:int=32,
-               expand:int=12):
+  def __init__(self, ic:int, oc:int=21, dconv_ks:int=64, dconv_s:int=32):
     super().__init__()
-    
-    self.inter_convs = 2 << (expand-1)
+
     self.net = nn.Sequential(
-                  *conv(ic, self.inter_convs, 6), 
-                  #*conv(self.inter_convs, self.inter_convs, 1),
-                  nn.Conv2d(self.inter_convs, oc, 1, 1, 0),
-                  #nn.ConvTranspose2d(oc, oc, dconv_ks, dconv_s, bias=False),
+                  *conv(ic, 4096, 6), *conv(4096, 4096, 1),
+                   nn.Conv2d(4096, oc, 1, 1, 0),
+                   nn.ConvTranspose2d(oc, oc, dconv_ks, dconv_s, bias=False),
               )
     
     #self.net.apply(zero_init)
-    #self.net[-1].weight.data.copy_(bilinear_kernel(oc, oc, dconv_ks))
-    #self.net[-1].weight.requires_grad_(False)
+    self.net[-1].weight.data.copy_(bilinear_kernel(oc, oc, dconv_ks))
+    self.net[-1].weight.requires_grad_(False)
 
   def forward(self, x): 
     x = self.net(x)
@@ -116,16 +113,14 @@ class FCN(nn.Module):
                    The number of skip connections the net will have.
   """
   def __init__(self, head_ic:int, nc=21, backbone=None, aux_classifier=None,
-               pad_input:bool=False, expand:int=12):
+               pad_input:bool=False):
     super().__init__()
 
     dconv_ks = 64; dconv_s = 32
     self.pad_input = pad_input
-    #self.backbone = backbone
-    #self.backbone = nn.Conv2d(3, 256, 5, 3, 0)
-    self.backbone = nn.Sequential(nn.Conv2d(3, 256, 1, 1, 0), nn.ReLU())#, nn.Conv2d(256, nc, 1, 1, 0))
+    self.backbone = backbone
     self.aux_classifier = aux_classifier
-    """
+    
     # Creating Extra Convolutional Layers as required.
     skips = deepcopy(self.backbone.return_layers)
     # TODO Think of a way to not reverse the dict twice.
@@ -146,12 +141,16 @@ class FCN(nn.Module):
         setattr(self, str(key)+str(ii), nn.Conv2d(val, nc, 1, 1, 0))
         setattr(self, str(key)+str(ii+1), nn.ConvTranspose2d(nc, nc, dc_ks, 
                                                              dc_s, bias=False))
+        
+        
+        getattr(self, str(key)+str(ii+1)).weight.data.copy_(bilinear_kernel(nc, nc, dc_ks))
+        getattr(self, str(key)+str(ii+1)).weight.requires_grad_(False)
+        
         self.skip_dicts[key] = [getattr(self, str(key)+str(ii)),
                                 getattr(self, str(key)+str(ii+1))]
       dconv_ks, dconv_s = 4, 2
 
-    """
-    self.fcn_head = FCNHead(head_ic, nc, dconv_ks, dconv_s, expand=expand)
+    self.fcn_head = FCNHead(head_ic, nc, dconv_ks=dconv_ks, dconv_s=dconv_s)
 
 
   def forward(self, x):
@@ -168,7 +167,7 @@ class FCN(nn.Module):
       # and the target shape will differ.
       raise Exception('You poked the bear!')
       out['aux'] = self.aux_classifier(features_out['aux'])
-    """
+    
     out['out'] = self.fcn_head(features_out['out'])
 
     if len(self.skip_dicts) > 0:
@@ -181,19 +180,12 @@ class FCN(nn.Module):
 
     # Cropping the image to the required size (as mentioned by shape)
     out['out'] = center_crop(out['out'], x_shape)
-
-    return out['out']
-    """
-    # TODO Remove the below lines
-    features_out = self.fcn_head(features_out)
-    out = F.interpolate(features_out, size=(360, 360), mode='bilinear')
-    #print (out.shape); input()
-    return out
-    return center_crop(out, x_shape)
+    
+    return out#['out']
 
 
 
-def get_fcn(nc, aux, features, return_layers:dict, head_ic, **kwargs):
+def get_fcn(nc, aux, features, return_layers:dict, head_ic):
   """
   Helper Function to Get a FCN.
 
@@ -213,9 +205,10 @@ def get_fcn(nc, aux, features, return_layers:dict, head_ic, **kwargs):
             The number of in_channels to the FCN Head.
   """
   backbone = InterLayer(features, return_layers)
+  #backbone.net[0].padding = (100, 100)
   aux_classifier = FCNHead(ic=head_ic, oc=nc) if aux else None
   return FCN(head_ic=head_ic, backbone=backbone, nc=nc, 
-             aux_classifier=aux_classifier, pad_input=True, **kwargs)
+             aux_classifier=aux_classifier, pad_input=True)
 
 
 
@@ -224,24 +217,24 @@ def get_fcn(nc, aux, features, return_layers:dict, head_ic, **kwargs):
 # =============================================================================
 
 # FCN32-Alexnet
-def fcn_alexnet(nc=21, aux:bool=False, **kwargs):
+def fcn_alexnet(nc=21, aux:bool=False):
   return_layers = {'12': 'out'}
   if aux: return_layers['9'] = 'aux'
-  return get_fcn(nc, aux, nets.alexnet().features, return_layers, 256, **kwargs)
+  return get_fcn(nc, aux, alexnet().features, return_layers, 256)
 
 
 # FCN32-VGG16_BN
-def fcn_vgg(nc=21, aux:bool=False, **kwargs):
+def fcn_vgg(nc=21, aux:bool=False):
   return_layers = {'30': 'out'}
   if aux: return_layers['23'] = 'aux'
-  return get_fcn(nc, aux, nets.vgg16_bn().features, return_layers, 512, **kwargs)
+  return get_fcn(nc, aux, vgg16().features, return_layers, 512)
 
 
 # FCN32-GoogLeNet
-def fcn_googlenet(nc=21, aux:bool=False, **kwargs):
+def fcn_googlenet(nc=21, aux:bool=False):
   return_layers = {'inception5b': 'out'}
   if aux: return_layers['inception4e'] = 'aux'
-  return get_fcn(nc, aux, nets.googlenet(), return_layers, 1024, **kwargs)
+  return get_fcn(nc, aux, googlenet(), return_layers, 1024)
 
 
 
@@ -250,10 +243,10 @@ def fcn_googlenet(nc=21, aux:bool=False, **kwargs):
 # =============================================================================
 
 # FCN16-Alexnet
-def fcn16_alexnet(nc=21, aux:bool=False, **kwargs):
+def fcn16_alexnet(nc=21, aux:bool=False):
   return_layers = {'5': 'skip1', '12': 'out'}
   if aux: return_layers['9'] = 'aux'
-  return get_fcn(nc, aux, nets.alexnet().features, return_layers, 256, **kwargs)
+  return get_fcn(nc, aux, alexnet().features, return_layers, 256)
 
 
 
@@ -261,7 +254,7 @@ def fcn16_alexnet(nc=21, aux:bool=False, **kwargs):
 # FCN-8s
 # =============================================================================
 # FCN8-Alexnet
-def fcn8_alexnet(nc=21, aux:bool=False, **kwargs):
+def fcn8_alexnet(nc=21, aux:bool=False):
   return_layers = {'2': 'skip2', '5': 'skip1', '12': 'out'}
   if aux: return_layers['9'] = 'aux'
-  return get_fcn(nc, aux, nets.alexnet().features, return_layers, 256, **kwargs)
+  return get_fcn(nc, aux, alexnet().features, return_layers, 256)
