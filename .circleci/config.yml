@@ -115,7 +115,7 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "tests/test_metrics.py" }}
 
-  test_learners:
+  test_trainers:
     docker:
       - image: circleci/python:3.6.1
 
@@ -130,12 +130,12 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
-            python3 -m unittest tests/test_learners.py
+            python3 -m unittest tests/test_trainers.py
 
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "tests/test_learners.py" }}
+          key: v1-dependencies-{{ checksum "tests/test_trainers.py" }}
           
   test_utils:
     docker:
@@ -168,5 +168,5 @@ workflows:
       - test_attacks
       - test_one_calls
       - test_metrics
-      - test_learners
+      - test_trainers
       - test_utils
