@@ -16,7 +16,6 @@ from torch.nn import functional as F
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
 from scratchai import imgutils
-from scratchai import one_call
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -209,6 +208,7 @@ class Trainer():
       
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
     raise Exception('You poked the dinosaur!')
@@ -351,6 +351,7 @@ class SegTrainer(Trainer):
     return fobatch
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
     one_call.segment(x, nstr=self.net)
