@@ -8,11 +8,6 @@ from scratchai.trainers import metrics as M
 
 class TestMetrics(unittest.TestCase):
   
-  def test_miou(self):
-    # TODO Add some more tests
-    utils.implemented(M, 'miou')
-
-
   def test_confusion_matrix(self):
     
     # TODO Need more tests!
