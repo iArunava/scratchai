@@ -62,6 +62,21 @@ def load_from_pth(url, fname='random', key='state_dict'):
   return ckpt[key] if key in ckpt else ckpt
 
 
+def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
+                    inn:int=512):
+  """
+  Helps in Loading Pretrained networks
+  """
+  net.load_state_dict(load_from_pth(url, fname))
+  # If nc != None, load a custom last linear layer
+  # After freezing the rest of the network
+  if nc is not None:
+    for p in net.parameters():
+      p.requires_grad_(False)
+    setatrib(net, attr, nn.Linear(inn, nc))
+  return net
+
+
 def implemented(module, func):
   """
   Function to check if a function func exists in module.
@@ -127,21 +142,6 @@ def setatrib(obj, attr:str, val):
       setattr(obj, attr, val)
     else:
       obj = getattr(obj, attr)
-
-
-def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
-                    inn:int=512):
-  """
-  Helps in Loading Pretrained networks
-  """
-  net.load_state_dict(load_from_pth(url, fname))
-  # If nc != None, load a custom last linear layer
-  # After freezing the rest of the network
-  if nc is not None:
-    for p in net.parameters():
-      p.requires_grad_(False)
-    setatrib(net, attr, nn.Linear(inn, nc))
-  return net
 
 
 def freeze(net:nn.Module):
