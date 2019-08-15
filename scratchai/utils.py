@@ -233,6 +233,7 @@ class Topk():
     for k in topk:
       n = name + str(k)
       self.avgmtrs[n] = AvgMeter(n)
+      self.avgmtrs[n].create_and_shift_to_new_slot()
 
   def update(self, vals, cnt):
     """
