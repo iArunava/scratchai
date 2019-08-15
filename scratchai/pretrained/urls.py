@@ -32,9 +32,9 @@ vgg19    = '1MqY9HOmTlubxo9Y1AZxRM1F6uZJq6w1j'
 # =============================================================================
 resnet18_url = 'https://www.dropbox.com/s/dvjgt5ojbkmd3f2/resnet18.pth?dl=1'
 resnet34_url = 'https://www.dropbox.com/s/b7l029v0v6kyn46/resnet34.pth?dl=1'
-resnet50_url = 'https://www.dropbox.com/s/hinaadj4kj1rsl0/resnet50.pth?dl=1'
-resnet101_url = 'https://www.dropbox.com/s/11u40th2ygsz9u0/resnet101.pth?dl=1'
-resnet152_url = 'https://www.dropbox.com/s/9babg74hcgx1w9l/resnet152.pth?dl=1'
+resnet50_url = 'https://www.dropbox.com/s/bigs4ac2skjs5ag/resnet50.pth?dl=1'
+resnet101_url = 'https://www.dropbox.com/s/ythdqkvsurbh4is/resnet101.pth?dl=1'
+resnet152_url = 'https://www.dropbox.com/s/6iiwe0x5910v450/resnet152.pth?dl=1'
 
 
 # =============================================================================
