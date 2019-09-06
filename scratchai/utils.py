@@ -34,7 +34,7 @@ def cam():
   cv2.destroyAllWindows()
 
 
-def load_from_pth(url, fname='random', key='state_dict'):
+def load_from_pth(url=None, fname='random', key='state_dict', no_prefix=False):
   """
   Function to download/load the pth file and return the key mentioned.
 
@@ -52,8 +52,8 @@ def load_from_pth(url, fname='random', key='state_dict'):
         The value.
   """
   
-  prefix = home
-  if not os.path.isfile(prefix + fname + '.pth'):
+  prefix = '' if no_prefix else home
+  if url is not None and not os.path.isfile(prefix + fname + '.pth'):
     if url.startswith('https://'):
       call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
     else:
@@ -129,12 +129,12 @@ def setatrib(obj, attr:str, val):
       obj = getattr(obj, attr)
 
 
-def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
-                    inn:int=512):
+def load_pretrained(net:nn.Module, url:str=None, fname:str='random', 
+                    nc:int=None, attr='fc', inn:int=512, **kwargs):
   """
   Helps in Loading Pretrained networks
   """
-  net.load_state_dict(load_from_pth(url, fname))
+  net.load_state_dict(load_from_pth(url, os.path.abspath(fname), **kwargs))
   # If nc != None, load a custom last linear layer
   # After freezing the rest of the network
   if nc is not None:

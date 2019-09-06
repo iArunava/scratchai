@@ -4,6 +4,7 @@ This file stores the code that allows to train GANs.
 
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 import cv2
 
 from tqdm import tqdm
@@ -146,19 +147,31 @@ class GANTrainer(Trainer):
                             self.lossG.get_curr_slot_avg()))
   
   def show_epoch_details(self, e):
-      print ('Epoch: {}/{} - DLoss: {:3f} - GLoss: {:3f}'.format(e, self.epochs,
+      print ('Epoch: {}/{} - DLoss: {:3f} - GLoss: {:3f}'.format(e+1, self.epochs,
              self.train_list[-1][0], self.train_list[-1][1]))
 
   def save_epoch_model(self, e):
-      torch.save({'net' : self.G.state_dict(),
+      torch.save({'netG' : self.G.state_dict(),
+                  'netD' : self.D.state_dict(),
                   'optim' : self.optG.state_dict()},
-                  'G-{}-{}.pth'.format(e, self.train_list[-1][1]))
+                  'GD-{}-{:.3f}.pth'.format(e, self.train_list[-1][1]))
 
 
   def generate(self, save:bool=False):
     z = self.create_random_noise(1)
     self.G.eval()
     img = self.G(z).detach()
-    if not save: imshow(img.squeeze())
+    if not save: imshow(img.data.cpu().squeeze())
     else: cv2.imwrite('r.png', img.squeeze().detach().cpu().numpy())
 
+  def plot_gloss_vs_dloss(self):
+    dlosses = list(map(lambda x : x[0], self.train_list))
+    glosses = list(map(lambda x : x[1], self.train_list))
+     
+    epochs = np.arange(1, self.epochs_complete+1)
+    plt.plot(epochs, dlosses, 'b', label='Discriminator Loss')
+    plt.plot(epochs, dlosses, 'o', label='Generator Loss')
+    plt.xlabel('Epochs')
+    plt.ylable('Loss')
+    plt.legend()
+    plt.show()
