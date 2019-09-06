@@ -16,7 +16,6 @@ from torch.nn import functional as F
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
 from scratchai import imgutils
-from scratchai import one_call
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -132,7 +131,7 @@ class Trainer():
                   'best_net-{:.2f}.pth'.format(metric()))
 
   def save_epoch_model(self, e):
-    torch.save({'net' : self.net.cpu().state_dict(), 
+    torch.save({'net' : self.net.cpu().state_dict(),
                 'optim' : self.optimizer.state_dict()},
                 'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
@@ -171,7 +170,7 @@ class Trainer():
       self.update()
       self.update_metrics(out, labl, part='train')
     
-
+    
   def fit_one_batch(self):
     fobatch = ClfFitOneBatch(**vars(self))
     fobatch.fit()
@@ -209,6 +208,7 @@ class Trainer():
       
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
     raise Exception('You poked the dinosaur!')
@@ -351,6 +351,7 @@ class SegTrainer(Trainer):
     return fobatch
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
     one_call.segment(x, nstr=self.net)
@@ -364,20 +365,13 @@ class SegTrainer(Trainer):
 
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
       if part == 'train':
+        print (np.sum(out == labl), out.size)
         self.t_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
-        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        #self.t_accmtr(acc)
-        #miu = mean_iu(nc, true=labl, pred=out)
-        #self.t_miumtr(miu)
 
       elif part == 'val':
         self.v_lossmtr(self.loss.item(), self.batch_size)
         self.cmatrix(true=labl, pred=out)
-        #acc, per_class_acc = pixel_accuracy(nc, true=labl, pred=out)
-        #self.v_accmtr(acc)
-        #miu = mean_iu(nc, true=labl, pred=out)
-        #self.v_miumtr(miu)
 
       else:
         raise ('Invalid Part! Not Supported!')
@@ -507,4 +501,4 @@ class SegEvaluater(SegTrainer):
     self.before_epoch_start()
     self.test()
     self.show_epoch_details(0)
-
+   

@@ -12,9 +12,8 @@ class TestOneCalls(unittest.TestCase):
           'LARGE.jpg'
   lab_1 = 'rain barrel'
 
-  url_2 = 'http://bradleymitchell.me/wp-content/uploads/2014/06/decompressed.'\
-          'jpg'
-  lab_2 = 'five'
+  url_2 = 'http://datawrangling.s3.amazonaws.com/sample_digit.png'
+  lab_2 = 'four'
 
   def test_classify(self):
     """
@@ -42,11 +41,12 @@ class TestOneCalls(unittest.TestCase):
     # Check that mnist works
     mnist_ns = ['lenet_mnist', 'alexnet_mnist']
     for n in mnist_ns:
+      pred, val = one_call.classify(TestOneCalls.url_2, nstr=n)
       pred, val = one_call.classify(TestOneCalls.url_2, nstr=n, 
                                     trf='rz32_cc28_tt')
-      pred, val = one_call.classify(TestOneCalls.url_2, nstr=n)
 
       self.assertTrue(isinstance(pred, str), 'Doesn\'t Work!')
+      print (pred, n)
       self.assertTrue(pred == TestOneCalls.lab_2, 'Doesn\'t Work!')
 
     self.assertRaises(AssertionError, lambda: one_call.classify(

@@ -9,7 +9,6 @@ from torchvision import datasets, transforms
 import itertools
 import matplotlib.gridspec as gridspec
 from tqdm import tqdm_notebook as tqdm
-from IPython.display import clear_output
 #import pydot
 
 def bnconv(in_channels, out_channels, kernel_size, stride, padding, init=nn.init.kaiming_normal_,

@@ -243,26 +243,23 @@ def mnist_gantrainer(G, D, pad_to_32:bool=True, debug:bool=False, **kwargs):
   kwargs['gan'] = True
   kwargs['net2'] = D
   kwargs['optim'] = optim.Adam
-  print (D)
   root, bs, opti, crit, evaluate, kwargs = preprocess_opts(G, **kwargs)
-  print (D)
 
   trf_str = 'tt_normmnist'
   if pad_to_32: trf_str = 'pad2_' + trf_str
   trf = get_trf(trf_str)
   
-  print (D)
   MNIST = datasets.MNIST if not debug else small_sets.MNIST
   t = MNIST(root=root, train=True, download=True, transform=trf)
   #v = MNIST(root, train=False, download=True, transform=trf)
   tloader = DataLoader(t, shuffle=True, batch_size=bs)
   #vloader = DataLoader(v, shuffle=True, batch_size=bs)
-
+  
   trainer = GANTrainer(G, net=D, criterion=crit, optimizer=opti,
                        train_loader=tloader, verbose=False, **kwargs)
-
   trainer.fit()
   return trainer
+
 
 
 # =============================================================================

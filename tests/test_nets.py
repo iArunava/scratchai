@@ -226,9 +226,11 @@ class TestCommon(nn.Module):
     utils.implemented(nets, 'debug')
 
 
-#############################################################
-######## Weght Initializations
-#############################################################
+# =============================================================================
+# 
+# Weght Initializations
+# 
+# =============================================================================
 
 class WeightInit(unittest.TestCase):
 
@@ -240,3 +242,30 @@ class WeightInit(unittest.TestCase):
     net.apply(init.kaiming_normal)
     net.apply(init.kaiming_uniform)
     net.apply(init.msr_init)
+
+
+# =============================================================================
+#
+# Generative Adversarial Networks
+#
+# =============================================================================
+
+class TestGAN(unittest.TestCase):
+  def test_dcgan(self):
+    G, D = nets.get_dcgan()
+    n1 = torch.randn(2, 100, 1, 1); out = G(n1)
+    self.assertEqual(list(out.shape), [2, 3, 64, 64], 'Nope!')
+
+    n2 = torch.randn(2, 3, 64, 64); out = D(n2)
+    self.assertEqual(list(out.squeeze().shape), [2], 'Nope!')
+    # TODO Add tests for the `.get_mnist_dcgan()`
+
+  
+  def test_linear_gan(self):
+    G, D = nets.get_lineargan_mnist()
+    n1 = torch.randn(2, 100); out = G(n1)
+    self.assertEqual(list(out.shape), [2, 1, 28, 28], 'Nope!')
+
+    n2 = torch.randn(2, 1, 28, 28); out = D(n2)
+    self.assertEqual(list(out.squeeze().shape), [2], 'Nope!')
+
