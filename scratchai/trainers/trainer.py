@@ -6,17 +6,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-import matplotlib.pyplot as plt
 
+from abc import ABC
 from tqdm import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from torchvision import datasets, transforms
-from abc import ABC
+from torch.nn import functional as F
 
 from scratchai.trainers.metrics import *
 from scratchai.utils import AvgMeter
-from scratchai.imgutils import imshow
-from scratchai.one_call import classify, segment
+from scratchai import imgutils
 
 
 __all__ = ['Trainer', 'SegTrainer', 'SegAuxTrainer', 'SegEvaluater']
@@ -35,7 +34,7 @@ class Trainer():
   val_loader   : nn.utils.DataLoader
                  The Validation Loader.
   """
-  def __init__(self, net, train_loader, val_loader, nc:int, lr=1e-3, epochs=5, 
+  def __init__(self, net, train_loader, val_loader=None, nc:int=None, lr=1e-3, epochs=5, 
                criterion=nn.CrossEntropyLoss, optimizer=optim.Adam, 
                lr_step=None, lr_decay=0.2, seed=123, device='cuda', 
                topk:tuple=(1, 5), verbose:bool=True, **kwargs):
@@ -52,16 +51,16 @@ class Trainer():
     self.nc           = nc
     self.net          = net
     self.topk         = topk
-    self.criterion         = criterion
     self.seed         = seed
-    self.optimizer        = optimizer
     self.device       = torch.device(device)
     self.epochs       = epochs
     self.lr_step      = lr_step
     self.lr_decay     = lr_decay
-    self.val_loader   = val_loader
+    self.optimizer    = optimizer
+    self.criterion    = criterion
     self.train_loader = train_loader
     self.batch_size   = self.train_loader.batch_size
+    self.val_loader   = val_loader
     
     self.best_loss  = float('inf')
     self.epochs_complete = 0
@@ -83,33 +82,39 @@ class Trainer():
 
     # Temporary Variables (Variables that needs to be reinitialized after
     # each epoch
-    self.loss  = 0.0
+    #self.loss  = 0.0
 
     if verbose: print (self.__str__())
+    
   
-  def fit(self):
-    """
-    This function is used to train the classification networks.
-    """
+  def set_seed(self):
     torch.manual_seed(self.seed)
     np.random.seed(self.seed)
     # TODO Make a function which prints out all the info.
     # And call that before calling fit, maybe in the constructor
     print ('[INFO] Setting torch seed to {}'.format(self.seed))
-    
-    for e in range(self.epochs):
-      if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
-      
-      self.before_epoch_start()
-      self.train()
-      self.test()
-      self.save_if_best(self.get_curr_val_loss)
-      self.show_epoch_details(e)
-      self.save_epoch_model(e)
 
+  def fit_body(self, e):
+    if self.to_adjust_lr: self.lr = adjust_lr(opti, lr, lr_decay)
+    self.before_epoch_start()
+    self.train()
+    self.test()
+    self.save_if_best(self.get_curr_val_loss)
+    self.show_epoch_details(e)
+    self.save_epoch_model(e)
+
+  def fit(self):
+    """
+    This function is used to train the classification networks.
+    """
+    # TODO Turn back switch on, switching it off to get hold of DCGAN bug.
+    #self.set_seed()
+    for e in range(self.epochs):
+      self.fit_body(e)
       # Increase completed epochs by 1
       self.epochs_complete += 1
-  
+
+    
   def before_epoch_start(self):
     self.t_lossmtr.create_and_shift_to_new_slot()
     self.v_lossmtr.create_and_shift_to_new_slot()
@@ -126,8 +131,8 @@ class Trainer():
                   'best_net-{:.2f}.pth'.format(metric()))
 
   def save_epoch_model(self, e):
-    torch.save({'net' : self.net.cpu().state_dict(), 
-                'opti' : self.optimizer.state_dict()},
+    torch.save({'net' : self.net.cpu().state_dict(),
+                'optim' : self.optimizer.state_dict()},
                 'net-{}-{:.2f}.pth'.format(e+1, self.get_curr_val_acc()))
     
   def get_curr_val_acc(self):
@@ -151,9 +156,12 @@ class Trainer():
     self.net.train()
     
   def train(self):
-    
     self.before_train()
-
+    self.train_body()
+    self.store_details(part='train')
+  
+  
+  def train_body(self):
     for ii, (data, labl) in enumerate(tqdm(self.train_loader)):
       data, labl = data.to(self.device), labl.to(self.device)
       out = self.net(data)
@@ -162,9 +170,7 @@ class Trainer():
       self.update()
       self.update_metrics(out, labl, part='train')
     
-    self.store_details(part='train')
-  
-  
+    
   def fit_one_batch(self):
     fobatch = ClfFitOneBatch(**vars(self))
     fobatch.fit()
@@ -202,10 +208,11 @@ class Trainer():
       
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
     raise Exception('You poked the dinosaur!')
-    classify(x, nstr=self.net)
+    one_call.classify(x, nstr=self.net)
 
   def get_loss(self, out, target):
     self.loss = self.criterion(out, target)
@@ -254,6 +261,7 @@ class Trainer():
     assert self.epochs_complete == len(self.train_list)
     epochs = np.arange(1, self.epochs_complete+1)
     
+    import matplotlib.pyplot as plt
     plt.plot(epochs, tacc, 'b--', label='Train Accuracy')
     plt.plot(epochs, vacc, 'b-', label='Val Accuracy')
     plt.plot(epochs, tloss, 'o--', label='Train Loss')
@@ -343,13 +351,16 @@ class SegTrainer(Trainer):
     return fobatch
   
   def show_a_pred(self):
+    from scratchai import one_call
     x, _ = next(iter(self.train_loader))
     x = x[0]
-    segment(x, nstr=self.net)
+    one_call.segment(x, nstr=self.net)
 
   def update_metrics(self, out, labl, part):
     with torch.no_grad():
       nc = out.shape[1]
+      # TODO Remove the line below
+      out = F.log_softmax(out, dim=1)
       out = torch.argmax(out, dim=1)
 
       out, labl = out.cpu().detach().numpy(), labl.cpu().detach().numpy()
@@ -380,6 +391,7 @@ class SegTrainer(Trainer):
     assert self.epochs_complete == len(self.train_list)
     epochs = np.arange(1, self.epochs_complete+1)
     
+    import matplotlib.pyplot as plt
     plt.subplot(1, 3, 1)
     plt.plot(epochs, tacc, 'b--', label='Train Pixel Accuracy')
     plt.plot(epochs, vacc, 'b-', label='Val Pixel Accuracy')
@@ -448,25 +460,27 @@ class FitOneBatch(ABC):
       vloader = DataLoader(va, batch_size=self.batch_size, shuffle=True)
     else:
       vloader = DataLoader(tr, batch_size=self.batch_size, shuffle=True)
-    return tloader, vloader
+    
+    self.train_loader = tloader
+    self.val_loader = vloader
 
   def show_batch(self):
     tx, _ = next(iter(self.train_loader))
-    imshow(tx, normd=True)
+    imgutils.imshow(tx, normd=True)
 
 
 class ClfFitOneBatch(FitOneBatch, Trainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.train_loader, self.val_loader = self.reset_batch_and_get_loaders()
+    self.reset_batch_and_get_loaders()
 
 
 class SegFitOneBatch(FitOneBatch, SegTrainer):
   def __init__(self, same_train_val:bool=True, **kwargs):
     super().__init__(**kwargs)
     self.same_train_val = same_train_val
-    self.train_loader, self.val_loader = self.reset_batch_and_get_loaders()
+    self.reset_batch_and_get_loaders()
 
 
 # =============================================================================

@@ -15,16 +15,16 @@ class TestLearners(unittest.TestCase):
     
   def test_imp_mnist_cifar10(self):
     # Check if the function is implemented
-    utils.implemented(learners.quicktrain, 'mnist')
-    utils.implemented(learners.quicktrain, 'cifar10')
+    utils.implemented(trainers.quicktrain, 'mnist')
+    utils.implemented(trainers.quicktrain, 'cifar10')
   
   @unittest.skipIf(torch.cuda.is_available() == False, 'no cuda')
   def test_train_mnist_cifar10(self):
     # Check if the function is implemented
     net = nets.lenet_mnist()
-    learners.quicktrain.mnist(net, epochs=1)
+    trainers.quicktrain.mnist(net, epochs=1)
     net = nets.lenet_cifar10()
-    learners.quicktrain.cifar10(net, epochs=1)
+    trainers.quicktrain.cifar10(net, epochs=1)
 
 
 class TestTransforms(unittest.TestCase):
@@ -83,6 +83,6 @@ class TestTransforms(unittest.TestCase):
       n1 = T.ToPILImage()(torch.randn(3, h, w))
       _oh, _ow = randint(10, 100), randint(10, 100)
       oh, ow = max(_oh, h), max(_ow, w)
-      n2 = ST.pad_if_smaller(n1, (_oh, _ow), fill=0)
+      n2 = ST.pad_if_smaller(n1, (_ow, _oh), fill=0)
       self.assertEqual(n2.size, (ow, oh), 'Shape not equal!')
       # TODO Test to check its filled correctly!

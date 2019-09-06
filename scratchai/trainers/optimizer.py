@@ -44,7 +44,7 @@ class Optimizer():
 
   def __init__(self, opt:torch.optim, net:nn.Module, lr=1e-3, momentum=0.9,
                nesterov:bool=False, weight_decay:float=5e-4, 
-               bias_2lr:bool=False):
+               bias_2lr:bool=False, betas:tuple=(0.9, 0.999)):
     
     assert opt in [optim.SGD, optim.Adam]
 
@@ -52,6 +52,7 @@ class Optimizer():
     self.momentum = momentum
     self.weight_decay = weight_decay
     self.nesterov = nesterov
+    self.betas = betas
 
     self.bias_2lr = bias_2lr
     
@@ -60,12 +61,15 @@ class Optimizer():
       'lr' : self.lr,
       'momentum' : self.momentum,
       'weight_decay' : self.weight_decay,
-      'nesterov' : self.nesterov
+      'nesterov' : self.nesterov,
+      'betas' : self.betas
     }
-
+    
     if opt == optim.Adam:
       optim_global_kwargs.pop('momentum', None)
       optim_global_kwargs.pop('nesterov', None)
+    elif opt == optim.SGD:
+      optim_global_kwargs.pop('betas', None)
 
     # Print some info
     if bias_2lr:
@@ -89,6 +93,8 @@ class Optimizer():
       self.opt = opt([p for p in net.parameters() if p.requires_grad],
                       **optim_global_kwargs)
 
+    
+    #print (self.opt)
 
   def get_parameters(self, net, bias=False):
     # TODO Try doing some optimizations here

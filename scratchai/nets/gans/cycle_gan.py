@@ -9,8 +9,7 @@ from torchvision import datasets, transforms
 import itertools
 import matplotlib.gridspec as gridspec
 from tqdm import tqdm_notebook as tqdm
-from IPython.display import clear_output
-import pydot
+#import pydot
 
 def bnconv(in_channels, out_channels, kernel_size, stride, padding, init=nn.init.kaiming_normal_,
            eps=1e-5, momentum=0.1, conv_first=True, relu='relu', nslope=0.2, norm='instance'):
@@ -377,7 +376,7 @@ def unnormalize(img):
 # NOTE! Not Tested
 class CycleGAN(object):
     
-    def __init__(self, x_path, y_path, bs=4, transform=None, device='cuda', l_type='mse' betas=(0.5, 0.999), 
+    def __init__(self, x_path, y_path, bs=4, transform=None, device='cuda', l_type='mse', betas=(0.5, 0.999), 
                  dlr=0.0002, glr=0.0002, lambA=10, lambB = 10, idt_loss=True, lamb_idt=0.1):
         
         super().__init__()

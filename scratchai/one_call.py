@@ -3,7 +3,6 @@ import numpy as np
 
 import os
 import requests
-import matplotlib.pyplot as plt
 
 from PIL import Image
 from torchvision import transforms as T
@@ -233,6 +232,7 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', ret:bool=False, **kwargs):
 
   # TODO Just go over the how the images are viz ones
   # in case something is weird.
+  import matplotlib.pyplot as plt
   plt.figure(figsize=(10, 10))
   gs = GridSpec(1, 3)
   gs.update(wspace=0.025, hspace=0.0)

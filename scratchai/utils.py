@@ -34,7 +34,7 @@ def cam():
   cv2.destroyAllWindows()
 
 
-def load_from_pth(url, fname='random', key='state_dict'):
+def load_from_pth(url=None, fname='random', key='state_dict', no_prefix=False):
   """
   Function to download/load the pth file and return the key mentioned.
 
@@ -52,14 +52,29 @@ def load_from_pth(url, fname='random', key='state_dict'):
         The value.
   """
   
-  prefix = home
-  if not os.path.isfile(prefix + fname + '.pth'):
+  prefix = '' if no_prefix else home
+  if url is not None and not os.path.isfile(prefix + fname + '.pth'):
     if url.startswith('https://'):
       call(['wget', '-O', '{}{}.pth'.format(prefix, fname), url])
     else:
       download_from_gdrive(url, prefix + fname + '.pth')
   ckpt = torch.load('{}{}.pth'.format(prefix, fname), map_location='cpu')
   return ckpt[key] if key in ckpt else ckpt
+
+
+def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
+                    inn:int=512):
+  """
+  Helps in Loading Pretrained networks
+  """
+  net.load_state_dict(load_from_pth(url, fname))
+  # If nc != None, load a custom last linear layer
+  # After freezing the rest of the network
+  if nc is not None:
+    for p in net.parameters():
+      p.requires_grad_(False)
+    setatrib(net, attr, nn.Linear(inn, nc))
+  return net
 
 
 def implemented(module, func):
@@ -127,21 +142,6 @@ def setatrib(obj, attr:str, val):
       setattr(obj, attr, val)
     else:
       obj = getattr(obj, attr)
-
-
-def load_pretrained(net:nn.Module, url:str, fname:str, nc:int=None, attr='fc',
-                    inn:int=512):
-  """
-  Helps in Loading Pretrained networks
-  """
-  net.load_state_dict(load_from_pth(url, fname))
-  # If nc != None, load a custom last linear layer
-  # After freezing the rest of the network
-  if nc is not None:
-    for p in net.parameters():
-      p.requires_grad_(False)
-    setatrib(net, attr, nn.Linear(inn, nc))
-  return net
 
 
 def freeze(net:nn.Module):
@@ -233,6 +233,7 @@ class Topk():
     for k in topk:
       n = name + str(k)
       self.avgmtrs[n] = AvgMeter(n)
+      self.avgmtrs[n].create_and_shift_to_new_slot()
 
   def update(self, vals, cnt):
     """

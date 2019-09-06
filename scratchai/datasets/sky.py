@@ -19,7 +19,7 @@ class SkySegmentation(VisionDataset):
   url = 'https://www.ime.usp.br/~eduardob/datasets/sky/sky.zip'
 
   def __init__(self, root='./', image_set='train', download=True, 
-               transform=None, target_transform=None):
+               transform=None, target_transform=None, shuffle=True):
     
     super().__init__(root, transform)
     

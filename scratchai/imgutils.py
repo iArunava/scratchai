@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import operator
 import PIL
@@ -246,8 +245,9 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
        Defaults to 224.
   """
   if isinstance(rz, int): rz = (rz, rz)
-  if isinstance(img, list) or (isinstance(img, torch.Tensor) and len(img) == 4):
+  if isinstance(img, list) or (isinstance(img, torch.Tensor) and len(img.shape) == 4):
     nimgs = len(img)
+    import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(8, 8))
     # TODO Update to handle when nimgs is a prime and a few other cases
     gp = utils.gpfactor(nimgs)
@@ -265,6 +265,7 @@ def imshow(img, normd:bool=False, rz=224, **kwargs):
       plt.axis('off'); plt.imshow(cimg)
 
   elif isinstance(img, torch.Tensor):
+    import matplotlib.pyplot as plt
     img = t2i(unnorm(img) if normd else img, **kwargs)
     plt.imshow(img)
 
