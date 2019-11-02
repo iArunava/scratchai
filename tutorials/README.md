@@ -55,7 +55,7 @@
 ```
 
 ### Image Utils
-1. thresh_img
+1. Thresholding Image using thresh_img
 ```
 >>> from scratchai.imgutils import  *
 >>> threshold_img = thresh_img(img,[50,50,50],tcol = [25,25,25])
