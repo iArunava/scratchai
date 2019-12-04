@@ -173,7 +173,7 @@ def stransfer(path:str, style:str=None, save:bool=False, show:bool=True):
   return out
 
 
-def attack(x, atk=attacks.FGM, nstr='resnet18', ret:bool=False, **kwargs):
+def attack(x, atk=None, nstr='resnet18', ret:bool=False, **kwargs):
   """
   One call to perform an attack on an image.
 
@@ -194,6 +194,7 @@ def attack(x, atk=attacks.FGM, nstr='resnet18', ret:bool=False, **kwargs):
   assert not atk == attacks.Noise, 'Noise attack not supported due to a diff '\
                                    'preprocessing pipeline for noise attacks.'\
                                    ' Will support in future'
+  if atk is None: atk == attacks.FGM
   
   if 'y' in kwargs:
     if isinstance(kwargs['y'], int): 

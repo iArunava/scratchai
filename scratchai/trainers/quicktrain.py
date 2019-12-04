@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 from scratchai.imgutils import get_trf
-from scratchai.trainers.trainer import *
+from scratchai.trainers.trainer import Trainer, SegTrainer
 from scratchai.trainers.optimizer import Optimizer
 from scratchai._config import home
 from scratchai import utils
