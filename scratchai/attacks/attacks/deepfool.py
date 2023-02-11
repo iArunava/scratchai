@@ -8,7 +8,19 @@ import torch.nn as nn
 import numpy as np
 import copy
 
-from torch.autograd.gradcheck import zero_gradients as zgrad
+try:
+  from torch.autograd.gradcheck import zero_gradients as zgrad
+except ImportError:
+  import collections, torch
+  def zero_gradients(x):
+      if isinstance(x, torch.Tensor):
+          if x.grad is not None:
+              x.grad.detach_()
+              x.grad.zero_()
+      elif isinstance(x, collections.abc.Iterable):
+          for elem in x:
+              zero_gradients(elem)
+
 
 
 __all__ = ['deepfool', 'DeepFool']
