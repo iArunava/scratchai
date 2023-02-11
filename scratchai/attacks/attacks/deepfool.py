@@ -22,10 +22,6 @@ except ImportError:
               zero_gradients(elem)
 
 
-  def zero_gradients(i):
-      for t in iter_gradients(i):
-          t.zero_()
-
 
 __all__ = ['deepfool', 'DeepFool']
 
