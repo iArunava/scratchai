@@ -15,6 +15,7 @@ from scratchai import *
 
 NOISE = 'noise'
 SEMANTIC = 'semantic'
+SAL = 'saliency_map_method'
 FGM = 'fgm'
 PGD = 'pgd'
 DEEPFOOL = 'deepfool'
@@ -24,16 +25,14 @@ class TestAttacks(unittest.TestCase):
   # TODO Shorten the url
   url = 'https://www.publicdomainpictures.net/pictures/210000/nahled/tiger-in-the-water-14812069667ks.jpg'
   trf = imgutils.get_trf('rz256_cc224_tt_normimgnet')
-  
   url_dset = 'https://www.dropbox.com/s/6bg8ntqcs4r98i9/testdataset.zip?dl=1'
 
   def test_noise_atk(self):
     """
     Tests to check that the Noise Attack works
     """
-    with open('/tmp/test.png', 'wb') as f:
-      f.write(requests.get(TestAttacks.url).content)
-    img = Image.open('/tmp/test.png')
+    self.init()
+    img = TestAttacks.img
 
     #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
     all_models = ['alexnet']
@@ -45,14 +44,35 @@ class TestAttacks(unittest.TestCase):
       self.check_atk(net, img, attacks.Noise(), t=NOISE)
       print ('[INFO] Attack worked successfully!')
       del net
+  
+  def test_smm_atk(self):
+    """
+    Tests to check that saliency map method is working as expected.
+    """
+    self.init()
+    img = TestAttacks.img
 
+    all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 
+                  'resnet101', 'resnet152']
+    net = getattr(models, 'alexnet')(pretrained=True)
+    self.check_atk(net, img, scratchai.attacks.smm, t=SAL)
+
+    '''
+    for model in all_models:
+      print ('[INFO] Testing Noise attack on {}'.format(model))
+      net = getattr(models, model)(pretrained=True)
+      atk = scratchai.attacks.SaliencyMapMethod(net)
+      self.check_atk(net, img, atk)
+      print ('[INFO] Attack worked successfully!')
+      del net, atk
+    '''
+    
   def test_semantic(self):
     """
     tests to ensure semantic attack works!
     """
-    with open('/tmp/test.png', 'wb') as f:
-      f.write(requests.get(TestAttacks.url).content)
-    img = Image.open('/tmp/test.png')
+    self.init()
+    img = TestAttacks.img
 
     # Maybe an option to perform the rigourous testing, if needed.
     #all_models = ['alexnet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
@@ -65,6 +85,16 @@ class TestAttacks(unittest.TestCase):
       self.check_atk(net, img, attacks.Semantic(), t=SEMANTIC)
       print ('[INFO] Attack worked successfully!')
       del net
+
+  def init(self):
+    """
+    Contains operations needed to perform before
+    any test in this class is executed.
+    """
+    if TestAttacks.img is None:
+      with open('/tmp/test.png', 'wb') as f:
+        f.write(requests.get(TestAttacks.url).content)
+      TestAttacks.img = Image.open('/tmp/test.png')
   
   def test_pgd(self):
     """
@@ -184,7 +214,13 @@ class TestAttacks(unittest.TestCase):
       if init: adv_x = atk(img.unsqueeze(0))
       else: adv_x = atk(img.unsqueeze(0), net)
       adv_pred = int(torch.argmax(net(adv_x), dim=1))
-      
+    elif t == SAL:
+      # TODO Passing noise, just for testing. Remove it.
+      img = torch.randn(3, 64, 64)
+      #img = TestAttacks.trf2(img)
+      adv_x = atk(net, img.unsqueeze(0), y=y)
+      adv_pred = int(torch.argmax(net(adv_x), dim=1))
+
     print (true_pred, adv_pred)
     self.assertFalse(true_pred == adv_pred, 'The attack doesn\'t work!')
     if y is not None:
