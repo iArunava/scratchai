@@ -53,4 +53,15 @@
 >>> from scratchai.one_call import *
 >>> stransfer('https://proservegroup.com/ekmps/shops/proservegroup/images/gilbert-revolution-x-size-5-match-rugby-ball-3859-p.jpg', save=1)
 ```
+
+### Image Utils
+1. Thresholding Image using thresh_img
+```
+>>> from scratchai.imgutils import  *
+>>> threshold_img = thresh_img(img,[50,50,50],tcol = [25,25,25])
+```
+
+
+
+
 Notes: Available Styles = ['elephant_skin']
