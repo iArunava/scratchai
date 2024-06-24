@@ -102,6 +102,53 @@ class TestImgUtils(unittest.TestCase):
       std = imgutils.std(t)
       self.assertEqual(round(std - torch.std(t).item(), 2), 0.0, 'nope!')
 
+  def test_segs_labels(self):
+    # TODO Test on batches of images
+    t = torch.Tensor([[[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]],
+                      [[1, 2, 3],
+                       [4, 5, 6],
+                       [7, 8, 9]]]).long()
+
+    gt = torch.Tensor([[0., 1., 2.],
+                       [0., 1., 2.],
+                       [0., 1., 2.]]).double()
+    
+    cols = np.array([(1., 2., 3.), (4., 5., 6.), (7., 8., 9.)])
+
+    label = imgutils.seg2labl(t, colors=cols)
+    
+    self.assertEqual(list(label.shape), [3, 3], 'Not working!')
+    self.assertTrue(torch.all(label == gt), 'Not working!')
+    
+    # =======================================================
+    # Tests for label2seg
+    # =======================================================
+
+    # TODO Test on batches of images
+    # Check with float type that it doesn't raises an exception
+    seg = imgutils.label2seg(gt.float(), colors=cols)
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    # Check with long type that it doesn't raises an exception
+    seg = imgutils.label2seg(gt.long(), colors=cols)
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    # Check to ensure colors can be in torch.Tensor type
+    seg = imgutils.label2seg(gt.long(), colors=torch.from_numpy(cols))
+    self.assertEqual(list(seg.shape), [3, 3, 3], 'Not working!')
+    self.assertTrue(torch.all(seg == t), 'Not working!')
+
+    self.assertRaises(AssertionError, 
+        lambda : imgutils.label2seg(gt.long(), colors=list(cols)))
+
+
 
 #############################################
 ### Check the functions in scratchai/utils.py
